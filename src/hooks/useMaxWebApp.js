@@ -4,11 +4,12 @@ export function useMaxWebApp() {
   const [webApp, setWebApp] = useState(null);
 
   useEffect(() => {
-    const wa = window?.WebApp;
-    alert(wa.initData);
+    const wa = window.WebApp;
+    
     if (!wa) return;
 
-    wa.ready?.(); // сообщаем MAX, что UI готов
+    wa.ready(); // сообщаем MAX, что UI готов
+    alert(wa.initData);
     setWebApp(wa);
   }, []);
 
