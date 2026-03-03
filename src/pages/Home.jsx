@@ -8,8 +8,8 @@ export default function Home() {
     const nav = useNavigate();
     const username = "Семён Сидорук";
     const username_chapters = username.split(" ", 2);
-    const initials = `${username_chapters.length == 2 ? `${username_chapters[0][0]}${username_chapters[1][0]}` : 
-                        username_chapters.length == 1 ? username_chapters[0][0] : "" }`;
+    const initials = `${username_chapters.length == 2 ? `${username_chapters[0][0]}${username_chapters[1][0]}` :
+        username_chapters.length == 1 ? username_chapters[0][0] : ""}`;
 
     return (
         <PageLayout
@@ -71,21 +71,25 @@ export default function Home() {
 
                 {/* Меню */}
                 <Container className="card menuCard">
-                    <button className="menuItem" type="button" onClick={() => nav("/visits")}>
-                        <Calendar size={18} />
-                        <Typography.Label>Мои записи</Typography.Label>
-                        <span className="chev">›</span>
-                    </button>
+                    <CellList>
+                        <CellSimple
+                            before={<Calendar size={20} />}
+                            after="chevron"
+                            onClick={() => nav("/my-records")}
+                        >
+                            Мои записи
+                        </CellSimple>
 
-                    <div className="menuDivider" />
-
-                    <button className="menuItem" type="button" onClick={() => nav("/history")}>
-                        <History size={18} />
-                        <Typography.Label>История приёмов</Typography.Label>
-                        <span className="chev">›</span>
-                    </button>
+                        <CellSimple
+                            before={<History size={20} />}
+                            after="chevron"
+                            onClick={() => nav("/history")}
+                        >
+                            История приёмов
+                        </CellSimple>
+                    </CellList>
                 </Container>
             </Flex>
-        </PageLayout>
+        </PageLayout >
     );
 }
