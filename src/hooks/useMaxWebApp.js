@@ -15,7 +15,7 @@ export function useMaxWebApp() {
   const initData = webApp?.initData ?? "";
   const initDataUnsafe = webApp?.initDataUnsafe ?? {};
   const user = initDataUnsafe?.user ?? null;
-  alert(user);
+  alert(`${user.first_name} ${user.last_name}`);
 
   return { webApp, initData, initDataUnsafe, user };
 }
