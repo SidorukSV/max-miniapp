@@ -1,0 +1,321 @@
+/* БАЗА */
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; margin: 0; padding: 0; }
+body { background: #f2f3f5; }
+
+/* ОСНОВНАЯ ПАНЕЛЬ */
+.panel {
+  min-height: 100vh;
+  position: relative;
+  padding-bottom: 108px; /* место под bottom bar + подпись */
+}
+
+/* iOS HEADER */
+.Header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: transparent;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  padding-top: calc(10px + env(safe-area-inset-top));
+  padding-bottom: 10px;
+}
+
+.Header--scrolled{
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.03);
+}
+
+.HeaderInner {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.clinicLogo {
+  height: 44px;
+  width: 44px;
+  border-radius: 14px;
+  object-fit: cover;
+}
+
+.clinicTitle {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/* КОНТЕНТ */
+.page {
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 12px 16px 16px;
+}
+
+/* КАРТОЧКИ */
+.card {
+  width: 100%;
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 14px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+}
+
+.card--tight { padding: 12px 14px; }
+
+/* ИМЯ */
+.nameBlock { min-width: 0; }
+.nameLine {
+  margin: 0;
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.roleLine { display: block; margin-top: 4px; line-height: 1.1; }
+
+.bonusValue { margin: 0; white-space: nowrap; }
+
+/* МЕНЮ */
+.menuCard {
+  width: 100%;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 18px;
+  margin-top: -4px;
+  background: #fff;
+}
+
+.menuItem {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+}
+.menuItem:active { background: rgba(0,0,0,0.04); }
+
+.menuDivider {
+  height: 1px;
+  background: rgba(0,0,0,0.08);
+  margin: 0 14px;
+}
+
+.chev { opacity: 0.55; font-size: 22px; line-height: 1; }
+
+/* BOTTOM BAR */
+.bottomBar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 60;
+  padding: 10px 0 calc(14px + env(safe-area-inset-bottom));
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(0,0,0,0.08);
+}
+
+.bottomBarInner {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+.bottomPrimary {
+  width: 100%;
+  height: 48px;
+  border-radius: 14px;
+  font-weight: 600;
+}
+
+.bottomNote {
+  margin-top: 10px;
+  text-align: center;
+  opacity: 0.8;
+}
+
+/* ===== BOOK VISIT UI ===== */
+
+.pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.pill {
+  border: 1px solid rgba(0, 0, 0, 0.10);
+  background: #fff;
+  padding: 10px 12px;
+  border-radius: 999px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.pill:active {
+  transform: scale(0.98);
+  opacity: 0.9;
+}
+
+.pill--active {
+  border-color: rgba(0, 0, 0, 0);
+  background: rgba(0, 122, 255, 0.12); /* лёгкий iOS-акцент */
+  font-weight: 600;
+}
+
+.card--disabled {
+  opacity: 0.55;
+}
+
+.linkBtn {
+  border: none;
+  background: transparent;
+  padding: 0;
+  color: rgba(0, 122, 255, 1);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.summary {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.summaryRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pageTitle{
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Правая часть карточки */
+.actions {
+  align-items: center;
+}
+
+.bonusChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(0, 122, 255, 0.08);
+
+  border: none;
+  cursor: pointer;
+}
+
+.bonusChip--clickable:active {
+  transform: scale(0.98);
+  opacity: 0.9;
+}
+
+.bonusIcon {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: rgba(0, 122, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bonusValue {
+  margin: 0;
+  font-size: 16px;
+  white-space: nowrap;
+}
+
+.statusPill {
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(0, 122, 255, 0.10);
+  color: rgba(0, 122, 255, 1);
+  white-space: nowrap;
+}
+
+.visitLine {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.visitActions {
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+
+.status--ok {
+  background: rgba(0, 180, 100, 0.12);
+  color: rgb(0, 150, 80);
+}
+
+.dangerBtn {
+  color: #d92d20;
+}
+
+/* ГРУППЫ ИСТОРИИ */
+.historyGroup {
+  margin-top: 12px;          /* общий отступ между группами */
+  width: 100%;
+}
+
+/* первая группа ближе к заголовку страницы */
+.historyGroup:first-of-type {
+  margin-top: 6px;
+}
+
+.historyGroupHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  margin: 0 2px 10px;        /* снизу отступ до карточек */
+  padding: 0;                /* без внутренних паддингов */
+}
+
+.historyGroupBar {
+  width: 4px;
+  height: 14px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.historyMonth {
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 12px;
+  opacity: 0.6;
+
+  margin: 0;                 
+  line-height: 1.2;
+}
+
+.status--danger {
+  background: rgba(217, 45, 32, 0.10);
+  color: rgb(217, 45, 32);
+}
+
+.status--muted {
+  background: rgba(0, 0, 0, 0.06);
+  color: rgba(0, 0, 0, 0.60);
+}
