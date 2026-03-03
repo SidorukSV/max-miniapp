@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Panel, Container, Flex, Avatar, Typography, Button, IconButton } from "@maxhub/max-ui";
+import { Panel, Container, Flex, Avatar, Typography, Button, IconButton, CellList, CellSimple } from "@maxhub/max-ui";
 import { MoreHorizontal, Calendar, History, ChevronRight, Gift } from "lucide-react";
 import PageLayout from "../components/PageLayout";
 import "../app.css";
@@ -74,15 +74,15 @@ export default function Home() {
                     <CellList>
                         <CellSimple
                             before={<Calendar size={20} />}
-                            after="chevron"
-                            onClick={() => nav("/my-records")}
+                            showChevron
+                            onClick={() => nav("/visits")}
                         >
                             Мои записи
                         </CellSimple>
 
                         <CellSimple
                             before={<History size={20} />}
-                            after="chevron"
+                            showChevron
                             onClick={() => nav("/history")}
                         >
                             История приёмов
