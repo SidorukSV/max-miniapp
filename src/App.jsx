@@ -4,8 +4,13 @@ import BookVisit from "./pages/BookVisit.jsx";
 import MyVisits from "./pages/MyVisits.jsx";
 import History from "./pages/History.jsx";
 import Bonuses from "./pages/Bonuses.jsx";
+import { useMaxWebApp } from "./hooks/useMaxWebApp.js";
 
 export default function App() {
+  const { initData, user } = useMaxWebApp();
+  console.log(user);
+  console.log(initData);
+
   return (
     <HashRouter>
       <Routes>
