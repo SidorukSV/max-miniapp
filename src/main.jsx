@@ -7,9 +7,9 @@ import { MaxUI } from "@maxhub/max-ui";
 import App from "./App.jsx";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
-  <React.StrictMode>
+  //<React.StrictMode>
     <MaxUI>
       <App />
     </MaxUI>
-  </React.StrictMode>
+  //</React.StrictMode>
 );

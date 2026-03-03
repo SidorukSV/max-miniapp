@@ -5,6 +5,7 @@ export function useMaxWebApp() {
 
   useEffect(() => {
     const wa = window?.WebApp;
+    alert(wa.initData);
     if (!wa) return;
 
     wa.ready?.(); // сообщаем MAX, что UI готов
@@ -17,8 +18,6 @@ export function useMaxWebApp() {
   const version = webApp?.version;
 
   const user = useMemo(() => initDataUnsafe?.user ?? null, [initDataUnsafe]);
-
-  alert(user);
 
   return { webApp, initData, initDataUnsafe, user, platform, version };
 }

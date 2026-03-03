@@ -7,7 +7,6 @@ import { useMaxWebApp } from "../hooks/useMaxWebApp";
 
 export default function Home() {
     const nav = useNavigate();
-    const { user } = useMaxWebApp();
     var username = "";
     try{
         username = `${user.first_name} ${user.last_name}`;
