@@ -12,7 +12,7 @@ export default function App() {
   console.log(initData);
 
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/book" element={<BookVisit />} />
