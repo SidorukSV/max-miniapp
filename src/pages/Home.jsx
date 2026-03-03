@@ -3,9 +3,11 @@ import { Panel, Container, Flex, Avatar, Typography, Button, IconButton, CellLis
 import { MoreHorizontal, Calendar, History, ChevronRight, Gift } from "lucide-react";
 import PageLayout from "../components/PageLayout";
 import "../app.css";
+import { useMaxWebApp } from "../hooks/useMaxWebApp";
 
 export default function Home() {
     const nav = useNavigate();
+    const { user } = useMaxWebApp();
     var username = "";
     try{
         username = `${user.first_name} ${user.last_name}`;
