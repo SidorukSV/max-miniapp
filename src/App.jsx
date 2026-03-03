@@ -5,7 +5,7 @@ import MyVisits from "./pages/MyVisits.jsx";
 import History from "./pages/History.jsx";
 import Bonuses from "./pages/Bonuses.jsx";
 import { useMaxWebApp } from "./hooks/useMaxWebApp.js";
-import { MaxContext } from "./context/MaxContext.jsx/index.js";
+import { MaxContext } from "./context/MaxContext.jsx";
 
 export default function App() {
   const max = useMaxWebApp();
