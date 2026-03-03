@@ -4,6 +4,7 @@ export function useMaxWebApp() {
   const [webApp, setWebApp] = useState(() => window.WebApp ?? null);
 
   useEffect(() => {
+    location.hash = location.hash.replace("#/#", "#");
     const wa = window.WebApp;
     if (!wa) return;
 
