@@ -5,7 +5,7 @@ import "../app.css";
 
 export default function PageLayout({
     children,
-    headerTitle = "Моя поликлиника",
+    headerTitle = "Красивые люди",
     logoSrc = `${import.meta.env.BASE_URL}logo-clinic.png`,
     showBottom = true,
     bottomButtonText,
