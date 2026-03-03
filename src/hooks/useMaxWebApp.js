@@ -7,7 +7,7 @@ export function useMaxWebApp() {
     const wa = window.WebApp;
     
     if (!wa) return;
-
+    alert(location.hash);
     wa.onEvent("WebAppReady", onMaxAppReady);
     wa.ready();
     //alert(wa.initData);
