@@ -61,19 +61,19 @@
     --text: rgba(255, 255, 255, 0.92);
     --muted: rgba(255, 255, 255, 0.65);
 
-    --surface: rgba(255, 255, 255, 0.08);
-    --surface-2: rgba(15, 17, 21, 0.96);
-    --surface-glass: rgba(15, 17, 21, 0.72);
+    --surface: rgba(255, 255, 255, 0.14);
+    --surface-2: rgba(15, 17, 21, 0.92);
+    --surface-glass: rgba(15, 17, 21, 0.70);
 
-    --border: rgba(255, 255, 255, 0.10);
+    --border: rgba(255, 255, 255, 0.14);
     --border-soft: rgba(255, 255, 255, 0.10);
-    --divider: rgba(255, 255, 255, 0.10);
+    --divider: rgba(255, 255, 255, 0.14);
     --divider-soft: rgba(255, 255, 255, 0.10);
 
     --tap: rgba(255, 255, 255, 0.06);
 
     --accent: rgba(59, 130, 246, 1);
-    --accent-soft: rgba(59, 130, 246, 0.20);
+    --accent-soft: rgba(115, 59, 246, 0.2);
     --accent-chip: rgba(59, 130, 246, 0.14);
     --accent-icon: rgba(59, 130, 246, 0.22);
     --accent-pill-bg: rgba(59, 130, 246, 0.18);
@@ -91,7 +91,7 @@
     --muted-bg: rgba(255, 255, 255, 0.08);
     --muted-text: rgba(255, 255, 255, 0.62);
 
-    --shadow-card: 0 2px 10px rgba(0, 0, 0, 0.35);
+    --shadow-card: 0 2px 14px rgba(0, 0, 0, 0.35);
     --shadow-header: 0 10px 30px rgba(0, 0, 0, 0.30);
   }
 }
