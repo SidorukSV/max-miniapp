@@ -8,7 +8,7 @@ export default function Home() {
     const nav = useNavigate();
     var username = "";
     try{
-        username = `${WebAppData.user.first_name} ${WebAppData.user.last_name}`;
+        username = `${user.first_name} ${user.last_name}`;
     }
     catch{
         username = "Иван Иванов";
