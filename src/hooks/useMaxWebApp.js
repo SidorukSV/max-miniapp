@@ -8,8 +8,9 @@ export function useMaxWebApp() {
     
     if (!wa) return;
 
-    wa.ready(); // сообщаем MAX, что UI готов
-    alert(wa.initData);
+    wa.onEvent("WebAppReady", onMaxAppReady);
+    wa.ready();
+    //alert(wa.initData);
     setWebApp(wa);
   }, []);
 
@@ -21,4 +22,8 @@ export function useMaxWebApp() {
   const user = useMemo(() => initDataUnsafe?.user ?? null, [initDataUnsafe]);
 
   return { webApp, initData, initDataUnsafe, user, platform, version };
+}
+
+export function onMaxAppReady(wa){
+  alert(wa.initData);
 }
