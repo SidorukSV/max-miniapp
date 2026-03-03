@@ -4,10 +4,11 @@ import { MoreHorizontal, Calendar, History, ChevronRight, Gift } from "lucide-re
 import PageLayout from "../components/PageLayout";
 import "../app.css";
 import { useMaxWebApp } from "../hooks/useMaxWebApp";
+import { useMax } from "../context/MaxContext,jsx";
 
 export default function Home() {
     const nav = useNavigate();
-    var username = "";
+    const user = useMax();
     try{
         username = `${user.first_name} ${user.last_name}`;
     }

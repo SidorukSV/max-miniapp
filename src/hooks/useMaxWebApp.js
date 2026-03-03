@@ -8,10 +8,8 @@ export function useMaxWebApp() {
     
     if (!wa) return;
     location.hash = location.hash.replace("#/#", "#");
-    alert(location.hash);
     wa.onEvent("WebAppReady", onMaxAppReady);
     wa.ready();
-    alert(wa.initData);
     setWebApp(wa);
   }, []);
 
@@ -21,7 +19,7 @@ export function useMaxWebApp() {
   const version = webApp?.version;
 
   const user = useMemo(() => initDataUnsafe?.user ?? null, [initDataUnsafe]);
-
+  alert(user);
   return { webApp, initData, initDataUnsafe, user, platform, version };
 }
 
