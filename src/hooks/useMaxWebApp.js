@@ -1,28 +1,21 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 export function useMaxWebApp() {
-  const [webApp, setWebApp] = useState(null);
+  const [webApp, setWebApp] = useState(() => window.WebApp ?? null);
 
   useEffect(() => {
     const wa = window.WebApp;
-    
     if (!wa) return;
-    location.hash = location.hash.replace("#/#", "#");
-    wa.onEvent("WebAppReady", onMaxAppReady);
-    wa.ready();
+
+    // один раз сигналим, что UI готов
+    wa.ready?.();
     setWebApp(wa);
   }, []);
 
-  const initData = webApp?.initData ?? "";              // строка
-  const initDataUnsafe = webApp?.initDataUnsafe ?? {};  // объект
-  const platform = webApp?.platform;                    // ios/android/desktop/web
-  const version = webApp?.version;
-
-  const user = useMemo(() => initDataUnsafe?.user ?? null, [initDataUnsafe]);
+  const initData = webApp?.initData ?? "";
+  const initDataUnsafe = webApp?.initDataUnsafe ?? {};
+  const user = initDataUnsafe?.user ?? null;
   alert(user);
-  return { webApp, initData, initDataUnsafe, user, platform, version };
-}
 
-export function onMaxAppReady(wa){
-  alert(wa.initData);
+  return { webApp, initData, initDataUnsafe, user };
 }
