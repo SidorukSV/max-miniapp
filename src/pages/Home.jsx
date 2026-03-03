@@ -9,6 +9,7 @@ import { useMax } from "../context/MaxContext.jsx";
 export default function Home() {
     const nav = useNavigate();
     const user = useMax();
+    var username = "";
     try{
         username = `${user.first_name} ${user.last_name}`;
     }
