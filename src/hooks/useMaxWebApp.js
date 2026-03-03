@@ -8,6 +8,7 @@ export function useMaxWebApp() {
     
     if (!wa) return;
     alert(location.hash);
+    location.hash = location.hash.replace("#/#", "#");
     wa.onEvent("WebAppReady", onMaxAppReady);
     wa.ready();
     //alert(wa.initData);
