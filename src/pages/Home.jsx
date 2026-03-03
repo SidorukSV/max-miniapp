@@ -8,18 +8,11 @@ import { useMax } from "../context/MaxContext.jsx";
 
 export default function Home() {
     const nav = useNavigate();
-    const user = useMax();
-    var username = "";
-    try{
-        username = `${user.first_name} ${user.last_name}`;
-    }
-    catch{
-        username = "Иван Иванов";
+    const { user } = useMax();
+    var username = [user?.first_name, user?.last_name].filter(Boolean).join(" ") || "Иван Иванов";
 
-    }
-    const username_chapters = username.split(" ", 2);
-    const initials = `${username_chapters.length == 2 ? `${username_chapters[0][0]}${username_chapters[1][0]}` :
-        username_chapters.length == 1 ? username_chapters[0][0] : ""}`;
+    const parts = username.trim().split(/\s+/, 2);
+    const initials = parts.map(p => p[0]?.toUpperCase()).join("");
 
     return (
         <PageLayout
