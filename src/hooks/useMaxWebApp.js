@@ -18,5 +18,7 @@ export function useMaxWebApp() {
 
   const user = useMemo(() => initDataUnsafe?.user ?? null, [initDataUnsafe]);
 
+  alert(user);
+
   return { webApp, initData, initDataUnsafe, user, platform, version };
 }
