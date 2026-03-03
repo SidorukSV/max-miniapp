@@ -1,0 +1,38 @@
+import { useEffect, useState } from "react";
+import { Typography } from "@maxhub/max-ui";
+import "../app.css";
+
+export default function AppHeader({
+    title = "Моя поликлиника",
+    logoSrc = "/logo-clinic.png"
+}) {
+    const [scrolled, setScrolled] = useState(false);
+
+    useEffect(() => {
+        const onScroll = () => {
+            const y = window.scrollY || document.documentElement.scrollTop || 0;
+            setScrolled(y > 0);
+        }
+
+        onScroll();
+        window.addEventListener("scroll", onScroll, { passive: true });
+        return () => window.removeEventListener("scroll", onScroll);
+    }, []);
+
+    return (
+        <div className={`Header ${scrolled ? "Header--scrolled" : ""}`}>
+            <div className="HeaderInner">
+                <img
+                    src={logoSrc}
+                    alt={title}
+                    className="clinicLogo"
+                    onError={(e) => (e.currentTarget.style.display = "none")}
+                />
+                <Typography.Label className="clinicTitle">
+                    {title}
+                </Typography.Label>
+            </div>
+        </div>
+    );
+}
+
