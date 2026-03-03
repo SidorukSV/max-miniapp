@@ -30,7 +30,7 @@ export function useMaxWebApp() {
     };
   }, []);
 
-  const user = useMemo(() => initDataUnsafe?.user ?? null, [initDataUnsafe]);
+  const user = initDataUnsafe?.user ?? null;
   const platform = webApp?.platform ?? null;
   const version = webApp?.version ?? null;
 
