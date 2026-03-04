@@ -25,9 +25,9 @@ export function useMaxWebApp() {
     // 3) говорим хосту, что UI готов
     wa.ready?.();
 
-    phone = wa.requestContact()
+    wa.requestContact()
       .then((contact) => {
-        alert(contact);
+        alert(JSON.stringify(contact));
       })
       .catch(() => {
         alert("contact not send");
