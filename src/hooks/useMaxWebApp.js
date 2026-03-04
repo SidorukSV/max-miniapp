@@ -34,7 +34,7 @@ export function useMaxWebApp() {
   const platform = webApp?.platform ?? null;
   const version = webApp?.version ?? null;
 
-  alert(`${user?.first_name} ${user?.last_name} ${platform} ${version}`);
+  alert(`${user?.first_name} ${user?.last_name} ${platform} ${version} ${initData}`);
 
   return { webApp, initData, initDataUnsafe, user, platform, version };
 }
