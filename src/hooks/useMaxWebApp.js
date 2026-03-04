@@ -25,6 +25,8 @@ export function useMaxWebApp() {
     // 3) говорим хосту, что UI готов
     wa.ready?.();
 
+    wa.requestContact();
+
     return () => {
       wa.offEvent?.("WebAppReady", sync);
     };
