@@ -3,7 +3,6 @@ import { Panel, Container, Flex, Avatar, Typography, Button, IconButton, CellLis
 import { MoreHorizontal, Calendar, History, ChevronRight, Gift } from "lucide-react";
 import PageLayout from "../components/PageLayout";
 import "../app.css";
-import { useMaxWebApp } from "../hooks/useMaxWebApp";
 import { useMax } from "../context/MaxContext.jsx";
 
 export default function Home() {
