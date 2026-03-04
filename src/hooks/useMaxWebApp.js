@@ -4,6 +4,7 @@ export function useMaxWebApp() {
   const [webApp, setWebApp] = useState(null);
   const [initData, setInitData] = useState("");
   const [initDataUnsafe, setInitDataUnsafe] = useState(null);
+  const [phone, setPhone] = useState(null);
 
   useEffect(() => {
     const wa = window.WebApp;
@@ -19,15 +20,12 @@ export function useMaxWebApp() {
     // 1) первичная попытка (иногда уже есть)
     sync();
 
-    // 2) подписка на готовность
-    wa.onEvent?.("WebAppReady", (e) => alert(e));
-
-    // 3) говорим хосту, что UI готов
+    // 2) говорим хосту, что UI готов
     wa.ready?.();
 
     wa.requestContact()
       .then((contact) => {
-        alert(JSON.stringify(contact));
+        setPhone(contact?.phone);
       })
       .catch(() => {
         alert("contact not send");
@@ -42,7 +40,5 @@ export function useMaxWebApp() {
   const platform = webApp?.platform ?? null;
   const version = webApp?.version ?? null;
 
-  //alert(`${user?.first_name} ${user?.last_name} ${platform} ${version} ${initData}`);
-
-  return { webApp, initData, initDataUnsafe, user, platform, version };
+  return { webApp, initData, initDataUnsafe, user, platform, version, phone };
 }

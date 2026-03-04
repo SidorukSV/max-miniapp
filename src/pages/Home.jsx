@@ -7,7 +7,7 @@ import { useMax } from "../context/MaxContext.jsx";
 
 export default function Home() {
     const nav = useNavigate();
-    const { user } = useMax();
+    const { user, phone } = useMax();
     var username = [user?.first_name, user?.last_name].filter(Boolean).join(" ") || "Иван Иванов";
 
     const parts = username.trim().split(/\s+/, 2);
@@ -34,7 +34,7 @@ export default function Home() {
 
                                 {/* "Пациент" отдельно под ФИО */}
                                 <Typography.Label className="roleLine">
-                                    Пациент
+                                    {phone}
                                 </Typography.Label>
                             </div>
                         </Flex>
