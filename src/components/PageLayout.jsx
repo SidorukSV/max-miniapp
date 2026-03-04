@@ -13,7 +13,7 @@ export default function PageLayout({
     showBottomButton = true
 }) {
     return (
-        <Panel mode="primary" className="panel">
+        <Panel mode="secondary" className="panel">
             <AppHeader title={headerTitle} logoSrc={logoSrc} />
             <Container className="page">{children}</Container>
             {showBottom && (
