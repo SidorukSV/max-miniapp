@@ -20,12 +20,18 @@ export function useMaxWebApp() {
     sync();
 
     // 2) подписка на готовность
-    wa.onEvent?.("*", (e) => alert(e));
+    wa.onEvent?.("WebAppReady", (e) => alert(e));
 
     // 3) говорим хосту, что UI готов
     wa.ready?.();
 
-    wa.requestContact();
+    phone = wa.requestContact()
+      .then((contact) => {
+        alert(contact);
+      })
+      .catch(() => {
+        alert("contact not send");
+      });
 
     return () => {
       wa.offEvent?.("WebAppReady", sync);
@@ -36,7 +42,7 @@ export function useMaxWebApp() {
   const platform = webApp?.platform ?? null;
   const version = webApp?.version ?? null;
 
-  alert(`${user?.first_name} ${user?.last_name} ${platform} ${version} ${initData}`);
+  //alert(`${user?.first_name} ${user?.last_name} ${platform} ${version} ${initData}`);
 
   return { webApp, initData, initDataUnsafe, user, platform, version };
 }
