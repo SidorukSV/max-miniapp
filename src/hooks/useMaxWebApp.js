@@ -20,7 +20,7 @@ export function useMaxWebApp() {
     sync();
 
     // 2) подписка на готовность
-    wa.onEvent?.("WebAppReady", sync);
+    wa.onEvent?.("*", (e) => alert(e));
 
     // 3) говорим хосту, что UI готов
     wa.ready?.();
