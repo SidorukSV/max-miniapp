@@ -29,7 +29,9 @@ export default function Home() {
 
                             <div className="nameBlock">
                                 <Typography.Title level={3} className="nameLine">
-                                    {username}
+                                    <EllipsisText maxLines={1}>
+                                        {username}
+                                    </EllipsisText>
                                 </Typography.Title>
 
                                 {/* "Пациент" отдельно под ФИО */}
