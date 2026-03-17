@@ -12,7 +12,7 @@ export function deleteRefreshToken(jti) {
     return refreshTokens.delete(jti);
 }
 
-export function deleteAllExpiredRefreshTokens() {
+export function cleanupExpiredRefreshTokens() {
     const now = Date.now();
 
     for (const [jti, token] of refreshTokens.entries()) {
