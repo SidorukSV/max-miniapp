@@ -22,10 +22,11 @@ export function useMaxWebApp() {
 
     // 2) говорим хосту, что UI готов
     wa.ready?.();
-
+    alert(wa.initData);
     wa.requestContact()
       .then((contact) => {
         setPhone(contact?.phone);
+        alert(contact?.phone);
       })
       .catch(() => {
         alert("contact not send");
