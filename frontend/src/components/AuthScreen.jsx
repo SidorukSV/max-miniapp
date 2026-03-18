@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useMax } from "../context/MaxContext";
 import { authStart, authSetCity, authPhone, authSelectPatient, storeTokens, getMe, sendLogs } from "../api";
-import { Flex, Container, Typography, Button, Spinner } from "@maxhub/max-ui";
+import { Flex, Container, Typography, Button, Spinner, CellList, CellSimple, CellHeader } from "@maxhub/max-ui";
 import "../app.css";
 import { useMaxWebApp } from "../hooks/useMaxWebApp";
 
@@ -20,26 +20,27 @@ export default function AuthScreen() {
     const [contact, setContact] = useState(null);
     const [needCity, setNeedCity] = useState(false);
 
-    setPatients([
-        {
-            id: "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
-            fullName: "Семён Сидорук",
-            birthDate: "1998-05-16"
-        },
-        {
-            id: "6e7f8a9b-0c1d-4e2f-3a4b-5c6d7e8f9a0b",
-            fullName: "Виктор Сидорук",
-            birthDate: "1973-04-14"
-        },
-        {
-            id: "6e7f8a9b-0c1d-4e2f-3a4b-5c6d7e8f9a0b",
-            fullName: "Людмила Сидорук",
-            birthDate: "1962-08-15"
-        }
-    ]);
     async function handleStart() {
+
         setBusy(true);
         setError("");
+        setPatients([
+            {
+                id: "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+                fullName: "Семён Сидорук",
+                birthDate: "1998-05-16"
+            },
+            {
+                id: "6e7f8a9b-0c1d-4e2f-3a4b-5c6d7e8f9a0b",
+                fullName: "Виктор Сидорук",
+                birthDate: "1973-04-14"
+            },
+            {
+                id: "6e7f8a9b-0c1d-4e2f-3a4b-5c6d7e8f9a0b",
+                fullName: "Людмила Сидорук",
+                birthDate: "1962-08-15"
+            }
+        ]);
 
         try {
             const start = await authStart();
@@ -138,7 +139,7 @@ export default function AuthScreen() {
                     )}
 
                     {!!patients.length && (
-                        <FLex direction="column" gap={10}>
+                        <Flex direction="column" gap={10}>
                             <CellList
                                 header={<CellHeader titleStyle="caps">Выберите пациента</CellHeader>}
                                 filled
@@ -146,6 +147,7 @@ export default function AuthScreen() {
                             >
                                 {patients.map((patient) => (
                                     <CellSimple
+                                        key={patient.id}
                                         height="normal"
                                         overline=""
                                         subtitle={patient.birthdate}
@@ -155,7 +157,7 @@ export default function AuthScreen() {
                                     />
                                 ))}
                             </CellList>
-                        </FLex>
+                        </Flex>
                     )}
 
                     {error && (
