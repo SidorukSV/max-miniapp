@@ -1,5 +1,5 @@
 export async function logsRoutes(app) {
-    app.get("/api/v1/send-log",
+    app.post("/api/v1/send-log",
         async (req) => {
             const { log } = req.body;
 
