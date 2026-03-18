@@ -37,7 +37,7 @@ export default function AuthScreen() {
 
             webApp.requestContact()
                 .then(async (send_contact) => {
-                    setContact(contact);
+                    setContact(send_contact);
                     const phoneResult = await authPhone({
                         auth_session_id: start.auth_session_id,
                         phone: contact?.phone || "",
