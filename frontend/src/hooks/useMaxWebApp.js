@@ -23,13 +23,13 @@ export function useMaxWebApp() {
     // 2) говорим хосту, что UI готов
     wa.ready?.();
 
-    // wa.requestContact()
-    //   .then((contact) => {
-    //     setPhone(contact?.phone);
-    //   })
-    //   .catch(() => {
-    //     alert("contact not send");
-    //   });
+    wa.requestContact()
+      .then((contact) => {
+        setPhone(contact?.phone);
+      })
+      .catch(() => {
+        alert("contact not send");
+      });
 
     return () => {
       wa.offEvent?.("WebAppReady", sync);
@@ -40,5 +40,5 @@ export function useMaxWebApp() {
   const platform = webApp?.platform ?? null;
   const version = webApp?.version ?? null;
 
-  return { webApp, initData, initDataUnsafe, user, platform, version, phone };
+  return { webApp, initData, initDataUnsafe, user, platform, version, phone, contact };
 }

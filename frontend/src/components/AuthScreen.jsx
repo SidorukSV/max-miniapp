@@ -30,17 +30,9 @@ export default function AuthScreen() {
                 });
             }
 
-            if (!window.webApp?.requestContact) {
-                throw new Error("request_contact_unavailable");
-            }
+            const max = useMaxWebApp();
 
-            window.webApp?.requestContact()
-                .then((send_contact) => {
-                    setContact(send_contact);
-                })
-                .catch(() => {
-                    throw new Error("contact_not_send");
-                });
+            setContact(max.contact);
 
             const phoneResult = await authPhone({
                 auth_session_id: start.auth_session_id,
