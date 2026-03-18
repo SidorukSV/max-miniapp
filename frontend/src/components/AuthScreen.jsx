@@ -49,7 +49,7 @@ export default function AuthScreen() {
             if (err.message === "request_contact_unavailable") {
                 setError("Запрос контакта недоступен в данном клиенте");
             } else {
-                setError(err.message);
+                setError(err);
             }
         } finally {
             setBusy(false);
