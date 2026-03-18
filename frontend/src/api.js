@@ -1,9 +1,11 @@
 const API_BASE = "http://localhost:3000/api/v1";
 
 export async function apiFetch(path, options = {}) {
+    const hasBody = options.body !== undefined;
+
     const res = await fetch(`${API_BASE}${path}`, {
         headers: {
-            "Content-Type": "application/json",
+            ...(hasBody ? { "Content-Type": "application/json" } : {}),
             ...(options.headers || {}),
         },
         ...options,
