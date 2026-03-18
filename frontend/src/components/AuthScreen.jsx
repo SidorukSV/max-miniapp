@@ -6,9 +6,10 @@ import { Flex, Container, Typography, Button, Spinner } from "@maxhub/max-ui";
 import "../app.css";
 import { useMaxWebApp } from "../hooks/useMaxWebApp";
 
-const { webApp } = useMaxWebApp();
 
 export default function AuthScreen() {
+
+    const { webApp } = useMaxWebApp();
     const { setMe } = useAuth();
 
     const [selectedCity, setSelectedCity] = useState("");
