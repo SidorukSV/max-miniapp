@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { authStart, authSetCity, authPhone, authSelectPatient, storeTokens, getMe } from "../api";
 import { Flex, Container, Typography, Button, Spinner } from "@maxhub/max-ui";
+import { useMaxWebApp } from "../hooks/useMaxWebApp";
 import "../app.css";
 
 export default function AuthScreen() {
