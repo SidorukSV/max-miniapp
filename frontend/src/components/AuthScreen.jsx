@@ -4,8 +4,9 @@ import { useMax } from "../context/MaxContext";
 import { authStart, authSetCity, authPhone, authSelectPatient, storeTokens, getMe, sendLogs } from "../api";
 import { Flex, Container, Typography, Button, Spinner } from "@maxhub/max-ui";
 import "../app.css";
+import { useMaxWebApp } from "../hooks/useMaxWebApp";
 
-const { webApp } = useMax();
+const { webApp } = useMaxWebApp();
 
 export default function AuthScreen() {
     const { setMe } = useAuth();
