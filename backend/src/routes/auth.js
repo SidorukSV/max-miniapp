@@ -35,7 +35,7 @@ export async function authRoutes(app) {
     app.post("/api/v1/auth/phone",
         { preHandler: [sessionMiddleware, requireCityMiddleware, normalizePhoneMiddleware] },
         async (req, reply) => {
-            const { channel, proof, p } = req.body || {};
+            const { channel, proof } = req.body || {};
             const session = req.session;
             const cityId = session.city_id;
 
