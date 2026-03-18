@@ -1,8 +1,11 @@
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import { useMax } from "../context/MaxContext";
 import { authStart, authSetCity, authPhone, authSelectPatient, storeTokens, getMe, sendLogs } from "../api";
 import { Flex, Container, Typography, Button, Spinner } from "@maxhub/max-ui";
 import "../app.css";
+
+const { webApp } = useMax();
 
 export default function AuthScreen() {
     const { setMe } = useAuth();
@@ -29,8 +32,8 @@ export default function AuthScreen() {
                     city_id: selectedCity,
                 });
             }
-
-            max.webApp.requestContact()
+            
+            webApp.requestContact()
                 .then((send_contact) => {
                     setContact(contact);
                 })
