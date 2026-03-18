@@ -3,7 +3,6 @@ import { useAuth } from "../context/AuthContext";
 import { authStart, authSetCity, authPhone, authSelectPatient, storeTokens, getMe } from "../api";
 import { Flex, Container, Typography, Button, Spinner } from "@maxhub/max-ui";
 import "../app.css";
-import { Columns } from "lucide-react";
 
 export default function AuthScreen() {
     const { setMe } = useAuth();
@@ -57,7 +56,7 @@ export default function AuthScreen() {
             if (err.message === "request_contact_unavailable") {
                 setError("Запрос контакта недоступен в данном клиенте");
             } else {
-                setError("Не удаётся начать авторизацию. Попробуйте ещё раз.");
+                setError(err.message);
             }
         } finally {
             setBusy(false);
