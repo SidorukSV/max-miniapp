@@ -34,32 +34,30 @@ export default function AuthScreen() {
                     city_id: selectedCity,
                 });
             }
-            
+
             webApp.requestContact()
-                .then((send_contact) => {
+                .then(async (send_contact) => {
                     setContact(contact);
+                    const phoneResult = await authPhone({
+                        auth_session_id: start.auth_session_id,
+                        phone: contact?.phone || "",
+                        channel: "max",
+                        proof: contact,
+                    });
+
+                    setPatients(phoneResult.patients || []);
                 })
                 .catch(() => {
-                    alert("contact not send");
+                    throw new Error("contact_not_send");
                 });
-
-            const phoneResult = await authPhone({
-                auth_session_id: start.auth_session_id,
-                phone: contact?.phone || "",
-                channel: "max",
-                proof: contact,
-            });
-
-            setPatients(phoneResult.patients || []);
         } catch (err) {
 
             sendLogs(err);
 
-            if (err.message === "request_contact_unavailable") {
-                setError("Запрос контакта недоступен в данном клиенте");
-            } else {
-                setError(err.message);
-
+            switch (err.message) {
+                case "request_contact_unavailable": setError("Запрос контакта недоступен в данном клиенте");
+                case "contact_not_send": setError("Контакт не отправлен. Попробуйте ещё раз");
+                default: setError("Авторизация не пройдена. Попробуйте ещё раз");
             }
         } finally {
             setBusy(false);
