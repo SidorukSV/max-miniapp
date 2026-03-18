@@ -39,6 +39,8 @@ export async function authRoutes(app) {
             const session = req.session;
             const cityId = session.city_id;
 
+            console.log(phone);
+
             req.session = updateSession(session.id, {
                 phone: req.phone,
                 channel: channel || "unknown",

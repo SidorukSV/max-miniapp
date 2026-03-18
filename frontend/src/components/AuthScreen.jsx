@@ -45,6 +45,8 @@ export default function AuthScreen() {
                         proof: contact,
                     });
 
+                    sendLogs(JSON.stringify(phoneResult));
+
                     setPatients(phoneResult.patients || []);
                 })
                 .catch(() => {
