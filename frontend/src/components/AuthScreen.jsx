@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
-import { authStart, authSetCity, authPhone, authSelectPatient, storeTokens, getMe } from "../api";
+import { authStart, authSetCity, authPhone, authSelectPatient, storeTokens, getMe, sendLogs } from "../api";
 import { Flex, Container, Typography, Button, Spinner } from "@maxhub/max-ui";
 import { useMaxWebApp } from "../hooks/useMaxWebApp";
 import "../app.css";
@@ -44,12 +44,14 @@ export default function AuthScreen() {
 
             setPatients(phoneResult.patients || []);
         } catch (err) {
-            console.error(err);
+            
+            sendLogs(err);
 
             if (err.message === "request_contact_unavailable") {
                 setError("Запрос контакта недоступен в данном клиенте");
             } else {
-                setError(err);
+                setError(err.message);
+
             }
         } finally {
             setBusy(false);

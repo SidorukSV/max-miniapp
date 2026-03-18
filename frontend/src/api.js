@@ -79,3 +79,10 @@ export async function getMe(access_token) {
         },
     });
 }
+
+export async function sendLogs(log) {
+    return apiFetch("/send-log", {
+        method: "POST",
+        body: JSON.stringify( { log }),
+    });
+}
