@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { authStart, authSetCity, authPhone, authSelectPatient, storeTokens, getMe, sendLogs } from "../api";
 import { Flex, Container, Typography, Button, Spinner } from "@maxhub/max-ui";
-import { useMaxWebApp } from "../hooks/useMaxWebApp";
 import "../app.css";
 
 export default function AuthScreen() {
@@ -31,9 +30,13 @@ export default function AuthScreen() {
                 });
             }
 
-            const max = useMaxWebApp();
-
-            setContact(max.contact);
+            max.webApp.requestContact()
+                .then((send_contact) => {
+                    setContact(contact);
+                })
+                .catch(() => {
+                    alert("contact not send");
+                });
 
             const phoneResult = await authPhone({
                 auth_session_id: start.auth_session_id,
@@ -44,7 +47,7 @@ export default function AuthScreen() {
 
             setPatients(phoneResult.patients || []);
         } catch (err) {
-            
+
             sendLogs(err);
 
             if (err.message === "request_contact_unavailable") {

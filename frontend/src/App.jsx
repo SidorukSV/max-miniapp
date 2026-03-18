@@ -10,6 +10,8 @@ import { AuthProvider } from "./context/AuthContext.jsx";
 
 export default function App() {
 
+  const max = useMaxWebApp();
+
   return (
     <AuthProvider>
       <MaxContext.Provider value={max}>
