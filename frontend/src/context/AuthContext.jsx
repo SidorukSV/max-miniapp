@@ -35,6 +35,11 @@ export function AuthProvider({ children }) {
         }
     }
 
+    function logout() {
+        clearTokens();
+        setMe(null);
+    }
+
     useEffect(() => {
         bootstrap();
     }, []);
@@ -46,6 +51,7 @@ export function AuthProvider({ children }) {
                 setMe,
                 loading,
                 isAuthorized: Boolean(me),
+                logout,
             }}
         >
             {children}

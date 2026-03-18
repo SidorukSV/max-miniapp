@@ -4,7 +4,7 @@ import { config } from "./config.js";
 import { cleanupExpiredSessions } from "./store/authSessions.js";
 import { cleanupExpiredRefreshTokens } from "./store/refreshTokens.js";
 
-const app = buildApp();
+const app = await buildApp();
 
 app.get("/", async () => {
     return { status: "ok" };

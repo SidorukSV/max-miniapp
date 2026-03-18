@@ -1,17 +1,39 @@
 import { useNavigate } from "react-router-dom";
-import { Panel, Container, Flex, Avatar, Typography, Button, IconButton, CellList, CellSimple, EllipsisText } from "@maxhub/max-ui";
+import { Panel, Container, Flex, Avatar, Typography, Button, IconButton, CellList, CellSimple, EllipsisText, Spinner } from "@maxhub/max-ui";
 import { MoreHorizontal, Calendar, History, ChevronRight, Gift } from "lucide-react";
 import PageLayout from "../components/PageLayout";
 import "../app.css";
 import { useMax } from "../context/MaxContext.jsx";
+import { useAuth } from "../context/AuthContext.jsx";
+import AuthScreen from "../components/AuthScreen.jsx";
 
 export default function Home() {
     const nav = useNavigate();
-    const { user, phone } = useMax();
-    var username = [user?.first_name, user?.last_name].filter(Boolean).join(" ") || "Иван Иванов";
+    const {me, loading, isAuthorized } = useAuth();
+    // const { user, phone } = useMax();
+    //var username = [user?.first_name, user?.last_name].filter(Boolean).join(" ") || "Иван Иванов";
+    const username = me?.fullname || "Иван Иванов";
 
     const parts = username.trim().split(/\s+/, 2);
     const initials = parts.map(p => p[0]?.toUpperCase()).join("");
+
+    if (loading) {
+        return (
+            <PageLayout showBottomButton={false}>
+                <Container className="card">
+                    <Typography.Title><Spinner appearance="primary"size={20}/> Загрузка...</Typography.Title>
+                </Container>
+            </PageLayout>
+        );
+    }
+
+    if (!isAuthorized) {
+        return (
+            <PageLayout showBottomButton={false}>
+                <AuthScreen />
+            </PageLayout>
+        );
+    }
 
     return (
         <PageLayout
