@@ -1,27 +1,42 @@
 import { useNavigate } from "react-router-dom";
-import { Panel, Container, Flex, Avatar, Typography, Button, IconButton, CellList, CellSimple, EllipsisText, Spinner } from "@maxhub/max-ui";
-import { MoreHorizontal, Calendar, History, ChevronRight, Gift } from "lucide-react";
+import { Panel, Container, Flex, Avatar, Typography, Button, IconButton, CellList, CellSimple, EllipsisText, Spinner, CellHeader } from "@maxhub/max-ui";
+import { MoreHorizontal, Calendar, LibraryBig, ChevronRight, Gift, LogOut } from "lucide-react";
 import PageLayout from "../components/PageLayout";
 import "../app.css";
 import { useMax } from "../context/MaxContext.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import AuthScreen from "../components/AuthScreen.jsx";
+import { useState } from "react";
+import { clearTokens, authLogout } from "../api.js";
 
 export default function Home() {
     const nav = useNavigate();
-    const {me, loading, isAuthorized } = useAuth();
-    // const { user, phone } = useMax();
-    //var username = [user?.first_name, user?.last_name].filter(Boolean).join(" ") || "Иван Иванов";
-    const username = me?.fullname || "Иван Иванов";
+    const { me, loading, isAuthorized, setMe } = useAuth();
 
+    const [busy, setBusy] = useState(false);
+    const username = me?.fullname || "Иван Иванов";
+    const phone = me?.phone || "79123456789";
     const parts = username.trim().split(/\s+/, 2);
     const initials = parts.map(p => p[0]?.toUpperCase()).join("");
+
+    async function handleLogout() {
+        setBusy(true);
+        try {
+            await authLogout();
+        } catch (err) {
+            console.log(err);
+        } finally {
+            clearTokens();
+            setMe(null);
+            setBusy(false);
+        }        
+    }
 
     if (loading) {
         return (
             <PageLayout showBottomButton={false}>
                 <Container className="card">
-                    <Typography.Title><Spinner appearance="primary"size={20}/> Загрузка...</Typography.Title>
+                    <Typography.Title><Spinner appearance="primary" size={20} /> Загрузка...</Typography.Title>
                 </Container>
             </PageLayout>
         );
@@ -80,18 +95,8 @@ export default function Home() {
                                 </Typography.Title>
                             </button>
 
-                            {/* Ещё действия */}
-                            <IconButton
-                                appearance="themed"
-                                aria-label="Ещё"
-                                mode="secondary"
-                                size="medium"
-                                onClick={() => console.log("Меню")}
-                            >
-                                <MoreHorizontal size={20} />
-                            </IconButton>
-
                         </Flex>
+
                     </Flex>
                 </Container>
 
@@ -99,7 +104,7 @@ export default function Home() {
                 <Container className="card menuCard">
                     <CellList>
                         <CellSimple
-                            before={<Calendar size={20} />}
+                            before={<Calendar size={24} />}
                             showChevron
                             onClick={() => nav("/visits")}
                         >
@@ -107,11 +112,19 @@ export default function Home() {
                         </CellSimple>
 
                         <CellSimple
-                            before={<History size={20} />}
+                            before={<LibraryBig size={24} strokeWidth={3} absoluteStrokeWidth />}
                             showChevron
                             onClick={() => nav("/history")}
                         >
                             История приёмов
+                        </CellSimple>
+
+                        <CellSimple
+                            before={<LogOut size={24} />}
+                            showChevron={false}
+                            onClick={async () => handleLogout()}
+                        >
+                            { busy ? "Выходим" : "Выйти" }
                         </CellSimple>
                     </CellList>
                 </Container>
