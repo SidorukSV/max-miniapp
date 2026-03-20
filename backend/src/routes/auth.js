@@ -4,6 +4,7 @@ import { getPatientsByPhone } from "../services/onecRouter.js";
 import { normalizePhoneMiddleware, requireCityMiddleware, sessionMiddleware } from "../middleware/session.js";
 import { signAccessToken, signRefreshToken, verifyToken, ACCESS_TOKEN_EXPIRES_SECONDS, REFRESH_TOKEN_EXPIRES_SECONDS } from "../auth/jwt.js";
 import { saveRefreshToken, getRefreshToken, deleteRefreshToken } from "../store/refreshTokens.js";
+import { verifyMaxInitData } from "../auth/maxInitData.js";
 
 export async function authRoutes(app) {
 
@@ -35,16 +36,30 @@ export async function authRoutes(app) {
     app.post("/api/v1/auth/phone",
         { preHandler: [sessionMiddleware, requireCityMiddleware, normalizePhoneMiddleware] },
         async (req, reply) => {
-            const { channel, proof } = req.body || {};
+            const { channel, proof, init_data } = req.body || {};
             const session = req.session;
             const cityId = session.city_id;
+            const authChannel = channel || "unknown";
 
-            console.log(req.phone);
+            let verifiedMaxInitData = null;
+            if (authChannel === "max") {
+                try {
+                    const maxInitData = init_data || proof?.init_data || proof?.initData || null;
+
+                    verifiedMaxInitData = verifyMaxInitData(maxInitData, {
+                        botToken: config.maxBotToken,
+                        maxAgeSeconds: config.maxInitDataMaxAgeSeconds,
+                    });
+                } catch (err) {
+                    return reply.code(401).send({ error: err?.message || "init_data_invalid" });
+                }
+            }
 
             req.session = updateSession(session.id, {
                 phone: req.phone,
-                channel: channel || "unknown",
+                channel: authChannel,
                 proof: proof || null,
+                max_user: verifiedMaxInitData?.user || null,
             });
 
             const patients = await getPatientsByPhone({

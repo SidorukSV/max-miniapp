@@ -6,7 +6,9 @@ import "../app.css";
 import { useMaxWebApp } from "../hooks/useMaxWebApp";
 
 export default function AuthScreen() {
-    const { webApp } = useMaxWebApp();
+
+    const { webApp, initData } = useMaxWebApp();
+
     const { setMe } = useAuth();
 
     const [selectedCity, setSelectedCity] = useState("");
@@ -35,15 +37,25 @@ export default function AuthScreen() {
                 });
             }
 
-            const send_contact = await webApp.requestContact();
-            setContact(send_contact);
+            webApp.requestContact()
+                .then(async (send_contact) => {
+                    setContact(send_contact);
+                    const phoneResult = await authPhone({
+                        auth_session_id: start.auth_session_id,
+                        phone: contact?.phone || "",
+                        channel: "max",
+                        proof: { initData },
+                    });
 
-            const phoneResult = await authPhone({
-                auth_session_id: start.auth_session_id,
-                phone: send_contact?.phone || "",
-                channel: "max",
-                proof: send_contact,
-            });
+                    sendLogs(JSON.stringify(phoneResult));
+
+                    setPatients(phoneResult.patients || []);
+                })
+                .catch(() => {
+                    throw new Error("contact_not_send");
+                });
+        } catch (err) {
+
 
             sendLogs(JSON.stringify(phoneResult));
             console.log("patients:", phoneResult.patients);
