@@ -51,10 +51,10 @@ export async function authSetCity({ auth_session_id, city_id }) {
     });
 }
 
-export async function authPhone({ auth_session_id, phone, channel, proof }) {
+export async function authPhone({ auth_session_id, phone, channel, proof, init_data }) {
     return apiFetch("/auth/phone", {
         method: "POST",
-        body: JSON.stringify({ auth_session_id, phone, channel, proof }),
+        body: JSON.stringify({ auth_session_id, phone, channel, proof, init_data }),
     });
 }
 

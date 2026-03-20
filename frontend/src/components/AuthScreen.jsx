@@ -9,7 +9,7 @@ import { useMaxWebApp } from "../hooks/useMaxWebApp";
 
 export default function AuthScreen() {
 
-    const { webApp } = useMaxWebApp();
+    const { webApp, initData } = useMaxWebApp();
     const { setMe } = useAuth();
 
     const [selectedCity, setSelectedCity] = useState("");
@@ -44,6 +44,7 @@ export default function AuthScreen() {
                         phone: contact?.phone || "",
                         channel: "max",
                         proof: contact,
+                        init_data: initData,
                     });
 
                     sendLogs(JSON.stringify(phoneResult));
