@@ -16,7 +16,7 @@ export function signAccessToken(payload){
 }
 
 export function signRefreshToken(payload) {
-    jwt.sign(
+    return jwt.sign(
         {
             ...payload,
             token_type: "refresh",
@@ -30,5 +30,5 @@ export function signRefreshToken(payload) {
 }
 
 export function verifyToken(token){
-    return jwt.verify(token, JWT_SECRET);
+    return jwt.verify(token, config.jwtSecret);
 }

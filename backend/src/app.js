@@ -3,6 +3,7 @@ import cors from "@fastify/cors";
 import { authRoutes } from "./routes/auth.js";
 import { meRoutes } from "./routes/me.js";
 import { logsRoutes } from "./routes/logs.js";
+import { catalogsRoutes } from "./routes/catalogs.js";
 
 export async function buildApp() {
     const app = Fastify({
@@ -16,6 +17,7 @@ export async function buildApp() {
     app.register(authRoutes);
     app.register(meRoutes);
     app.register(logsRoutes);
+    app.register(catalogsRoutes);
 
     return app;
 }

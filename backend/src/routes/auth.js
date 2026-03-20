@@ -67,7 +67,7 @@ export async function authRoutes(app) {
         async (req, reply) => {
             const { patient_id } = req.body || {};
             const session = req.session;
-
+            console.log(req.body);
             if (!patient_id) {
                 return reply.code(400).send({ error: "patient_id_required" });
             }

@@ -1,14 +1,11 @@
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
-import { useMax } from "../context/MaxContext";
-import { authStart, authSetCity, authPhone, authSelectPatient, storeTokens, getMe, sendLogs } from "../api";
+import { authStart, authSetCity, authPhone, authSelectPatient, storeTokens, getMe, sendLogs, getCatalogsCities } from "../api";
 import { Flex, Container, Typography, Button, Spinner, CellList, CellSimple, CellHeader } from "@maxhub/max-ui";
 import "../app.css";
 import { useMaxWebApp } from "../hooks/useMaxWebApp";
 
-
 export default function AuthScreen() {
-
     const { webApp } = useMaxWebApp();
     const { setMe } = useAuth();
 
@@ -21,46 +18,50 @@ export default function AuthScreen() {
     const [needCity, setNeedCity] = useState(false);
 
     async function handleStart() {
-
         setBusy(true);
         setError("");
 
         try {
             const start = await authStart();
             setAuthSessionId(start.auth_session_id);
-            setNeedCity(start.need_city)
-            if (needCity) {
+            setNeedCity(start.need_city);
+            
+            let cities = [];
+            if (start.need_city) {
+                cities = await getCatalogsCities();
                 await authSetCity({
                     auth_session_id: start.auth_session_id,
                     city_id: selectedCity,
                 });
             }
 
-            webApp.requestContact()
-                .then(async (send_contact) => {
-                    setContact(send_contact);
-                    const phoneResult = await authPhone({
-                        auth_session_id: start.auth_session_id,
-                        phone: contact?.phone || "",
-                        channel: "max",
-                        proof: contact,
-                    });
+            const send_contact = await webApp.requestContact();
+            setContact(send_contact);
 
-                    sendLogs(JSON.stringify(phoneResult));
+            const phoneResult = await authPhone({
+                auth_session_id: start.auth_session_id,
+                phone: send_contact?.phone || "",
+                channel: "max",
+                proof: send_contact,
+            });
 
-                    setPatients(phoneResult.patients || []);
-                })
-                .catch(() => {
-                    throw new Error("contact_not_send");
-                });
+            sendLogs(JSON.stringify(phoneResult));
+            console.log("patients:", phoneResult.patients);
+
+            setPatients(phoneResult.patients || []);
         } catch (err) {
-
-            sendLogs(err);
+            console.error(err);
+            sendLogs(JSON.stringify(err));
 
             switch (err.message) {
-                case "request_contact_unavailable": setError("Запрос контакта недоступен в данном клиенте");
-                case "contact_not_send": setError("Контакт не отправлен. Попробуйте ещё раз");
-                default: setError("Авторизация не пройдена. Попробуйте ещё раз");
+                case "request_contact_unavailable":
+                    setError("Запрос контакта недоступен в данном клиенте");
+                    break;
+                case "contact_not_send":
+                    setError("Контакт не отправлен. Попробуйте ещё раз");
+                    break;
+                default:
+                    setError("Авторизация не пройдена. Попробуйте ещё раз");
             }
         } finally {
             setBusy(false);
@@ -96,51 +97,58 @@ export default function AuthScreen() {
             <Container className="card">
                 <Flex direction="column" gap={10}>
                     <Typography.Title level={2}>Вход в личный кабинет</Typography.Title>
+
                     <Typography.Label className="roleLine">
                         Подтвердите номер телефона, чтобы продолжить.
                     </Typography.Label>
 
                     {needCity && (
-                        <div className="authField">
-                            <Typography.Label className="authLabel">Город</Typography.Label>
-
-                            <select
-                                className="authSelect"
-                                value={selectedCity}
-                                onChange={(e) => setSelectedCity(e.target)}
-                                disabled={busy}
-                            >
-                                <option value="chita">Чита</option>
-                                <option value="krsnk">Красноярск</option>
-                            </select>
-                        </div>
+                        <CellList
+                            header={<CellHeader titleStyle="caps">Выберите город</CellHeader>}
+                            filled
+                            mode="island"
+                        >
+                            {cities.map((city) => (
+                                <CellSimple
+                                    key={city.id}
+                                    title={city.name}
+                                    showChevron
+                                    onClick={() => setSelectedCity(city.id)}
+                                    selected={selectedCity === city.id}
+                                />
+                            ))}
+                        </CellList>
                     )}
+
                     {!patients.length && (
                         <Button onClick={handleStart} disabled={busy}>
-                            {busy ? "Загрузка..." && (<Spinner appearance="primary" size={20} />) : "Подтвердить номер телефона"}
+                            {busy ? (
+                                <>
+                                    Загрузка <Spinner appearance="primary" size={20} />
+                                </>
+                            ) : (
+                                "Подтвердить номер телефона"
+                            )}
                         </Button>
                     )}
 
                     {!!patients.length && (
-                        <Flex direction="column" gap={10}>
-                            <CellList
-                                header={<CellHeader titleStyle="caps">Выберите пациента</CellHeader>}
-                                filled
-                                mode="island"
-                            >
-                                {patients.map((patient) => (
-                                    <CellSimple
-                                        key={patient.id}
-                                        height="normal"
-                                        overline=""
-                                        subtitle={patient.birthdate}
-                                        title={patient.fullname}
-                                        showChevron
-                                        onClick={() => handleSelectPatient(patient.id)}
-                                    />
-                                ))}
-                            </CellList>
-                        </Flex>
+                        <CellList
+                            header={<CellHeader titleStyle="caps">Выберите пациента</CellHeader>}
+                            filled
+                            mode="island"
+                        >
+                            {patients.map((patient) => (
+                                <CellSimple
+                                    key={patient.id}
+                                    height="normal"
+                                    title={patient.fullName}
+                                    subtitle={patient.birthDate}
+                                    showChevron
+                                    onClick={() => handleSelectPatient(patient.id)}
+                                />
+                            ))}
+                        </CellList>
                     )}
 
                     {error && (

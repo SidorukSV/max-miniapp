@@ -481,3 +481,25 @@ body {
   background: var(--muted-bg);
   color: var(--muted-text);
 }
+
+.menuOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.menuSheet {
+    width: 100%;
+    max-width: 480px;
+    padding: 12px;
+    padding-bottom: 110px;
+    box-sizing: border-box;
+}
+
+.menuPanel {
+    margin-bottom: 96px;
+}

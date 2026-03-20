@@ -66,7 +66,14 @@ export async function authSelectPatient({ auth_session_id, patient_id }) {
 }
 
 export async function authRefresh(refresh_token) {
-    return apiFetch("/api/refresh", {
+    return apiFetch("/auth/refresh", {
+        method: "POST",
+        body: JSON.stringify({ refresh_token }),
+    });
+}
+
+export async function authLogout(refresh_token) {
+    return apiFetch("/auth/logout", {
         method: "POST",
         body: JSON.stringify({ refresh_token }),
     });
@@ -78,6 +85,10 @@ export async function getMe(access_token) {
             Authorization: `Bearer ${access_token}`,
         },
     });
+}
+
+export async function getCatalogsCities() {
+    return apiFetch("/catalogs/cities");
 }
 
 export async function sendLogs(log) {
