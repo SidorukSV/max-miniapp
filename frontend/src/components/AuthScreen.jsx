@@ -27,7 +27,7 @@ export default function AuthScreen() {
             const start = await authStart();
             setAuthSessionId(start.auth_session_id);
             setNeedCity(start.need_city);
-            
+
             let cities = [];
             if (start.need_city) {
                 cities = await getCatalogsCities();
@@ -42,7 +42,7 @@ export default function AuthScreen() {
                     setContact(send_contact);
                     const phoneResult = await authPhone({
                         auth_session_id: start.auth_session_id,
-                        phone: contact?.phone || "",
+                        phone: send_contact?.phone || "",
                         channel: "max",
                         proof: { initData },
                     });
@@ -54,13 +54,6 @@ export default function AuthScreen() {
                 .catch(() => {
                     throw new Error("contact_not_send");
                 });
-        } catch (err) {
-
-
-            sendLogs(JSON.stringify(phoneResult));
-            console.log("patients:", phoneResult.patients);
-
-            setPatients(phoneResult.patients || []);
         } catch (err) {
             console.error(err);
             sendLogs(JSON.stringify(err));

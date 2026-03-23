@@ -162,7 +162,7 @@ export async function authRoutes(app) {
             patient_id: stored.patient_id,
             city_id: stored.city_id,
             phone: stored.phone,
-            chennel: stored.channel,
+            channel: stored.channel,
         };
 
         const access_token = signAccessToken(tokenPayload);
