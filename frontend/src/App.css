@@ -397,6 +397,30 @@ body {
   color: var(--danger-plain);
 }
 
+.questionDialogOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.questionDialogCard {
+  width: 100%;
+  max-width: 420px;
+}
+
+.questionDialogActions {
+  width: 100%;
+}
+
+.questionDialogBtn {
+  flex: 1;
+}
+
 /* ================================== */
 /* 5) HISTORY GROUPING + STATUSES     */
 /* ================================== */
