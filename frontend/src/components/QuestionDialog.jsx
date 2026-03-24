@@ -15,7 +15,7 @@ export default function QuestionDialog({
 
     return (
         <div className="questionDialogOverlay">
-            <Container className="card questionDialogCard">
+            <Container mode="secondary" className="card questionDialogCard">
                 <Flex direction="column" gap={16}>
                     <Typography.Title level={3}>{question}</Typography.Title>
 

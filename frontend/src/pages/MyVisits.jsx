@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Container, Flex, Typography, Button } from "@maxhub/max-ui";
+import { Container, Flex, Typography, Button, CellHeader } from "@maxhub/max-ui";
 import PageLayout from "../components/PageLayout";
 import QuestionDialog from "../components/QuestionDialog";
 import "../App.css";
@@ -208,7 +208,7 @@ export default function MyVisits() {
             onBottomButtonClick={() => { nav("/") }}
         >
             <Flex direction="column" gap={10}>
-                <Typography.Title level={2}>Мои записи</Typography.Title>
+                <CellHeader titleStyle="caps">Мои записи</CellHeader>
 
                 {mockUpcomingInitial.length === 0 ? (
                     <Container className="card">
