@@ -1,10 +1,24 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Container, Flex, Typography, Button, Spinner } from "@maxhub/max-ui";
+import { format } from "date-fns";
+import { ru } from "date-fns/locale";
 import PageLayout from "../components/PageLayout";
 import { useAuth } from "../context/AuthContext";
 import { getBonusTransactions, getStoredAccessToken } from "../api";
 import "../app.css";
+
+function formatTransactionDate(dateISO) {
+  if (!dateISO) {
+    return "Без даты";
+  }
+
+  try {
+    return format(new Date(dateISO), "d MMMM yyyy", { locale: ru });
+  } catch {
+    return "Без даты";
+  }
+}
 
 export default function Bonuses() {
   const nav = useNavigate();
@@ -39,6 +53,21 @@ export default function Bonuses() {
   }, []);
 
   const balance = useMemo(() => Number(me?.bonus || 0), [me?.bonus]);
+  const groupedItems = useMemo(() => {
+    const sorted = [...items].sort((a, b) => new Date(b?.date || 0) - new Date(a?.date || 0));
+    const map = new Map();
+
+    for (const item of sorted) {
+      const key = formatTransactionDate(item?.date);
+      if (!map.has(key)) {
+        map.set(key, []);
+      }
+
+      map.get(key).push(item);
+    }
+
+    return Array.from(map.entries());
+  }, [items]);
 
   return (
     <PageLayout
@@ -71,31 +100,33 @@ export default function Bonuses() {
             ) : null}
 
             {!loading && !error && items.length > 0
-              ? items.map((item, index) => {
-                const isCredit = item.operation === "credit";
+              ? groupedItems.map(([dateLabel, dateItems]) => (
+                <div key={dateLabel} className="bonusesDateGroup">
+                  <div className="bonusesDateHeader">{dateLabel}</div>
 
-                return (
-                  <Container key={`${item.operation}-${item.sum}-${index}`} className="card card--tight">
-                    <Flex direction="column" gap={6}>
-                      <Flex align="center" justify="space-between" gap={8}>
-                        <Typography.Title level={3}>
+                  {dateItems.map((item, index) => {
+                    const isCredit = item.operation === "credit";
+
+                    return (
+                      <div key={`${item.operation}-${item.sum}-${index}`} className="bonusesTxRow">
+                        <div className="bonusesTxLeft">
+                          <Typography.Title level={3}>{isCredit ? "Начисление" : "Списание"}</Typography.Title>
+                          <Typography.Label>{item.description || "Без описания"}</Typography.Label>
+
+                          {item.operation_sum !== 0 ? (
+                            <Typography.Label>Сумма покупки: {item.operation_sum} ₽</Typography.Label>
+                          ) : null}
+                        </div>
+
+                        <div className={`bonusesTxAmount ${isCredit ? "bonusesTxAmount--credit" : "bonusesTxAmount--debit"}`}>
                           {isCredit ? "+" : "-"}
                           {item.sum} ₽
-                        </Typography.Title>
-                        <Typography.Label>
-                          {isCredit ? "Начисление" : "Списание"}
-                        </Typography.Label>
-                      </Flex>
-
-                      <Typography.Label>{item.description || "Без описания"}</Typography.Label>
-
-                      {item.operation_sum !== 0 ? (
-                        <Typography.Label>Сумма покупки: {item.operation_sum} ₽</Typography.Label>
-                      ) : null}
-                    </Flex>
-                  </Container>
-                );
-              })
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ))
               : null}
           </Flex>
         </Container>

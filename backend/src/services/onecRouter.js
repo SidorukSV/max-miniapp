@@ -95,6 +95,7 @@ export async function getBonusTransactions({ cityId, patient_id }) {
             operation,
             sum: Number(transaction?.sum || 0),
             description: transaction?.description || "",
+            date: transaction?.date || null,
             operation_sum: transaction?.operation_sum !== undefined
                 ? Number(transaction.operation_sum)
                 : undefined,

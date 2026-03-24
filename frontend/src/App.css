@@ -489,3 +489,45 @@ body {
   background: var(--muted-bg);
   color: var(--muted-text);
 }
+
+/* 9.3 Bonuses page */
+.bonusesDateGroup {
+  border-top: 1px solid var(--divider-soft);
+}
+
+.bonusesDateHeader {
+  padding: 10px 0;
+  color: var(--muted);
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.bonusesTxRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 0;
+  border-top: 1px solid var(--divider-soft);
+}
+
+.bonusesTxLeft {
+  min-width: 0;
+}
+
+.bonusesTxAmount {
+  min-width: 98px;
+  text-align: right;
+  font-weight: 700;
+  font-size: 20px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.bonusesTxAmount--credit {
+  color: var(--ok-text);
+}
+
+.bonusesTxAmount--debit {
+  color: var(--text);
+}
