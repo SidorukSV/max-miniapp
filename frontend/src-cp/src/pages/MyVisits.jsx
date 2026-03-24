@@ -237,6 +237,7 @@ export default function MyVisits() {
                 onConfirm={confirmCancelVisit}
                 cancelText="Нет"
                 confirmText="Да, отменить"
+                confirmMode="secondary"
                 confirmClassName="dangerBtn"
             />
         </PageLayout>
