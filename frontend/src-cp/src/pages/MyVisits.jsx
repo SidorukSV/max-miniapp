@@ -2,7 +2,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Container, Flex, Typography, Button } from "@maxhub/max-ui";
 import PageLayout from "../components/PageLayout";
-import "../app.css";
+import QuestionDialog from "../components/QuestionDialog";
+import "../App.css";
 
 const mockUpcomingInitial = [
     {
@@ -163,6 +164,7 @@ export default function MyVisits() {
     const nav = useNavigate();
 
     const [visits, setVisits] = useState(mockUpcomingInitial);
+    const [cancelDialogVisitId, setCancelDialogVisitId] = useState(null);
 
     function confirmVisit(id) {
         setVisits((prev) =>
@@ -174,6 +176,23 @@ export default function MyVisits() {
 
     function cancelVisit(id) {
         setVisits((prev) => prev.filter((v) => v.id !== id));
+    }
+
+    function openCancelDialog(id) {
+        setCancelDialogVisitId(id);
+    }
+
+    function closeCancelDialog() {
+        setCancelDialogVisitId(null);
+    }
+
+    function confirmCancelVisit() {
+        if (!cancelDialogVisitId) {
+            return;
+        }
+
+        cancelVisit(cancelDialogVisitId);
+        closeCancelDialog();
     }
 
     function rescheduleVisit(id) {
@@ -204,12 +223,22 @@ export default function MyVisits() {
                             key={v.id}
                             v={v}
                             onConfirm={confirmVisit}
-                            onCancel={cancelVisit}
+                            onCancel={openCancelDialog}
                             onReschedule={rescheduleVisit}
                         />
                     ))
                 )}
             </Flex>
+
+            <QuestionDialog
+                open={Boolean(cancelDialogVisitId)}
+                question="Вы уверены что хотите отменить запись на прием?"
+                onCancel={closeCancelDialog}
+                onConfirm={confirmCancelVisit}
+                cancelText="Нет"
+                confirmText="Да, отменить"
+                confirmClassName="dangerBtn"
+            />
         </PageLayout>
     );
 }

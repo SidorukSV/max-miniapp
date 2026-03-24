@@ -1,30 +1,156 @@
-/* БАЗА */
-* { box-sizing: border-box; }
-html, body, #root { height: 100%; margin: 0; padding: 0; }
-body { background: #f2f3f5; }
+/* ================================== */
+/* 1) THEME TOKENS (LIGHT + DARK)     */
+/* ================================== */
 
-/* ОСНОВНАЯ ПАНЕЛЬ */
+:root {
+  --bg: #f2f3f5;
+  --text: rgba(0, 0, 0, 0.88);
+  --muted: rgba(0, 0, 0, 0.6);
+
+  /* surfaces */
+  --surface: #ffffff;
+  /* основной белый */
+  --surface-2: rgba(255, 255, 255, 0.96);
+  /* для нижнего бара */
+  --surface-glass: rgba(255, 255, 255, 0.72);
+  /* для шапки при скролле */
+
+  /* borders / dividers */
+  --border: rgba(0, 0, 0, 0.08);
+  --border-soft: rgba(0, 0, 0, 0.06);
+  --divider: rgba(0, 0, 0, 0.08);
+  --divider-soft: rgba(0, 0, 0, 0.06);
+
+  /* tap/hover */
+  --tap: rgba(0, 0, 0, 0.04);
+
+  /* accent (iOS-like blue) */
+  --accent: rgba(0, 122, 255, 1);
+  --accent-soft: rgba(0, 122, 255, 0.12);
+  --accent-chip: rgba(0, 122, 255, 0.08);
+  --accent-icon: rgba(0, 122, 255, 0.15);
+  --accent-pill-bg: rgba(0, 122, 255, 0.10);
+
+  /* primary button */
+  --primary: #1f7ae0;
+  --primary-hover: #1768c4;
+
+  /* status */
+  --ok-bg: rgba(0, 180, 100, 0.12);
+  --ok-text: rgb(0, 150, 80);
+
+  --danger-bg: rgba(217, 45, 32, 0.10);
+  --danger-text: rgb(217, 45, 32);
+  --danger-plain: #d92d20;
+
+  --muted-bg: rgba(0, 0, 0, 0.06);
+  --muted-text: rgba(0, 0, 0, 0.60);
+
+  /* shadows */
+  --shadow-card: 0 2px 6px rgba(0, 0, 0, 0.04);
+  --shadow-header: 0 6px 20px rgba(0, 0, 0, 0.03);
+
+  --inset-top: env(safe-area-inset-top);
+  --inset-bottom: env(safe-area-inset-bottom);
+}
+
+/* 1.1 Dark theme overrides */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f1115;
+    --text: rgba(255, 255, 255, 0.92);
+    --muted: rgba(255, 255, 255, 0.65);
+
+    --surface: rgba(255, 255, 255, 0.14);
+    --surface-2: rgba(15, 17, 21, 0.92);
+    --surface-glass: rgba(15, 17, 21, 0.70);
+
+    --border: rgba(255, 255, 255, 0.14);
+    --border-soft: rgba(255, 255, 255, 0.10);
+    --divider: rgba(255, 255, 255, 0.14);
+    --divider-soft: rgba(255, 255, 255, 0.10);
+
+    --tap: rgba(255, 255, 255, 0.06);
+
+    --accent: rgba(59, 130, 246, 1);
+    --accent-soft: rgba(115, 59, 246, 0.2);
+    --accent-chip: rgba(59, 130, 246, 0.14);
+    --accent-icon: rgba(59, 130, 246, 0.22);
+    --accent-pill-bg: rgba(59, 130, 246, 0.18);
+
+    --primary: #3b82f6;
+    --primary-hover: #2563eb;
+
+    --ok-bg: rgba(34, 197, 94, 0.22);
+    --ok-text: rgba(34, 197, 94, 1);
+
+    --danger-bg: rgba(239, 68, 68, 0.20);
+    --danger-text: rgba(239, 68, 68, 1);
+    --danger-plain: rgba(239, 68, 68, 1);
+
+    --muted-bg: rgba(255, 255, 255, 0.08);
+    --muted-text: rgba(255, 255, 255, 0.62);
+
+    --shadow-card: 0 2px 14px rgba(0, 0, 0, 0.35);
+    --shadow-header: 0 10px 30px rgba(0, 0, 0, 0.30);
+  }
+}
+
+/* 1.2 Touch-device safe-area fallbacks */
+@media (pointer: coarse) {
+  :root {
+    --inset-top: 0px;
+    --inset-bottom: 0px;
+  }
+}
+
+/* ================================== */
+/* 2) GLOBAL RESET / LAYOUT BASE      */
+/* ================================== */
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* ================================== */
+/* 3) PAGE SHELL                      */
+/* ================================== */
+
+/* 3.1 Main panel */
 .panel {
   min-height: 100vh;
   position: relative;
-  padding-bottom: 108px; /* место под bottom bar + подпись */
+  padding-bottom: 108px;
+  /* место под bottom bar + подпись */
 }
 
-/* iOS HEADER */
+/* 3.2 iOS-style header */
 .Header {
   position: sticky;
   top: 0;
   z-index: 50;
   background: transparent;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-  padding-top: calc(10px + env(safe-area-inset-top));
+  border-bottom: 1px solid var(--border);
+  padding-top: calc(10px + var(--inset-top));
   padding-bottom: 10px;
 }
 
-.Header--scrolled{
-  background: rgba(255, 255, 255, 0.72);
+.Header--scrolled {
+  background: var(--surface-glass);
   backdrop-filter: blur(14px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.03);
+  box-shadow: var(--shadow-header);
 }
 
 .HeaderInner {
@@ -47,9 +173,10 @@ body { background: #f2f3f5; }
 .clinicTitle {
   font-size: 16px;
   font-weight: 600;
+  color: var(--text);
 }
 
-/* КОНТЕНТ */
+/* 3.3 Content container */
 .page {
   width: 100%;
   max-width: 560px;
@@ -57,71 +184,67 @@ body { background: #f2f3f5; }
   padding: 12px 16px 16px;
 }
 
-/* КАРТОЧКИ */
+/* 3.4 Shared cards */
 .card {
   width: 100%;
-  background: #ffffff;
+  background: var(--surface);
   border-radius: 18px;
   padding: 14px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+  box-shadow: var(--shadow-card);
 }
 
-.card--tight { padding: 12px 14px; }
+.card--tight {
+  padding: 12px 14px;
+}
 
-/* ИМЯ */
-.nameBlock { min-width: 0; }
+/* 3.5 Profile/name block */
+.nameBlock {
+  min-width: 0;
+}
+
 .nameLine {
   margin: 0;
   line-height: 1.1;
   white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis;
+  /* text-overflow: ellipsis; */
 }
-.roleLine { display: block; margin-top: 4px; line-height: 1.1; }
 
-.bonusValue { margin: 0; white-space: nowrap; }
+.roleLine {
+  display: block;
+  margin-top: 4px;
+  line-height: 1.1;
+  color: var(--muted);
+}
 
-/* МЕНЮ */
+.bonusValue {
+  margin: 0;
+  font-size: 16px;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+/* 3.6 Home menu card */
 .menuCard {
   width: 100%;
   padding: 0;
   overflow: hidden;
   border-radius: 18px;
   margin-top: -4px;
-  background: #fff;
+  background: var(--surface);
 }
 
-.menuItem {
-  width: 100%;
-  padding: 14px;
-  border: none;
-  background: transparent;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  cursor: pointer;
-}
-.menuItem:active { background: rgba(0,0,0,0.04); }
-
-.menuDivider {
-  height: 1px;
-  background: rgba(0,0,0,0.08);
-  margin: 0 14px;
-}
-
-.chev { opacity: 0.55; font-size: 22px; line-height: 1; }
-
-/* BOTTOM BAR */
+/* 3.7 Bottom action bar */
 .bottomBar {
   position: fixed;
   left: 0;
   right: 0;
   bottom: 0;
   z-index: 60;
-  padding: 10px 0 calc(14px + env(safe-area-inset-bottom));
-  background: rgba(255, 255, 255, 0.96);
+  padding: 10px 0 calc(14px + var(--inset-bottom));
+  background: var(--surface-2);
   backdrop-filter: blur(10px);
-  border-top: 1px solid rgba(0,0,0,0.08);
+  border-top: 1px solid var(--border);
 }
 
 .bottomBarInner {
@@ -141,9 +264,12 @@ body { background: #f2f3f5; }
   margin-top: 10px;
   text-align: center;
   opacity: 0.8;
+  color: var(--muted);
 }
 
-/* ===== BOOK VISIT UI ===== */
+/* ================================== */
+/* 4) BOOK VISIT FLOW                 */
+/* ================================== */
 
 .pills {
   display: flex;
@@ -153,12 +279,13 @@ body { background: #f2f3f5; }
 }
 
 .pill {
-  border: 1px solid rgba(0, 0, 0, 0.10);
-  background: #fff;
+  border: 1px solid var(--border);
+  background: var(--surface);
   padding: 10px 12px;
   border-radius: 999px;
   font-size: 14px;
   cursor: pointer;
+  color: var(--text);
 }
 
 .pill:active {
@@ -167,8 +294,9 @@ body { background: #f2f3f5; }
 }
 
 .pill--active {
-  border-color: rgba(0, 0, 0, 0);
-  background: rgba(0, 122, 255, 0.12); /* лёгкий iOS-акцент */
+  border-color: transparent;
+  background: var(--accent-soft);
+  /* лёгкий iOS-акцент */
   font-weight: 600;
 }
 
@@ -180,7 +308,7 @@ body { background: #f2f3f5; }
   border: none;
   background: transparent;
   padding: 0;
-  color: rgba(0, 122, 255, 1);
+  color: var(--accent);
   font-weight: 600;
   cursor: pointer;
 }
@@ -199,13 +327,13 @@ body { background: #f2f3f5; }
   gap: 12px;
 }
 
-.pageTitle{
+.pageTitle {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-/* Правая часть карточки */
+/* 4.1 Right-side card actions */
 .actions {
   align-items: center;
 }
@@ -217,10 +345,11 @@ body { background: #f2f3f5; }
 
   padding: 6px 10px;
   border-radius: 999px;
-  background: rgba(0, 122, 255, 0.08);
+  background: var(--accent-chip);
 
   border: none;
   cursor: pointer;
+  color: var(--text);
 }
 
 .bonusChip--clickable:active {
@@ -232,24 +361,19 @@ body { background: #f2f3f5; }
   width: 24px;
   height: 24px;
   border-radius: 6px;
-  background: rgba(0, 122, 255, 0.15);
+  background: var(--accent-icon);
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.bonusValue {
-  margin: 0;
-  font-size: 16px;
-  white-space: nowrap;
+  color: var(--accent);
 }
 
 .statusPill {
   font-size: 12px;
   padding: 6px 10px;
   border-radius: 999px;
-  background: rgba(0, 122, 255, 0.10);
-  color: rgba(0, 122, 255, 1);
+  background: var(--accent-pill-bg);
+  color: var(--accent);
   white-space: nowrap;
 }
 
@@ -265,21 +389,50 @@ body { background: #f2f3f5; }
 }
 
 .status--ok {
-  background: rgba(0, 180, 100, 0.12);
-  color: rgb(0, 150, 80);
+  background: var(--ok-bg);
+  color: var(--ok-text);
 }
 
 .dangerBtn {
-  color: #d92d20;
+  color: var(--danger-plain);
 }
 
-/* ГРУППЫ ИСТОРИИ */
-.historyGroup {
-  margin-top: 12px;          /* общий отступ между группами */
+.questionDialogOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.questionDialogCard {
+  width: 100%;
+  max-width: 420px;
+}
+
+.questionDialogActions {
   width: 100%;
 }
 
-/* первая группа ближе к заголовку страницы */
+.questionDialogBtn {
+  flex: 1;
+}
+
+/* ================================== */
+/* 5) HISTORY GROUPING + STATUSES     */
+/* ================================== */
+
+/* 5.1 History group header */
+.historyGroup {
+  margin-top: 12px;
+  /* общий отступ между группами */
+  width: 100%;
+}
+
+/* 5.2 First group sits closer to page title */
 .historyGroup:first-of-type {
   margin-top: 6px;
 }
@@ -289,8 +442,10 @@ body { background: #f2f3f5; }
   align-items: center;
   gap: 10px;
 
-  margin: 0 2px 10px;        /* снизу отступ до карточек */
-  padding: 0;                /* без внутренних паддингов */
+  margin: 0 2px 10px;
+  /* снизу отступ до карточек */
+  padding: 0;
+  /* без внутренних паддингов */
 }
 
 .historyGroupBar {
@@ -300,22 +455,30 @@ body { background: #f2f3f5; }
   background: rgba(0, 0, 0, 0.18);
 }
 
+/* 5.3 Dark theme tweak for month marker */
+@media (prefers-color-scheme: dark) {
+  .historyGroupBar {
+    background: rgba(255, 255, 255, 0.18);
+  }
+}
+
 .historyMonth {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   font-size: 12px;
   opacity: 0.6;
 
-  margin: 0;                 
+  margin: 0;
   line-height: 1.2;
+  color: var(--muted);
 }
 
 .status--danger {
-  background: rgba(217, 45, 32, 0.10);
-  color: rgb(217, 45, 32);
+  background: var(--danger-bg);
+  color: var(--danger-text);
 }
 
 .status--muted {
-  background: rgba(0, 0, 0, 0.06);
-  color: rgba(0, 0, 0, 0.60);
+  background: var(--muted-bg);
+  color: var(--muted-text);
 }
