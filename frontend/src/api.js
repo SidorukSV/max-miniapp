@@ -87,6 +87,14 @@ export async function getMe(access_token) {
     });
 }
 
+export async function getBonusTransactions(access_token) {
+    return apiFetch("/me/bonus-transactions", {
+        headers: {
+            Authorization: `Bearer ${access_token}`,
+        },
+    });
+}
+
 export async function getCatalogsCities() {
     return apiFetch("/catalogs/cities");
 }
