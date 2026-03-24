@@ -1,6 +1,6 @@
-/* ============================= */
-/*            THEME              */
-/* ============================= */
+/* ================================== */
+/* 1) THEME TOKENS (LIGHT + DARK)     */
+/* ================================== */
 
 :root {
   --bg: #f2f3f5;
@@ -54,7 +54,7 @@
   --inset-bottom: env(safe-area-inset-bottom);
 }
 
-/* Dark theme support */
+/* 1.1 Dark theme overrides */
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: #0f1115;
@@ -96,8 +96,7 @@
   }
 }
 
-@supports (-webkit-touch-callout: none) {}
-
+/* 1.2 Touch-device safe-area fallbacks */
 @media (pointer: coarse) {
   :root {
     --inset-top: 0px;
@@ -105,7 +104,9 @@
   }
 }
 
-/* БАЗА */
+/* ================================== */
+/* 2) GLOBAL RESET / LAYOUT BASE      */
+/* ================================== */
 * {
   box-sizing: border-box;
 }
@@ -123,7 +124,11 @@ body {
   color: var(--text);
 }
 
-/* ОСНОВНАЯ ПАНЕЛЬ */
+/* ================================== */
+/* 3) PAGE SHELL                      */
+/* ================================== */
+
+/* 3.1 Main panel */
 .panel {
   min-height: 100vh;
   position: relative;
@@ -131,7 +136,7 @@ body {
   /* место под bottom bar + подпись */
 }
 
-/* iOS HEADER */
+/* 3.2 iOS-style header */
 .Header {
   position: sticky;
   top: 0;
@@ -171,7 +176,7 @@ body {
   color: var(--text);
 }
 
-/* КОНТЕНТ */
+/* 3.3 Content container */
 .page {
   width: 100%;
   max-width: 560px;
@@ -179,7 +184,7 @@ body {
   padding: 12px 16px 16px;
 }
 
-/* КАРТОЧКИ */
+/* 3.4 Shared cards */
 .card {
   width: 100%;
   background: var(--surface);
@@ -192,7 +197,7 @@ body {
   padding: 12px 14px;
 }
 
-/* ИМЯ */
+/* 3.5 Profile/name block */
 .nameBlock {
   min-width: 0;
 }
@@ -214,11 +219,12 @@ body {
 
 .bonusValue {
   margin: 0;
-  white-space: nowrap;
+  font-size: 16px;
   color: var(--text);
+  white-space: nowrap;
 }
 
-/* МЕНЮ */
+/* 3.6 Home menu card */
 .menuCard {
   width: 100%;
   padding: 0;
@@ -228,36 +234,7 @@ body {
   background: var(--surface);
 }
 
-.menuItem {
-  width: 100%;
-  padding: 14px;
-  border: none;
-  background: transparent;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  cursor: pointer;
-  color: var(--text);
-}
-
-.menuItem:active {
-  background: var(--tap);
-}
-
-.menuDivider {
-  height: 1px;
-  background: var(--divider);
-  margin: 0 14px;
-}
-
-.chev {
-  opacity: 0.55;
-  font-size: 22px;
-  line-height: 1;
-  color: var(--muted);
-}
-
-/* BOTTOM BAR */
+/* 3.7 Bottom action bar */
 .bottomBar {
   position: fixed;
   left: 0;
@@ -290,7 +267,9 @@ body {
   color: var(--muted);
 }
 
-/* ===== BOOK VISIT UI ===== */
+/* ================================== */
+/* 4) BOOK VISIT FLOW                 */
+/* ================================== */
 
 .pills {
   display: flex;
@@ -315,7 +294,7 @@ body {
 }
 
 .pill--active {
-  border-color: rgba(0, 0, 0, 0);
+  border-color: transparent;
   background: var(--accent-soft);
   /* лёгкий iOS-акцент */
   font-weight: 600;
@@ -354,7 +333,7 @@ body {
   gap: 6px;
 }
 
-/* Правая часть карточки */
+/* 4.1 Right-side card actions */
 .actions {
   align-items: center;
 }
@@ -389,12 +368,6 @@ body {
   color: var(--accent);
 }
 
-.bonusValue {
-  margin: 0;
-  font-size: 16px;
-  white-space: nowrap;
-}
-
 .statusPill {
   font-size: 12px;
   padding: 6px 10px;
@@ -424,14 +397,18 @@ body {
   color: var(--danger-plain);
 }
 
-/* ГРУППЫ ИСТОРИИ */
+/* ================================== */
+/* 5) HISTORY GROUPING + STATUSES     */
+/* ================================== */
+
+/* 5.1 History group header */
 .historyGroup {
   margin-top: 12px;
   /* общий отступ между группами */
   width: 100%;
 }
 
-/* первая группа ближе к заголовку страницы */
+/* 5.2 First group sits closer to page title */
 .historyGroup:first-of-type {
   margin-top: 6px;
 }
@@ -454,7 +431,7 @@ body {
   background: rgba(0, 0, 0, 0.18);
 }
 
-/* (в тёмной теме полоска будет слишком тёмная — делаем через border) */
+/* 5.3 Dark theme tweak for month marker */
 @media (prefers-color-scheme: dark) {
   .historyGroupBar {
     background: rgba(255, 255, 255, 0.18);
@@ -480,26 +457,4 @@ body {
 .status--muted {
   background: var(--muted-bg);
   color: var(--muted-text);
-}
-
-.menuOverlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.55);
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-    z-index: 1000;
-}
-
-.menuSheet {
-    width: 100%;
-    max-width: 480px;
-    padding: 12px;
-    padding-bottom: 110px;
-    box-sizing: border-box;
-}
-
-.menuPanel {
-    margin-bottom: 96px;
 }
