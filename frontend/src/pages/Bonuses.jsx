@@ -41,7 +41,11 @@ export default function Bonuses() {
   const balance = useMemo(() => Number(me?.bonus || 0), [me?.bonus]);
 
   return (
-    <PageLayout headerTitle="Мои бонусы" showBottomButton={false}>
+    <PageLayout
+      showBottom={true}
+      bottomButtonText="Вернуться на главную"
+      onBottomButtonClick={() => { nav("/") }}
+    >
       <Flex direction="column" gap={10}>
         <Container className="card">
           <Flex direction="column" gap={10}>
@@ -85,7 +89,7 @@ export default function Bonuses() {
 
                       <Typography.Label>{item.description || "Без описания"}</Typography.Label>
 
-                      {item.operation_sum !== undefined ? (
+                      {item.operation_sum !== 0 ? (
                         <Typography.Label>Сумма покупки: {item.operation_sum} ₽</Typography.Label>
                       ) : null}
                     </Flex>
@@ -93,10 +97,6 @@ export default function Bonuses() {
                 );
               })
               : null}
-
-            <Button mode="secondary" onClick={() => nav("/")}>
-              На главную
-            </Button>
           </Flex>
         </Container>
       </Flex>

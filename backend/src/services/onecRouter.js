@@ -73,7 +73,7 @@ export async function getPatientById({ cityId, patient_id}) {
 
 export async function getBonusTransactions({ cityId, patient_id }) {
     const oneCConfig = getOneCConfig(cityId);
-    const data = await onecFetch(oneCConfig.url.concat(`/transactions/bonus`), {
+    const data = await onecFetch(oneCConfig.url.concat(`/transactions/bonus/`), {
         method: "POST",
         headers: {
             Authorization: `Basic d2ViOjEyMzQ1`, // TODO: hardcode
