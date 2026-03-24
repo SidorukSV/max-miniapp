@@ -405,12 +405,13 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.45);
+  background: rgba(0, 0, 0, 0.58);
 }
 
 .questionDialogCard {
   width: 100%;
   max-width: 420px;
+  background: #ffffff;
 }
 
 .questionDialogActions {
@@ -419,6 +420,12 @@ body {
 
 .questionDialogBtn {
   flex: 1;
+}
+
+@media (prefers-color-scheme: dark) {
+  .questionDialogCard {
+    background: #1f2430;
+  }
 }
 
 /* ================================== */
