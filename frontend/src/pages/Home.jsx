@@ -9,15 +9,36 @@ import AuthScreen from "../components/AuthScreen.jsx";
 import { useState } from "react";
 import { clearTokens, authLogout } from "../api.js";
 
+export function getFallbackGradientByInitials(initials) {
+
+    const gradients = ["red", "orange", "green", "blue", "purple"];
+
+    const normalized = initials
+        .trim()
+        .toUpperCase()
+        .replace(/\s+/g, "")
+        .replace(/Ё/g, "Е");
+
+    let hash = 0;
+
+    for (let i = 0; i < normalized.length; i++) {
+        hash = (hash * 31 + normalized.charCodeAt(i)) >>> 0;
+    }
+
+    return gradients[hash % gradients.length];
+
+}
+
 export default function Home() {
     const nav = useNavigate();
     const { me, loading, isAuthorized, setMe } = useAuth();
 
     const [busy, setBusy] = useState(false);
-    const username = me?.fullname || "Иван Иванов";
+    const username = me?.fullName || "Иван Иванов";
     const phone = me?.phone || "79123456789";
     const parts = username.trim().split(/\s+/, 2);
     const initials = parts.map(p => p[0]?.toUpperCase()).join("");
+    const bonus = me?.bonus || 0;
 
     async function handleLogout() {
         setBusy(true);
@@ -29,7 +50,7 @@ export default function Home() {
             clearTokens();
             setMe(null);
             setBusy(false);
-        }        
+        }
     }
 
     if (loading) {
@@ -60,13 +81,13 @@ export default function Home() {
                 <Container className="card card--tight">
                     <Flex align="center" justify="space-between" gap={12}>
                         <Flex align="center" gap={12} style={{ minWidth: 0 }}>
-                            <Avatar.Container size={60} form="circle">
-                                <Avatar.Image fallback={initials} fallbackGradient="green" />
+                            <Avatar.Container style={{ minWidth: 60 }} size={60} form="circle">
+                                <Avatar.Image fallback={initials} fallbackGradient={getFallbackGradientByInitials(initials)} />
                             </Avatar.Container>
 
                             <div className="nameBlock">
                                 <Typography.Title level={3} className="nameLine">
-                                    <EllipsisText maxLines={1}>
+                                    <EllipsisText maxLines={3}>
                                         {username}
                                     </EllipsisText>
                                 </Typography.Title>
@@ -91,7 +112,7 @@ export default function Home() {
                                     <Gift size={16} />
                                 </div>
                                 <Typography.Title level={3} className="bonusValue">
-                                    615.3 ₽
+                                    {bonus} ₽
                                 </Typography.Title>
                             </button>
 
@@ -112,7 +133,7 @@ export default function Home() {
                         </CellSimple>
 
                         <CellSimple
-                            before={<LibraryBig size={24} strokeWidth={3} absoluteStrokeWidth />}
+                            before={<LibraryBig size={24} />}
                             showChevron
                             onClick={() => nav("/history")}
                         >
@@ -124,7 +145,7 @@ export default function Home() {
                             showChevron={false}
                             onClick={async () => handleLogout()}
                         >
-                            { busy ? "Выходим" : "Выйти" }
+                            {busy ? "Выходим" : "Выйти"}
                         </CellSimple>
                     </CellList>
                 </Container>

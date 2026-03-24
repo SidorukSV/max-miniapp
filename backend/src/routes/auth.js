@@ -54,7 +54,6 @@ export async function authRoutes(app) {
                     return reply.code(401).send({ error: err?.message || "init_data_invalid" });
                 }
             }
-
             req.session = updateSession(session.id, {
                 phone: req.phone,
                 channel: authChannel,

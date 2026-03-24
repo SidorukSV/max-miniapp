@@ -4,6 +4,12 @@ import { authStart, authSetCity, authPhone, authSelectPatient, storeTokens, getM
 import { Flex, Container, Typography, Button, Spinner, CellList, CellSimple, CellHeader } from "@maxhub/max-ui";
 import "../app.css";
 import { useMaxWebApp } from "../hooks/useMaxWebApp";
+import { format } from "date-fns";
+
+export function dateISOFormat(dateISO, dateFormat) {
+    const date = new Date(dateISO);
+    return format(date, dateFormat);
+}
 
 export default function AuthScreen() {
 
@@ -148,7 +154,7 @@ export default function AuthScreen() {
                                     key={patient.id}
                                     height="normal"
                                     title={patient.fullName}
-                                    subtitle={patient.birthDate}
+                                    subtitle={dateISOFormat(patient.birthDate, "dd.MM.yyyy")}
                                     showChevron
                                     onClick={() => handleSelectPatient(patient.id)}
                                 />
