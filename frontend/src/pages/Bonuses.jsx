@@ -9,9 +9,9 @@ import { getBonusTransactions, getStoredAccessToken } from "../api";
 import "../app.css";
 
 function formatTransactionDate(dateISO) {
-  if (!dateISO) {
-    return "Без даты";
-  }
+  //if (!dateISO) {
+  //  return "Без даты";
+  //}
 
   try {
     const stringDate = String(dateISO).trim();
