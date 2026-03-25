@@ -7,25 +7,52 @@ export function AuthProvider({ children }) {
     const [me, setMe] = useState(null);
     const [loading, setLoading] = useState(true);
 
+    async function refreshAndLoadMe() {
+        const refresh = getStoredRefreshtoken();
+
+        if (!refresh) {
+            return false;
+        }
+
+        try {
+            const refreshed = await authRefresh(refresh);
+            storeTokens(refreshed);
+
+            const meData = await getMe(refreshed.access_token);
+            setMe(meData);
+
+            return true;
+        } catch {
+            return false;
+        }
+    }
+
     async function bootstrap() {
         try {
             const access = getStoredAccessToken();
 
             if (access) {
-                const meData = await getMe(access);
-                setMe(meData);
-                setLoading(false);
-                return;
+                try {
+                    const meData = await getMe(access);
+                    setMe(meData);
+                    return;
+                } catch {
+                    const isRefreshed = await refreshAndLoadMe();
+
+                    if (!isRefreshed) {
+                        clearTokens();
+                        setMe(null);
+                    }
+
+                    return;
+                }
             }
 
-            const refresh = getStoredRefreshtoken();
+            const isRefreshed = await refreshAndLoadMe();
 
-            if (refresh) {
-                const refreshed = await authRefresh(refresh);
-                storeTokens(refresh);
-
-                const meData = await getMe(refreshed.access_token);
-                setMe(meData);
+            if (!isRefreshed) {
+                clearTokens();
+                setMe(null);
             }
         } catch {
             clearTokens();
