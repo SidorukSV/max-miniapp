@@ -7,7 +7,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 import AuthScreen from "../components/AuthScreen.jsx";
 import { HomeLoadingCard } from "../components/loadingCard.jsx";
 import { useState } from "react";
-import { clearTokens, authLogout } from "../api.js";
+import { clearTokens, authLogout, getStoredRefreshtoken } from "../api.js";
 
 import { getFallbackGradientByInitials } from "../modules/avatarGradient.js";
 import { getSurveys } from "../modules/surveyStore.js";
@@ -28,7 +28,7 @@ export default function Home() {
     async function handleLogout() {
         setBusy(true);
         try {
-            await authLogout();
+            await authLogout(getStoredRefreshtoken());
         } catch (err) {
             console.log(err);
         } finally {

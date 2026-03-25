@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Button, CellHeader, Container, Flex, Typography } from "@maxhub/max-ui";
+import { Button, CellHeader, Container, Flex, Typography, Textarea } from "@maxhub/max-ui";
 import PageLayout from "../components/PageLayout";
 import { getSurveyTitle, SURVEY_STATUSES } from "../data/mockSurveys";
 import { completeSurvey, getSurveyById } from "../modules/surveyStore";
@@ -67,11 +67,11 @@ export default function SurveyDetails() {
         <Container className="card">
           <Flex direction="column" gap={14}>
             {survey.questions.map((question, index) => (
-              <div key={question}>
-                <Typography.Label>{index + 1}. {question}</Typography.Label>
-                <textarea
+              <div key={question} style={{width:"100%"}}>
+                <Typography.Label style={{display: "block", marginBottom: 12}}>{index + 1}. {question}</Typography.Label>
+                <Textarea
+                  mode="secondary"
                   rows={3}
-                  style={{ marginTop: 8, width: "100%", borderRadius: 12, border: "1px solid #d6d6d6", padding: 10, font: "inherit" }}
                   value={answers[index]}
                   disabled={!isNew}
                   onChange={(event) => updateAnswer(index, event.target.value)}
