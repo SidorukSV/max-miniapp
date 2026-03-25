@@ -1,9 +1,12 @@
-import { Routes, Route, HashRouter, BrowserRouter } from "react-router-dom";
+import { Routes, Route, BrowserRouter } from "react-router-dom";
 import Home from "./pages/Home.jsx";
 import BookVisit from "./pages/BookVisit.jsx";
 import MyVisits from "./pages/MyVisits.jsx";
 import History from "./pages/History.jsx";
 import Bonuses from "./pages/Bonuses.jsx";
+import MySurveys from "./pages/MySurveys.jsx";
+import SurveyDetails from "./pages/SurveyDetails.jsx";
+import PayloadSurveyRedirect from "./components/PayloadSurveyRedirect.jsx";
 import { useMaxWebApp } from "./hooks/useMaxWebApp.js";
 import { MaxContext } from "./context/MaxContext.jsx";
 import { AuthProvider } from "./context/AuthContext.jsx";
@@ -16,12 +19,15 @@ export default function App() {
     <AuthProvider>
       <MaxContext.Provider value={max}>
         <BrowserRouter basename={import.meta.env.BASE_URL}>
+          <PayloadSurveyRedirect />
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/book" element={<BookVisit />} />
             <Route path="/visits" element={<MyVisits />} />
             <Route path="/history" element={<History />} />
             <Route path="/bonuses" element={<Bonuses />} />
+            <Route path="/surveys" element={<MySurveys />} />
+            <Route path="/surveys/:id" element={<SurveyDetails />} />
           </Routes>
         </BrowserRouter>
       </MaxContext.Provider>

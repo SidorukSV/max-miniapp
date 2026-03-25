@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Container, Flex, Avatar, Typography, CellList, CellSimple, EllipsisText } from "@maxhub/max-ui";
-import { Calendar, LibraryBig, Gift, LogOut } from "lucide-react";
+import { Calendar, LibraryBig, Gift, LogOut, ClipboardList } from "lucide-react";
 import PageLayout from "../components/PageLayout";
 import "../app.css";
 import { useAuth } from "../context/AuthContext.jsx";
@@ -118,6 +118,14 @@ export default function Home() {
                             onClick={() => nav("/history")}
                         >
                             История приёмов
+                        </CellSimple>
+
+                        <CellSimple
+                            before={<ClipboardList size={24} />}
+                            showChevron
+                            onClick={() => nav("/surveys")}
+                        >
+                            Мои анкеты
                         </CellSimple>
 
                         <CellSimple
