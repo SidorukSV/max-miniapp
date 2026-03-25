@@ -73,7 +73,7 @@ export async function getPatientById({ cityId, patient_id}) {
 
 export async function getBonusTransactions({ cityId, patient_id }) {
     const oneCConfig = getOneCConfig(cityId);
-    const data = await onecFetch(oneCConfig.url.concat(`/transactions/bonus/`), {
+    const data = await onecFetch(oneCConfig.url.concat(`/transactions/bonus`), {
         method: "POST",
         headers: {
             Authorization: `Basic d2ViOjEyMzQ1`, // TODO: hardcode
@@ -95,7 +95,7 @@ export async function getBonusTransactions({ cityId, patient_id }) {
             operation,
             sum: Number(transaction?.sum || 0),
             description: transaction?.description || "",
-            date: transaction?.date || null,
+            date: transaction?.date || transaction?.Date || transaction?.date_time || null,
             operation_sum: transaction?.operation_sum !== undefined
                 ? Number(transaction.operation_sum)
                 : undefined,
