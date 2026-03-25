@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Container, Flex, Typography, Button, Spinner } from "@maxhub/max-ui";
+import { Container, Flex, Typography } from "@maxhub/max-ui";
 import { format, isValid, parse, parseISO } from "date-fns";
 import { ru } from "date-fns/locale";
 import PageLayout from "../components/PageLayout";
@@ -97,9 +97,12 @@ export default function Bonuses() {
             <Typography.Title level={3}>История операций</Typography.Title>
 
             {loading ? (
-              <Typography.Label>
-                <Spinner appearance="primary" size={20} /> Загружаем операции...
-              </Typography.Label>
+              <div className="bonusesLoading" aria-label="Загрузка истории операций">
+                <div className="skeleton skeleton--title skeleton--w40" />
+                <div className="skeleton skeleton--tx" />
+                <div className="skeleton skeleton--tx" />
+                <div className="skeleton skeleton--tx skeleton--w85" />
+              </div>
             ) : null}
 
             {!loading && error ? <Typography.Label>{error}</Typography.Label> : null}

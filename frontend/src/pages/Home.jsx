@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Panel, Container, Flex, Avatar, Typography, Button, IconButton, CellList, CellSimple, EllipsisText, Spinner, CellHeader } from "@maxhub/max-ui";
+import { Container, Flex, Avatar, Typography, CellList, CellSimple, EllipsisText } from "@maxhub/max-ui";
 import { MoreHorizontal, Calendar, LibraryBig, ChevronRight, Gift, LogOut } from "lucide-react";
 import PageLayout from "../components/PageLayout";
 import "../app.css";
@@ -56,9 +56,26 @@ export default function Home() {
     if (loading) {
         return (
             <PageLayout showBottomButton={false}>
-                <Container className="card">
-                    <Typography.Title><Spinner appearance="primary" size={20} /> Загрузка...</Typography.Title>
-                </Container>
+                <Flex direction="column" gap={10}>
+                    <Container className="card card--tight loadingCard">
+                        <Flex align="center" justify="space-between" gap={12}>
+                            <Flex align="center" gap={12} style={{ minWidth: 0, width: "100%" }}>
+                                <div className="skeleton skeleton--avatar" />
+                                <div className="loadingCardMeta">
+                                    <div className="skeleton skeleton--title" />
+                                    <div className="skeleton skeleton--text" />
+                                </div>
+                            </Flex>
+                            <div className="skeleton skeleton--chip" />
+                        </Flex>
+                    </Container>
+
+                    <Container className="card menuCard loadingMenuCard">
+                        <div className="skeletonRow" />
+                        <div className="skeletonRow" />
+                        <div className="skeletonRow" />
+                    </Container>
+                </Flex>
             </PageLayout>
         );
     }
