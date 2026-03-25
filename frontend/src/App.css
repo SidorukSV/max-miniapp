@@ -482,3 +482,100 @@ body {
   background: var(--muted-bg);
   color: var(--muted-text);
 }
+
+/* 9.3 Bonuses page */
+.bonusesDateGroup {
+  border-top: 1px solid var(--divider-soft);
+}
+
+.bonusesDateHeader {
+  padding: 10px 0;
+  color: var(--muted);
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.bonusesTxRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 0;
+  border-top: 1px solid var(--divider-soft);
+}
+
+.bonusesTxLeft {
+  flex: 1;
+  min-width: 0;
+}
+
+.bonusesTxAmount {
+  min-width: 98px;
+  text-align: right;
+  font-weight: 700;
+  font-size: 20px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.bonusesTxAmount--credit {
+  color: var(--ok-text);
+}
+
+.bonusesTxAmount--debit {
+  color: var(--text);
+}
+
+.bonusesSkeletonList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bonusesSkeletonRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid var(--divider-soft);
+}
+
+.bonusesSkeletonLeft {
+  flex: 1;
+  min-width: 0;
+}
+
+.bonusesSkeletonLine,
+.bonusesSkeletonAmount {
+  border-radius: 8px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.08) 25%, rgba(255, 255, 255, 0.16) 45%, rgba(255, 255, 255, 0.08) 65%);
+  background-size: 240% 100%;
+  animation: bonusesShimmer 1.4s ease-in-out infinite;
+}
+
+.bonusesSkeletonLine--title {
+  width: 120px;
+  height: 18px;
+  margin-bottom: 8px;
+}
+
+.bonusesSkeletonLine--text {
+  width: 180px;
+  height: 14px;
+}
+
+.bonusesSkeletonAmount {
+  width: 92px;
+  height: 24px;
+}
+
+@keyframes bonusesShimmer {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -40% 0;
+  }
+}

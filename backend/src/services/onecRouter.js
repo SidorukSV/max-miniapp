@@ -70,3 +70,35 @@ export async function getPatientById({ cityId, patient_id}) {
     }
 
 }
+
+export async function getBonusTransactions({ cityId, patient_id }) {
+    const oneCConfig = getOneCConfig(cityId);
+    const data = await onecFetch(oneCConfig.url.concat(`/transactions/bonus`), {
+        method: "POST",
+        headers: {
+            Authorization: `Basic d2ViOjEyMzQ1`, // TODO: hardcode
+        },
+        body: JSON.stringify({ patient_id }),
+    });
+
+    if (!Array.isArray(data)) {
+        return [];
+    }
+
+    return data.map((transaction) => {
+        const normalizedOperation = String(transaction?.operation || "").toLowerCase();
+        const operation = normalizedOperation === "расход" || normalizedOperation === "debit"
+            ? "debit"
+            : "credit";
+
+        return {
+            operation,
+            sum: Number(transaction?.sum || 0),
+            description: transaction?.description || "",
+            date: transaction?.date || transaction?.Date || transaction?.date_time || transaction?.Дата || null,
+            operation_sum: transaction?.operation_sum !== undefined
+                ? Number(transaction.operation_sum)
+                : undefined,
+        };
+    });
+}
