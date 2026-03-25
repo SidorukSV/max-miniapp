@@ -1,8 +1,6 @@
-import ms from "ms";
 import { buildApp } from "./app.js";
 import { config } from "./config.js";
-import { cleanupExpiredSessions } from "./store/authSessions.js";
-import { cleanupExpiredRefreshTokens } from "./store/refreshTokens.js";
+import { closeRedisClient, getRedisClient } from "./store/redisClient.js";
 
 const app = await buildApp();
 
@@ -10,12 +8,13 @@ app.get("/", async () => {
     return { status: "ok" };
 });
 
-setInterval(() => {
-    cleanupExpiredSessions();
-    cleanupExpiredRefreshTokens();
-}, ms("1m"));
+await getRedisClient();
 
-app.listen({ port: config.port, host: "0.0.0.0"})
+app.addHook("onClose", async () => {
+    await closeRedisClient();
+});
+
+app.listen({ port: config.port, host: "0.0.0.0" })
     .then(() => {
         console.log("server is running");
     })

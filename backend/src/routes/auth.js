@@ -1,4 +1,4 @@
-import { createSession, getSession, updateSession } from "../store/authSessions.js";
+import { createSession, updateSession } from "../store/authSessions.js";
 import { config } from "../config.js";
 import { getPatientsByPhone } from "../services/onecRouter.js";
 import { normalizePhoneMiddleware, requireCityMiddleware, sessionMiddleware } from "../middleware/session.js";
@@ -9,7 +9,7 @@ import { verifyMaxInitData } from "../auth/maxInitData.js";
 export async function authRoutes(app) {
 
     app.post("/api/v1/auth/start", async () => {
-        const auth_session_id = createSession();
+        const auth_session_id = await createSession();
 
         return {
             auth_session_id,
@@ -26,7 +26,7 @@ export async function authRoutes(app) {
                 return reply.code(400).send({ error: "city_id_required" });
             }
 
-            req.session = updateSession(req.session.id, { city_id });
+            req.session = await updateSession(req.session.id, { city_id });
             console.log(req.session);
             console.log({ city_id });
 
@@ -54,7 +54,7 @@ export async function authRoutes(app) {
                     return reply.code(401).send({ error: err?.message || "init_data_invalid" });
                 }
             }
-            req.session = updateSession(session.id, {
+            req.session = await updateSession(session.id, {
                 phone: req.phone,
                 channel: authChannel,
                 proof: proof || null,
@@ -66,7 +66,7 @@ export async function authRoutes(app) {
                 phone: req.phone,
             });
 
-            req.session = updateSession(session.id, {
+            req.session = await updateSession(session.id, {
                 patients,
             });
 
@@ -112,12 +112,12 @@ export async function authRoutes(app) {
 
             const decodeRefresh = verifyToken(refresh_token);
 
-            saveRefreshToken(decodeRefresh.jti, {
+            await saveRefreshToken(decodeRefresh.jti, {
                 ...tokenPayload,
                 expiresAt: decodeRefresh.exp * 1000,
             });
 
-            req.session = updateSession(session.id, {
+            req.session = await updateSession(session.id, {
                 selected_patient_id: patient.id,
             });
 
@@ -149,13 +149,13 @@ export async function authRoutes(app) {
            return reply.code(401).send({ error: "invalid_token_type" }); 
         }
 
-        const stored = getRefreshToken(decoded.jti);
+        const stored = await getRefreshToken(decoded.jti);
 
         if (!stored) {
             return reply.code(401).send({ error: "refresh_token_revoked" }); 
         }
 
-        deleteRefreshToken(decoded.jti);
+        await deleteRefreshToken(decoded.jti);
 
         const tokenPayload = {
             patient_id: stored.patient_id,
@@ -169,7 +169,7 @@ export async function authRoutes(app) {
         
         const newDecodedRefresh = verifyToken(new_refresh_token);
 
-        saveRefreshToken(newDecodedRefresh.jti, {
+        await saveRefreshToken(newDecodedRefresh.jti, {
             ...tokenPayload,
             expiresAt: newDecodedRefresh.exp * 1000,
         });
@@ -193,7 +193,7 @@ export async function authRoutes(app) {
             const decoded = verifyToken(refresh_token);
 
             if (decoded.token_type === "refresh") {
-                deleteRefreshToken(decoded.jti);
+                await deleteRefreshToken(decoded.jti);
             }
         } catch {
             // no-action: always logout
