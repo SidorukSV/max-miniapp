@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Container, Flex, Avatar, Typography, CellList, CellSimple, EllipsisText } from "@maxhub/max-ui";
+import { Container, Flex, Avatar, Typography, CellList, CellSimple, EllipsisText, Counter } from "@maxhub/max-ui";
 import { Calendar, LibraryBig, Gift, LogOut, ClipboardList } from "lucide-react";
 import PageLayout from "../components/PageLayout";
 import "../app.css";
@@ -10,6 +10,8 @@ import { useState } from "react";
 import { clearTokens, authLogout } from "../api.js";
 
 import { getFallbackGradientByInitials } from "../modules/avatarGradient.js";
+import { getSurveys } from "../modules/surveyStore.js";
+import { SURVEY_STATUSES } from "../data/mockSurveys.js";
 
 export default function Home() {
     const nav = useNavigate();
@@ -21,6 +23,7 @@ export default function Home() {
     const parts = username.trim().split(/\s+/, 2);
     const initials = parts.map(p => p[0]?.toUpperCase()).join("");
     const bonus = me?.bonus || 0;
+    const newSurveysCount = getSurveys().filter((survey) => survey.status === SURVEY_STATUSES.NEW).length;
 
     async function handleLogout() {
         setBusy(true);
@@ -124,6 +127,7 @@ export default function Home() {
                             before={<ClipboardList size={24} />}
                             showChevron
                             onClick={() => nav("/surveys")}
+                            after={newSurveysCount > 0 ? <Counter>{newSurveysCount}</Counter> : null}
                         >
                             Мои анкеты
                         </CellSimple>
