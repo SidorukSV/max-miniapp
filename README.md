@@ -1,16 +1,56 @@
-# React + Vite
+# max-miniapp
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Backend: Redis для sessions и refresh tokens
 
-Currently, two official plugins are available:
+Теперь backend хранит:
+- `auth sessions` в Redis с TTL 5 минут;
+- `refresh tokens` в Redis с TTL до истечения срока токена.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+По умолчанию backend подключается к:
+- `REDIS_URL=redis://127.0.0.1:6379`
 
-## React Compiler
+Дополнительные переменные:
+- `REDIS_CONNECT_TIMEOUT_MS=5000`
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Установка Redis
 
-## Expanding the ESLint configuration
+#### Вариант 1 (рекомендуется): Docker
+```bash
+docker run -d --name max-miniapp-redis -p 6379:6379 redis:7-alpine
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Проверка:
+```bash
+docker exec -it max-miniapp-redis redis-cli ping
+# ожидаемый ответ: PONG
+```
+
+#### Вариант 2: Ubuntu / Debian
+```bash
+sudo apt update
+sudo apt install -y redis-server
+sudo systemctl enable redis-server
+sudo systemctl start redis-server
+redis-cli ping
+```
+
+#### Вариант 3: macOS (Homebrew)
+```bash
+brew install redis
+brew services start redis
+redis-cli ping
+```
+
+### Запуск backend
+
+```bash
+cd backend
+npm install
+npm run dev
+```
+
+Если Redis не локальный, укажите URL перед запуском:
+
+```bash
+REDIS_URL=redis://<host>:6379 npm run dev
+```
