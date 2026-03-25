@@ -1,23 +1,30 @@
-const refreshTokens = new Map();
+import { getRedisClient } from "./redisClient.js";
 
-export function saveRefreshToken(jti, data) {
-    refreshTokens.set(jti, data);
+const REFRESH_TOKEN_PREFIX = "refresh_token:";
+
+function getRefreshTokenKey(jti) {
+    return `${REFRESH_TOKEN_PREFIX}${jti}`;
 }
 
-export function getRefreshToken(jti) {
-    return refreshTokens.get(jti);
+export async function saveRefreshToken(jti, data) {
+    const redis = await getRedisClient();
+    const ttlSeconds = Math.max(1, Math.ceil((data.expiresAt - Date.now()) / 1000));
+
+    await redis.set(getRefreshTokenKey(jti), JSON.stringify(data), {
+        EX: ttlSeconds,
+    });
 }
 
-export function deleteRefreshToken(jti) {
-    return refreshTokens.delete(jti);
+export async function getRefreshToken(jti) {
+    const redis = await getRedisClient();
+    const payload = await redis.get(getRefreshTokenKey(jti));
+
+    if (!payload) return null;
+
+    return JSON.parse(payload);
 }
 
-export function cleanupExpiredRefreshTokens() {
-    const now = Date.now();
-
-    for (const [jti, token] of refreshTokens.entries()) {
-        if (token.expiresAt <= now) {
-            deleteRefreshToken(jti);
-        }
-    }
+export async function deleteRefreshToken(jti) {
+    const redis = await getRedisClient();
+    await redis.del(getRefreshTokenKey(jti));
 }
