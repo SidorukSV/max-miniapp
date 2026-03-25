@@ -532,3 +532,97 @@ body {
 .bonusesTxAmount--debit {
   color: var(--text);
 }
+
+
+/* 10) Modern loading skeletons */
+.loadingCard {
+  overflow: hidden;
+}
+
+.loadingCardMeta {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.loadingMenuCard {
+  padding: 4px 0;
+}
+
+.skeleton,
+.skeletonRow {
+  position: relative;
+  border-radius: 12px;
+  background: linear-gradient(100deg,
+      rgba(255, 255, 255, 0.08) 20%,
+      rgba(255, 255, 255, 0.4) 38%,
+      rgba(255, 255, 255, 0.08) 54%) var(--muted-bg);
+  background-size: 220% 100%;
+  animation: skeletonShimmer 1.4s ease-in-out infinite;
+}
+
+.skeleton--avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+
+.skeleton--title {
+  width: 66%;
+  height: 16px;
+}
+
+.skeleton--text {
+  width: 48%;
+  height: 12px;
+}
+
+.skeleton--chip {
+  width: 82px;
+  height: 32px;
+  border-radius: 999px;
+  flex: 0 0 auto;
+}
+
+.skeletonRow {
+  height: 54px;
+  margin: 0 14px;
+  border-radius: 0;
+}
+
+.skeletonRow + .skeletonRow {
+  border-top: 1px solid var(--divider-soft);
+}
+
+.bonusesLoading {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+.skeleton--tx {
+  width: 100%;
+  height: 54px;
+  border-radius: 14px;
+}
+
+.skeleton--w40 {
+  width: 40%;
+}
+
+.skeleton--w85 {
+  width: 85%;
+}
+
+@keyframes skeletonShimmer {
+  0% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0 50%;
+  }
+}

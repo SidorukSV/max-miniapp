@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Container, Flex, Typography, Button, Spinner, CellHeader } from "@maxhub/max-ui";
+import { Container, Flex, Typography } from "@maxhub/max-ui";
 import { format, isValid, parse, parseISO } from "date-fns";
 import { ru } from "date-fns/locale";
 import PageLayout from "../components/PageLayout";
+import { BonusesLoadingCard } from "../components/loadingCard.jsx";
 import { useAuth } from "../context/AuthContext";
 import { getBonusTransactions, getStoredAccessToken } from "../api";
 import "../app.css";
@@ -98,11 +99,7 @@ export default function Bonuses() {
           <Flex direction="column" gap={10}>
             <Typography.Title level={3}>История операций</Typography.Title>
 
-            {loading ? (
-              <Typography.Label>
-                <Spinner appearance="primary" size={20} /> Загружаем операции...
-              </Typography.Label>
-            ) : null}
+            {loading ? <BonusesLoadingCard /> : null}
 
             {!loading && error ? <Typography.Label>{error}</Typography.Label> : null}
 
