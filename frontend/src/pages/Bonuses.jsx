@@ -4,6 +4,7 @@ import { Container, Flex, Typography } from "@maxhub/max-ui";
 import { format, isValid, parse, parseISO } from "date-fns";
 import { ru } from "date-fns/locale";
 import PageLayout from "../components/PageLayout";
+import { BonusesLoadingCard } from "../components/loadingCard.jsx";
 import { useAuth } from "../context/AuthContext";
 import { getBonusTransactions, getStoredAccessToken } from "../api";
 import "../app.css";
@@ -96,14 +97,7 @@ export default function Bonuses() {
           <Flex direction="column" gap={10}>
             <Typography.Title level={3}>История операций</Typography.Title>
 
-            {loading ? (
-              <div className="bonusesLoading" aria-label="Загрузка истории операций">
-                <div className="skeleton skeleton--title skeleton--w40" />
-                <div className="skeleton skeleton--tx" />
-                <div className="skeleton skeleton--tx" />
-                <div className="skeleton skeleton--tx skeleton--w85" />
-              </div>
-            ) : null}
+            {loading ? <BonusesLoadingCard /> : null}
 
             {!loading && error ? <Typography.Label>{error}</Typography.Label> : null}
 
