@@ -4,12 +4,7 @@ import { authStart, authSetCity, authPhone, authSelectPatient, storeTokens, getM
 import { Flex, Container, Typography, Button, Spinner, CellList, CellSimple, CellHeader } from "@maxhub/max-ui";
 import "../app.css";
 import { useMaxWebApp } from "../hooks/useMaxWebApp";
-import { format } from "date-fns";
-
-export function dateISOFormat(dateISO, dateFormat) {
-    const date = new Date(dateISO);
-    return format(date, dateFormat);
-}
+import { dateISOFormat } from "../modules/DateFormat";
 
 export default function AuthScreen() {
 

@@ -7,6 +7,7 @@ export default function QuestionDialog({
     onConfirm,
     cancelText = "Нет",
     confirmText = "Да",
+    confirmMode = "secondary",
     confirmClassName = "",
 }) {
     if (!open) {
@@ -15,7 +16,7 @@ export default function QuestionDialog({
 
     return (
         <div className="questionDialogOverlay">
-            <Container mode="secondary" className="card questionDialogCard">
+            <Container className="card questionDialogCard">
                 <Flex direction="column" gap={16}>
                     <Typography.Title level={3}>{question}</Typography.Title>
 
@@ -23,7 +24,7 @@ export default function QuestionDialog({
                         <Button mode="secondary" onClick={onCancel} className="questionDialogBtn">
                             {cancelText}
                         </Button>
-                        <Button onClick={onConfirm} className={`questionDialogBtn ${confirmClassName}`.trim()}>
+                        <Button mode={confirmMode} onClick={onConfirm} className={`questionDialogBtn ${confirmClassName}`.trim()}>
                             {confirmText}
                         </Button>
                     </Flex>
