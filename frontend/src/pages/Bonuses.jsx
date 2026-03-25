@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Container, Flex, Typography, Button, Spinner } from "@maxhub/max-ui";
-import { format } from "date-fns";
+import { format, isValid, parse, parseISO } from "date-fns";
 import { ru } from "date-fns/locale";
 import PageLayout from "../components/PageLayout";
 import { useAuth } from "../context/AuthContext";
@@ -14,7 +14,16 @@ function formatTransactionDate(dateISO) {
   }
 
   try {
-    return format(new Date(dateISO), "d MMMM yyyy", { locale: ru });
+    const stringDate = String(dateISO).trim();
+    const parsedDate = isValid(parseISO(stringDate))
+      ? parseISO(stringDate)
+      : parse(stringDate, "yyyy-MM-dd'T'HH:mm:ss", new Date());
+
+    if (!isValid(parsedDate)) {
+      return "Без даты";
+    }
+
+    return format(parsedDate, "d MMMM yyyy", { locale: ru });
   } catch {
     return "Без даты";
   }
