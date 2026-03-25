@@ -127,7 +127,7 @@ export default function Home() {
                             before={<ClipboardList size={24} />}
                             showChevron
                             onClick={() => nav("/surveys")}
-                            after={newSurveysCount > 0 ? <Counter>{newSurveysCount}</Counter> : null}
+                            after={newSurveysCount > 0 ? <Counter rounded={true} value={newSurveysCount}></Counter> : null}
                         >
                             Мои анкеты
                         </CellSimple>
