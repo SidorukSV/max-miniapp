@@ -1,5 +1,5 @@
 import { authWiddleware } from "../middleware/auth.js";
-import { getPatientById } from "../services/onecRouter.js";
+import { getBonusTransactions, getPatientById } from "../services/onecRouter.js";
 
 export async function meRoutes(app) {
     app.get("/api/v1/me",
@@ -22,6 +22,17 @@ export async function meRoutes(app) {
                 channel,
                 fullname: "Семён Сидорук",
                 bonus: 615.3,
+            };
+        });
+
+    app.get("/api/v1/me/bonus-transactions",
+        { preHandler: [authWiddleware] },
+        async (req) => {
+            const { patient_id, city_id } = req.user;
+            const transactions = await getBonusTransactions({ cityId: city_id, patient_id });
+
+            return {
+                items: transactions,
             };
         });
 
