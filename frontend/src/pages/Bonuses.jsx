@@ -10,9 +10,10 @@ import { getBonusTransactions, getStoredAccessToken } from "../api";
 import "../app.css";
 
 function formatTransactionDate(dateISO) {
-  //if (!dateISO) {
-  //  return "Без даты";
-  //}
+  if (!dateISO) {
+    return "Без даты";
+  }
+
 
   try {
     const stringDate = String(dateISO).trim();
@@ -68,6 +69,7 @@ export default function Bonuses() {
     const map = new Map();
 
     for (const item of sorted) {
+      console.log(item);
       const key = formatTransactionDate(item?.date);
       if (!map.has(key)) {
         map.set(key, []);
@@ -108,7 +110,7 @@ export default function Bonuses() {
             {!loading && !error && items.length > 0
               ? groupedItems.map(([dateLabel, dateItems]) => (
                 <div key={dateLabel} className="bonusesDateGroup">
-                  <div className="bonusesDateHeader">{dateLabel}</div>
+                  <CellHeader titleStyle="caps" className="bonusesDateHeader">{dateLabel}</CellHeader>
 
                   {dateItems.map((item, index) => {
                     const isCredit = item.operation === "credit";
@@ -116,11 +118,10 @@ export default function Bonuses() {
                     return (
                       <div key={`${item.operation}-${item.sum}-${index}`} className="bonusesTxRow">
                         <div className="bonusesTxLeft">
-                          <Typography.Title level={3}>{isCredit ? "Начисление" : "Списание"}</Typography.Title>
                           <Typography.Label>{item.description || "Без описания"}</Typography.Label>
 
                           {item.operation_sum !== 0 ? (
-                            <Typography.Label>Сумма покупки: {item.operation_sum} ₽</Typography.Label>
+                            <Typography.Label className="roleLine">Сумма покупки: {item.operation_sum} ₽</Typography.Label>
                           ) : null}
                         </div>
 

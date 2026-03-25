@@ -493,6 +493,7 @@ body {
 /* 9.3 Bonuses page */
 .bonusesDateGroup {
   border-top: 1px solid var(--divider-soft);
+  width: 100%;
 }
 
 .bonusesDateHeader {
