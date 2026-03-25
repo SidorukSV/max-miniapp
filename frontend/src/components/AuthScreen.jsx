@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { authStart, authSetCity, authPhone, authSelectPatient, storeTokens, getMe, sendLogs, getCatalogsCities } from "../api";
 import { Flex, Container, Typography, Button, Spinner, CellList, CellSimple, CellHeader } from "@maxhub/max-ui";
@@ -7,9 +7,7 @@ import { useMaxWebApp } from "../hooks/useMaxWebApp";
 import { dateISOFormat } from "../modules/DateFormat";
 
 export default function AuthScreen() {
-
     const { webApp, initData } = useMaxWebApp();
-
     const { setMe } = useAuth();
 
     const [selectedCity, setSelectedCity] = useState("");
@@ -17,8 +15,45 @@ export default function AuthScreen() {
     const [patients, setPatients] = useState([]);
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState("");
-    const [contact, setContact] = useState(null);
     const [needCity, setNeedCity] = useState(false);
+    const [cities, setCities] = useState([]);
+    const [manualPhone, setManualPhone] = useState("");
+
+    const isBrowserLocalhost = useMemo(() => {
+        const host = window.location.hostname;
+        return host === "localhost" || host === "127.0.0.1";
+    }, []);
+
+    async function getPhonePayload() {
+        if (isBrowserLocalhost) {
+            if (!manualPhone.trim()) {
+                throw new Error("manual_phone_required");
+            }
+
+            return {
+                phone: manualPhone,
+                channel: "web",
+                proof: null,
+            };
+        }
+
+        if (!webApp?.requestContact) {
+            throw new Error("request_contact_unavailable");
+        }
+
+        const sendContact = await webApp.requestContact();
+        const phone = sendContact?.phone || "";
+
+        if (!phone) {
+            throw new Error("contact_not_send");
+        }
+
+        return {
+            phone,
+            channel: "max",
+            proof: { init_data: initData },
+        };
+    }
 
     async function handleStart() {
         setBusy(true);
@@ -29,37 +64,43 @@ export default function AuthScreen() {
             setAuthSessionId(start.auth_session_id);
             setNeedCity(start.need_city);
 
-            let cities = [];
             if (start.need_city) {
-                cities = await getCatalogsCities();
+                const citiesData = await getCatalogsCities();
+                setCities(citiesData || []);
+
+                if (!selectedCity) {
+                    throw new Error("city_required");
+                }
+
                 await authSetCity({
                     auth_session_id: start.auth_session_id,
                     city_id: selectedCity,
                 });
             }
 
-            webApp.requestContact()
-                .then(async (send_contact) => {
-                    setContact(send_contact);
-                    const phoneResult = await authPhone({
-                        auth_session_id: start.auth_session_id,
-                        phone: send_contact?.phone || "",
-                        channel: "max",
-                        proof: { initData },
-                    });
+            const phonePayload = await getPhonePayload();
 
-                    sendLogs(JSON.stringify(phoneResult));
+            const phoneResult = await authPhone({
+                auth_session_id: start.auth_session_id,
+                phone: phonePayload.phone,
+                channel: phonePayload.channel,
+                proof: phonePayload.proof,
+                init_data: initData,
+            });
 
-                    setPatients(phoneResult.patients || []);
-                })
-                .catch(() => {
-                    throw new Error("contact_not_send");
-                });
+            await sendLogs(JSON.stringify(phoneResult));
+            setPatients(phoneResult.patients || []);
         } catch (err) {
             console.error(err);
-            sendLogs(JSON.stringify(err));
+            await sendLogs(JSON.stringify(err));
 
             switch (err.message) {
+                case "manual_phone_required":
+                    setError("Введите номер телефона для теста в localhost.");
+                    break;
+                case "city_required":
+                    setError("Выберите город перед продолжением.");
+                    break;
                 case "request_contact_unavailable":
                     setError("Запрос контакта недоступен в данном клиенте");
                     break;
@@ -107,6 +148,15 @@ export default function AuthScreen() {
                     <Typography.Label className="roleLine">
                         Подтвердите номер телефона, чтобы продолжить.
                     </Typography.Label>
+
+                    {isBrowserLocalhost && (
+                        <input
+                            type="tel"
+                            value={manualPhone}
+                            onChange={(event) => setManualPhone(event.target.value)}
+                            placeholder="Введите номер телефона"
+                        />
+                    )}
 
                     {needCity && (
                         <CellList
