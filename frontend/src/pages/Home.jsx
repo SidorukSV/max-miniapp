@@ -1,33 +1,15 @@
 import { useNavigate } from "react-router-dom";
-import { Panel, Container, Flex, Avatar, Typography, Button, IconButton, CellList, CellSimple, EllipsisText, Spinner, CellHeader } from "@maxhub/max-ui";
-import { MoreHorizontal, Calendar, LibraryBig, ChevronRight, Gift, LogOut } from "lucide-react";
+import { Container, Flex, Avatar, Typography, CellList, CellSimple, EllipsisText } from "@maxhub/max-ui";
+import { Calendar, LibraryBig, Gift, LogOut } from "lucide-react";
 import PageLayout from "../components/PageLayout";
 import "../app.css";
-import { useMax } from "../context/MaxContext.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import AuthScreen from "../components/AuthScreen.jsx";
+import { HomeLoadingCard } from "../components/loadingCard.jsx";
 import { useState } from "react";
 import { clearTokens, authLogout } from "../api.js";
 
-export function getFallbackGradientByInitials(initials) {
-
-    const gradients = ["red", "orange", "green", "blue", "purple"];
-
-    const normalized = initials
-        .trim()
-        .toUpperCase()
-        .replace(/\s+/g, "")
-        .replace(/Ё/g, "Е");
-
-    let hash = 0;
-
-    for (let i = 0; i < normalized.length; i++) {
-        hash = (hash * 31 + normalized.charCodeAt(i)) >>> 0;
-    }
-
-    return gradients[hash % gradients.length];
-
-}
+import { getFallbackGradientByInitials } from "../modules/avatarGradient.js";
 
 export default function Home() {
     const nav = useNavigate();
@@ -56,9 +38,7 @@ export default function Home() {
     if (loading) {
         return (
             <PageLayout showBottomButton={false}>
-                <Container className="card">
-                    <Typography.Title><Spinner appearance="primary" size={20} /> Загрузка...</Typography.Title>
-                </Container>
+                <HomeLoadingCard />
             </PageLayout>
         );
     }
