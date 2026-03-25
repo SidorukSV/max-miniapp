@@ -7,6 +7,7 @@ export default function QuestionDialog({
     onConfirm,
     cancelText = "Нет",
     confirmText = "Да",
+    confirmMode = "secondary",
     confirmClassName = "",
 }) {
     if (!open) {
@@ -23,7 +24,7 @@ export default function QuestionDialog({
                         <Button mode="secondary" onClick={onCancel} className="questionDialogBtn">
                             {cancelText}
                         </Button>
-                        <Button onClick={onConfirm} className={`questionDialogBtn ${confirmClassName}`.trim()}>
+                        <Button mode={confirmMode} onClick={onConfirm} className={`questionDialogBtn ${confirmClassName}`.trim()}>
                             {confirmText}
                         </Button>
                     </Flex>
