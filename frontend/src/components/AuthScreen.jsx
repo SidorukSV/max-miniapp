@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { authStart, authSetCity, authPhone, authSelectPatient, storeTokens, getMe, sendLogs, getCatalogsCities } from "../api";
-import { Flex, Container, Typography, Button, Spinner, CellList, CellSimple, CellHeader } from "@maxhub/max-ui";
+import { Flex, Container, Typography, Button, CellList, CellSimple, CellHeader } from "@maxhub/max-ui";
 import "../app.css";
 import { useMaxWebApp } from "../hooks/useMaxWebApp";
 import { dateISOFormat } from "../modules/DateFormat";
@@ -179,9 +179,10 @@ export default function AuthScreen() {
                     {!patients.length && (
                         <Button onClick={handleStart} disabled={busy}>
                             {busy ? (
-                                <>
-                                    Загрузка <Spinner appearance="primary" size={20} />
-                                </>
+                                <span className="authButtonLoading" aria-live="polite">
+                                    <span className="authButtonLoading__dot" />
+                                    <span className="authButtonLoading__text">Подтверждаем номер</span>
+                                </span>
                             ) : (
                                 "Подтвердить номер телефона"
                             )}

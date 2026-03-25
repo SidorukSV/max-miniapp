@@ -626,3 +626,55 @@ body {
     background-position: 0 50%;
   }
 }
+
+
+.authButtonLoading {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.authButtonLoading__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.45;
+  animation: authPulse 1.1s ease-in-out infinite;
+}
+
+.authButtonLoading__text {
+  position: relative;
+  background: linear-gradient(100deg,
+      rgba(255, 255, 255, 0.2) 20%,
+      rgba(255, 255, 255, 0.75) 50%,
+      rgba(255, 255, 255, 0.2) 80%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  background-size: 200% 100%;
+  animation: authTextShimmer 1.5s linear infinite;
+}
+
+@keyframes authPulse {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.85);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes authTextShimmer {
+  0% {
+    background-position: 100% 0;
+  }
+
+  100% {
+    background-position: 0 0;
+  }
+}
