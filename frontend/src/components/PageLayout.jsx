@@ -12,11 +12,12 @@ export default function PageLayout({
     onBottomButtonClick,
     bottomButtonDisabled = false,
     showBottomButton = true,
-    after = null
+    after = null,
+    roundedLogo = true
 }) {
     return (
         <Panel mode="secondary" className="panel">
-            <AppHeader title={headerTitle} logoSrc={logoSrc} />
+            <AppHeader title={headerTitle} logoSrc={logoSrc} roundedLogo={roundedLogo} />
             <Container className="page">{children}</Container>
             {showBottom && (
                 <AppBottomBar

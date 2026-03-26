@@ -4,7 +4,8 @@ import "../app.css";
 
 export default function AppHeader({
     title = "",
-    logoSrc = "/logo-clinic-aldenta.png"
+    logoSrc = "/logo-clinic-aldenta.png",
+    roundedLogo = false
 }) {
     const [scrolled, setScrolled] = useState(false);
 
@@ -25,7 +26,7 @@ export default function AppHeader({
                 <img
                     src={logoSrc}
                     alt={title}
-                    className="clinicLogo"
+                    className={`clinicLogo ${roundedLogo ? "clinicLogo-rounded" : ""}`}
                     onError={(e) => (e.currentTarget.style.display = "none")}
                 />
                 <Typography.Label className="clinicTitle">
