@@ -1,102 +1,33 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Container, Flex, Typography, Button, CellHeader } from "@maxhub/max-ui";
 import PageLayout from "../components/PageLayout";
 import QuestionDialog from "../components/QuestionDialog";
+import { getAppointments, getStoredAccessToken } from "../api";
 import "../App.css";
 
-const mockUpcomingInitial = [
-    {
-        id: "v1",
-        date: "04.03.2026",
-        time: "09:00",
-        doctor: "Петров П.П.",
-        spec: "Терапевт",
-        place: "Кабинет 203",
-        clinic: "Филиал на Ленина, 10",
-        status: "Ожидает подтверждения",
-    },
-    {
-        id: "v2",
-        date: "04.03.2026",
-        time: "11:30",
-        doctor: "Сидорова А.А.",
-        spec: "Терапевт",
-        place: "Кабинет 207",
-        clinic: "Филиал на Ленина, 10",
-        status: "Подтверждена",
-    },
-    {
-        id: "v3",
-        date: "05.03.2026",
-        time: "14:00",
-        doctor: "Иванова И.А.",
-        spec: "Кардиолог",
-        place: "Кабинет 110",
-        clinic: "Филиал на Мира, 5",
-        status: "Подтверждена",
-    },
-    {
-        id: "v4",
-        date: "06.03.2026",
-        time: "16:30",
-        doctor: "Кузнецов Д.Д.",
-        spec: "Кардиолог",
-        place: "Кабинет 112",
-        clinic: "Филиал на Мира, 5",
-        status: "Ожидает подтверждения",
-    },
-    {
-        id: "v5",
-        date: "07.03.2026",
-        time: "10:00",
-        doctor: "Смирнов С.С.",
-        spec: "ЛОР",
-        place: "Кабинет 305",
-        clinic: "Филиал на Победы, 3",
-        status: "Подтверждена",
-    },
-    {
-        id: "v6",
-        date: "10.03.2026",
-        time: "13:00",
-        doctor: "Орлова Е.Е.",
-        spec: "Офтальмолог",
-        place: "Кабинет 410",
-        clinic: "Филиал на Центральной, 8",
-        status: "Подтверждена",
-    },
-    {
-        id: "v7",
-        date: "12.03.2026",
-        time: "15:30",
-        doctor: "Фёдоров Ф.Ф.",
-        spec: "Невролог",
-        place: "Кабинет 502",
-        clinic: "Филиал на Центральной, 8",
-        status: "Ожидает подтверждения",
-    },
-    {
-        id: "v8",
-        date: "18.03.2026",
-        time: "09:30",
-        doctor: "Петров П.П.",
-        spec: "Терапевт",
-        place: "Кабинет 203",
-        clinic: "Филиал на Ленина, 10",
-        status: "Подтверждена",
-    },
-    {
-        id: "v9",
-        date: "22.03.2026",
-        time: "12:30",
-        doctor: "Иванова И.А.",
-        spec: "Кардиолог",
-        place: "Кабинет 110",
-        clinic: "Филиал на Мира, 5",
-        status: "Ожидает подтверждения",
-    },
-];
+function normalizeAppointment(item, index) {
+    const sourceDate = item?.datetimeBegin || item?.appointment_date || "";
+    const dateObj = sourceDate ? new Date(sourceDate) : null;
+    const isValidDate = dateObj instanceof Date && !Number.isNaN(dateObj.valueOf());
+    const date = isValidDate ? dateObj.toLocaleDateString("ru-RU") : "Без даты";
+    const time = isValidDate ? dateObj.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }) : "--:--";
+
+    return {
+        id: item?.appointment_id || item?.appointmentId || item?.id || `appointment-${index}`,
+        date,
+        time,
+        doctor: [
+            item?.doctorLastname,
+            item?.doctorFirstname,
+            item?.doctorPatronimic,
+        ].filter(Boolean).join(" ") || "Не указан",
+        spec: item?.specializationTitle || "Специализация не указана",
+        place: item?.cabinetTitle || "Кабинет не указан",
+        clinic: item?.branchTitle || "Филиал не указан",
+        status: item?.conditionTitle || "Статус не указан",
+    };
+}
 
 function VisitCard({ v, onConfirm, onCancel, onReschedule }) {
     const isConfirmed = v.status === "Подтверждена";
@@ -163,8 +94,37 @@ function VisitCard({ v, onConfirm, onCancel, onReschedule }) {
 export default function MyVisits() {
     const nav = useNavigate();
 
-    const [visits, setVisits] = useState(mockUpcomingInitial);
+    const [visits, setVisits] = useState([]);
     const [cancelDialogVisitId, setCancelDialogVisitId] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
+
+    useEffect(() => {
+        async function loadAppointments() {
+            try {
+                setLoading(true);
+                setError("");
+                const accessToken = getStoredAccessToken();
+
+                if (!accessToken) {
+                    setVisits([]);
+                    return;
+                }
+
+                const response = await getAppointments(accessToken);
+                const items = Array.isArray(response?.items) ? response.items : [];
+                setVisits(items.map(normalizeAppointment));
+            } catch {
+                setError("Не удалось загрузить записи");
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        loadAppointments();
+    }, []);
+
+    const hasVisits = useMemo(() => visits.length > 0, [visits]);
 
     function confirmVisit(id) {
         setVisits((prev) =>
@@ -195,7 +155,7 @@ export default function MyVisits() {
         closeCancelDialog();
     }
 
-    function rescheduleVisit(id) {
+    function rescheduleVisit() {
         alert("Переход на страницу переноса (пока заглушка)");
     }
 
@@ -210,14 +170,28 @@ export default function MyVisits() {
             <Flex direction="column" gap={10}>
                 <CellHeader titleStyle="caps">Мои записи</CellHeader>
 
-                {mockUpcomingInitial.length === 0 ? (
+                {loading ? (
+                    <Container className="card">
+                        <Typography.Label>Загрузка записей...</Typography.Label>
+                    </Container>
+                ) : null}
+
+                {!loading && error ? (
+                    <Container className="card">
+                        <Typography.Label>{error}</Typography.Label>
+                    </Container>
+                ) : null}
+
+                {!loading && !error && !hasVisits ? (
                     <Container className="card">
                         <Typography.Label>У вас нет предстоящих приёмов</Typography.Label>
                         <Button style={{ marginTop: 12 }} onClick={() => nav("/book")}>
                             Записаться на приём
                         </Button>
                     </Container>
-                ) : (
+                ) : null}
+
+                {!loading && !error && hasVisits ? (
                     visits.map((v) => (
                         <VisitCard
                             key={v.id}
@@ -227,7 +201,7 @@ export default function MyVisits() {
                             onReschedule={rescheduleVisit}
                         />
                     ))
-                )}
+                ) : null}
             </Flex>
 
             <QuestionDialog

@@ -102,3 +102,19 @@ export async function getBonusTransactions({ cityId, patient_id }) {
         };
     });
 }
+
+export async function getAppointmentsDocuments({ cityId, patient_id }) {
+    const oneCConfig = getOneCConfig(cityId);
+    const data = await onecFetch(oneCConfig.url.concat(`/documents/appointments?patient_id=${patient_id}`), {
+        method: "GET",
+        headers: {
+            Authorization: `Basic d2ViOjEyMzQ1`, // TODO: hardcode
+        },
+    });
+
+    if (!Array.isArray(data)) {
+        return [];
+    }
+
+    return data;
+}
