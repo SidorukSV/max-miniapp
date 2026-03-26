@@ -24,8 +24,7 @@ export default function AppBottomBar({
             </Container>
             <div className="bottomNote">
                 <Typography.Label>
-                    БИТ.Медицина / Омни.
-                    Создана чтобы заботиться о пациентах
+                    БИТ.Медицина / Омни. С заботой о пациентах
                 </Typography.Label>
             </div>
         </footer>
