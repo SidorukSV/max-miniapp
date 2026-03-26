@@ -1,10 +1,11 @@
 import { useMemo, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { authStart, authSetCity, authPhone, authSelectPatient, storeTokens, getMe, sendLogs, getCatalogsCities } from "../api";
-import { Flex, Container, Typography, Button, CellList, CellSimple, CellHeader } from "@maxhub/max-ui";
+import { Flex, Container, Typography, CellList, CellSimple, CellHeader } from "@maxhub/max-ui";
 import "../app.css";
 import { useMaxWebApp } from "../hooks/useMaxWebApp";
 import { dateISOFormat } from "../modules/DateFormat";
+import PageLayout from "./PageLayout";
 
 export default function AuthScreen() {
     const { webApp, initData } = useMaxWebApp();
@@ -140,81 +141,82 @@ export default function AuthScreen() {
     }
 
     return (
-        <Flex direction="column">
-            <Container className="card">
-                <Flex direction="column" gap={10}>
-                    <Typography.Title level={2}>Вход в личный кабинет</Typography.Title>
+        <PageLayout
+            showBottom
+            showBottomButton={!patients.length}
+            bottomButtonText={busy ? "Подтверждаем номер..." : "Подтвердить номер телефона"}
+            onBottomButtonClick={handleStart}
+            bottomButtonDisabled={busy}
+            after={(
+                <Typography.Label className="authPolicyText">
+                    Нажимая кнопку &quot;Подтвердить номер телефона&quot; вы соглашаетесь
+                    с Политикой на обработку персональных данных.
+                </Typography.Label>
+            )}
+        >
+            <Flex direction="column">
+                <Container className="card">
+                    <Flex direction="column" gap={10}>
+                        <Typography.Title level={2}>Вход в личный кабинет</Typography.Title>
 
-                    <Typography.Label className="roleLine">
-                        Подтвердите номер телефона, чтобы продолжить.
-                    </Typography.Label>
+                        <Typography.Label className="roleLine">
+                            Подтвердите номер телефона, чтобы продолжить.
+                        </Typography.Label>
 
-                    {isBrowserLocalhost && (
-                        <input
-                            type="tel"
-                            value={manualPhone}
-                            onChange={(event) => setManualPhone(event.target.value)}
-                            placeholder="Введите номер телефона"
-                        />
-                    )}
+                        {isBrowserLocalhost && (
+                            <input
+                                type="tel"
+                                value={manualPhone}
+                                onChange={(event) => setManualPhone(event.target.value)}
+                                placeholder="Введите номер телефона"
+                            />
+                        )}
 
-                    {needCity && (
-                        <CellList
-                            header={<CellHeader titleStyle="caps">Выберите город</CellHeader>}
-                            filled
-                            mode="island"
-                        >
-                            {cities.map((city) => (
-                                <CellSimple
-                                    key={city.id}
-                                    title={city.name}
-                                    showChevron
-                                    onClick={() => setSelectedCity(city.id)}
-                                    selected={selectedCity === city.id}
-                                />
-                            ))}
-                        </CellList>
-                    )}
+                        {needCity && (
+                            <CellList
+                                header={<CellHeader titleStyle="caps">Выберите город</CellHeader>}
+                                filled
+                                mode="island"
+                            >
+                                {cities.map((city) => (
+                                    <CellSimple
+                                        key={city.id}
+                                        title={city.name}
+                                        showChevron
+                                        onClick={() => setSelectedCity(city.id)}
+                                        selected={selectedCity === city.id}
+                                    />
+                                ))}
+                            </CellList>
+                        )}
 
-                    {!patients.length && (
-                        <Button onClick={handleStart} disabled={busy}>
-                            {busy ? (
-                                <span className="authButtonLoading" aria-live="polite">
-                                    <span className="authButtonLoading__dot" />
-                                    <span className="authButtonLoading__text">Подтверждаем номер</span>
-                                </span>
-                            ) : (
-                                "Подтвердить номер телефона"
-                            )}
-                        </Button>
-                    )}
+                        {!!patients.length && (
+                            <CellList
+                                header={<CellHeader titleStyle="caps">Выберите пациента</CellHeader>}
+                                filled
+                                mode="island"
+                            >
+                                {patients.map((patient) => (
+                                    <CellSimple
+                                        key={patient.id}
+                                        height="normal"
+                                        title={patient.fullName}
+                                        subtitle={dateISOFormat(patient.birthDate, "dd.MM.yyyy")}
+                                        showChevron
+                                        onClick={() => handleSelectPatient(patient.id)}
+                                    />
+                                ))}
+                            </CellList>
+                        )}
 
-                    {!!patients.length && (
-                        <CellList
-                            header={<CellHeader titleStyle="caps">Выберите пациента</CellHeader>}
-                            filled
-                            mode="island"
-                        >
-                            {patients.map((patient) => (
-                                <CellSimple
-                                    key={patient.id}
-                                    height="normal"
-                                    title={patient.fullName}
-                                    subtitle={dateISOFormat(patient.birthDate, "dd.MM.yyyy")}
-                                    showChevron
-                                    onClick={() => handleSelectPatient(patient.id)}
-                                />
-                            ))}
-                        </CellList>
-                    )}
-
-                    {error && (
-                        <div className="authError">
-                            <Typography.Label>{error}</Typography.Label>
-                        </div>
-                    )}
-                </Flex>
-            </Container>
-        </Flex>
+                        {error && (
+                            <div className="authError">
+                                <Typography.Label>{error}</Typography.Label>
+                            </div>
+                        )}
+                    </Flex>
+                </Container>
+            </Flex>
+        </PageLayout>
     );
 }

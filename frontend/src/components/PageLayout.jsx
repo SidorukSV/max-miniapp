@@ -10,7 +10,9 @@ export default function PageLayout({
     showBottom = true,
     bottomButtonText,
     onBottomButtonClick,
-    showBottomButton = true
+    bottomButtonDisabled = false,
+    showBottomButton = true,
+    after = null
 }) {
     return (
         <Panel mode="secondary" className="panel">
@@ -20,7 +22,9 @@ export default function PageLayout({
                 <AppBottomBar
                     buttonText={bottomButtonText}
                     onButtonClick={onBottomButtonClick}
+                    buttonDisabled={bottomButtonDisabled}
                     showButton={showBottomButton}
+                    after={after}
                 />
             )}
         </Panel>

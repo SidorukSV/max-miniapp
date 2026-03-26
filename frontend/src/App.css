@@ -260,6 +260,10 @@ body {
   font-weight: 600;
 }
 
+.bottomAfter {
+  margin-top: 10px;
+}
+
 .bottomNote {
   margin-top: 10px;
   text-align: center;
@@ -654,6 +658,12 @@ body {
   color: transparent;
   background-size: 200% 100%;
   animation: authTextShimmer 1.5s linear infinite;
+}
+
+.authPolicyText {
+  display: block;
+  text-align: center;
+  color: var(--muted);
 }
 
 @keyframes authPulse {
