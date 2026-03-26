@@ -165,10 +165,10 @@ body {
 
 .clinicLogo {
   object-fit: cover;
+  height: 44px;
 }
 
 .clinicLogo-rounded {
-  height: 44px;
   width: 44px;
   border-radius: 14px;
 }
