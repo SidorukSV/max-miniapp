@@ -4,7 +4,7 @@ import "../app.css";
 
 export default function AppHeader({
     title = "",
-    logoSrc = "/logo-clinic.png"
+    logoSrc = "/logo-clinic-aldenta.png"
 }) {
     const [scrolled, setScrolled] = useState(false);
 
