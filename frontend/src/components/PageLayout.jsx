@@ -13,7 +13,7 @@ export default function PageLayout({
     bottomButtonDisabled = false,
     showBottomButton = true,
     after = null,
-    roundedLogo = true
+    roundedLogo = false
 }) {
     return (
         <Panel mode="secondary" className="panel">
