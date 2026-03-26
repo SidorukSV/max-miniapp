@@ -3,7 +3,7 @@ import { Typography } from "@maxhub/max-ui";
 import "../app.css";
 
 export default function AppHeader({
-    title = "Моя поликлиника",
+    title = "",
     logoSrc = "/logo-clinic.png"
 }) {
     const [scrolled, setScrolled] = useState(false);
