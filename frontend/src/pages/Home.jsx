@@ -47,11 +47,7 @@ export default function Home() {
     }
 
     if (!isAuthorized) {
-        return (
-            <PageLayout showBottomButton={false}>
-                <AuthScreen />
-            </PageLayout>
-        );
+        return <AuthScreen />;
     }
 
     return (

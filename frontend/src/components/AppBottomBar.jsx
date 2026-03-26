@@ -4,15 +4,22 @@ import "../app.css";
 export default function AppBottomBar({
     buttonText,
     onButtonClick,
-    showButton = true
+    buttonDisabled = false,
+    showButton = true,
+    after = null
 }) {
     return (
         <footer className="bottomBar">
             <Container className="bottomBarInner">
                 {showButton && (
-                    <Button className="bottomPrimary" onClick={onButtonClick}>
+                    <Button className="bottomPrimary" onClick={onButtonClick} disabled={buttonDisabled}>
                         {buttonText}
                     </Button>
+                )}
+                {after && (
+                    <div className="bottomAfter">
+                        {after}
+                    </div>
                 )}
             </Container>
             <div className="bottomNote">
@@ -24,4 +31,3 @@ export default function AppBottomBar({
         </footer>
     );
 }
-
