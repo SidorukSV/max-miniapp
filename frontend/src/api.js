@@ -95,6 +95,14 @@ export async function getBonusTransactions(access_token) {
     });
 }
 
+export async function getAppointments(access_token) {
+    return apiFetch("/documents/appointments", {
+        headers: {
+            Authorization: `Bearer ${access_token}`,
+        },
+    });
+}
+
 export async function getCatalogsCities() {
     return apiFetch("/catalogs/cities");
 }
