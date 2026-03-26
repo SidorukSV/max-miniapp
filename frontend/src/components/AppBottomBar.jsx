@@ -16,9 +16,7 @@ export default function AppBottomBar({
         if (!viewport) return undefined;
 
         const handleViewportResize = () => {
-            const keyboardThreshold = 120;
-            const heightDiff = window.innerHeight - viewport.height;
-            setIsKeyboardOpen(heightDiff > keyboardThreshold);
+            setIsKeyboardOpen(viewport.height <= 410);
         };
 
         handleViewportResize();
