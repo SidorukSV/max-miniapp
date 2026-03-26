@@ -20,6 +20,7 @@ export function HomeLoadingCard() {
         <div className="skeletonRow" />
         <div className="skeletonRow" />
         <div className="skeletonRow" />
+        <div className="skeletonRow" />
       </Container>
     </Flex>
   );
