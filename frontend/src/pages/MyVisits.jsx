@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Container, Flex, Typography, Button, CellHeader } from "@maxhub/max-ui";
 import PageLayout from "../components/PageLayout";
 import QuestionDialog from "../components/QuestionDialog";
-import { getAppointments, getStoredAccessToken } from "../api";
+import { getAppointments, getStoredAccessToken, updateAppointment } from "../api";
 import "../App.css";
 
 function normalizeAppointment(item, index) {
@@ -22,20 +22,22 @@ function normalizeAppointment(item, index) {
             item?.doctorFirstname,
             item?.doctorPatronimic,
         ].filter(Boolean).join(" ") || "Не указан",
+        doctorId: item?.doctorId || "",
         spec: item?.specializationTitle || "Специализация не указана",
+        specializationId: item?.specializationId || "",
         place: item?.cabinetTitle || "Кабинет не указан",
         clinic: item?.branchTitle || "Филиал не указан",
         status: item?.conditionTitle || "Статус не указан",
     };
 }
 
-function VisitCard({ v, onConfirm, onCancel, onReschedule }) {
+function VisitCard({ v, pendingId, onConfirm, onCancel, onReschedule }) {
     const isConfirmed = v.status === "Подтверждена";
+    const isBusy = pendingId === v.id;
 
     return (
         <Container className="card">
             <Flex direction="column" gap={12}>
-
                 <Flex align="center" justify="space-between" gap={10}>
                     <Typography.Title level={3}>
                         {v.date} • {v.time}
@@ -60,18 +62,17 @@ function VisitCard({ v, onConfirm, onCancel, onReschedule }) {
                     </Typography.Label>
                 </div>
 
-                {/* Кнопки */}
                 <Flex gap={8} className="visitActions">
-
                     {!isConfirmed && (
-                        <Button onClick={() => onConfirm(v.id)}>
+                        <Button onClick={() => onConfirm(v.id)} disabled={isBusy}>
                             Подтвердить
                         </Button>
                     )}
 
                     <Button
                         mode="secondary"
-                        onClick={() => onReschedule(v.id)}
+                        onClick={() => onReschedule(v)}
+                        disabled={isBusy}
                     >
                         Перенести
                     </Button>
@@ -80,12 +81,11 @@ function VisitCard({ v, onConfirm, onCancel, onReschedule }) {
                         mode="secondary"
                         className="dangerBtn"
                         onClick={() => onCancel(v.id)}
+                        disabled={isBusy}
                     >
                         Отменить
                     </Button>
-
                 </Flex>
-
             </Flex>
         </Container>
     );
@@ -93,49 +93,60 @@ function VisitCard({ v, onConfirm, onCancel, onReschedule }) {
 
 export default function MyVisits() {
     const nav = useNavigate();
+    const accessToken = getStoredAccessToken();
 
     const [visits, setVisits] = useState([]);
     const [cancelDialogVisitId, setCancelDialogVisitId] = useState(null);
+    const [pendingVisitId, setPendingVisitId] = useState("");
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
-    useEffect(() => {
-        async function loadAppointments() {
-            try {
-                setLoading(true);
-                setError("");
-                const accessToken = getStoredAccessToken();
+    async function loadAppointments() {
+        try {
+            setLoading(true);
+            setError("");
 
-                if (!accessToken) {
-                    setVisits([]);
-                    return;
-                }
-
-                const response = await getAppointments(accessToken);
-                const items = Array.isArray(response?.items) ? response.items : [];
-                setVisits(items.map(normalizeAppointment));
-            } catch {
-                setError("Не удалось загрузить записи");
-            } finally {
-                setLoading(false);
+            if (!accessToken) {
+                setVisits([]);
+                return;
             }
-        }
 
+            const response = await getAppointments(accessToken);
+            const items = Array.isArray(response?.items) ? response.items : [];
+            setVisits(items.map(normalizeAppointment));
+        } catch {
+            setError("Не удалось загрузить записи");
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    useEffect(() => {
         loadAppointments();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const hasVisits = useMemo(() => visits.length > 0, [visits]);
 
-    function confirmVisit(id) {
-        setVisits((prev) =>
-            prev.map((v) =>
-                v.id === id ? { ...v, status: "Подтверждена" } : v
-            )
-        );
-    }
+    async function confirmVisit(id) {
+        if (!accessToken) return;
 
-    function cancelVisit(id) {
-        setVisits((prev) => prev.filter((v) => v.id !== id));
+        try {
+            setPendingVisitId(id);
+            setError("");
+            await updateAppointment(accessToken, {
+                appointmentId: id,
+                isApproved: true,
+            });
+
+            setVisits((prev) => prev.map((visit) => (
+                visit.id === id ? { ...visit, status: "Подтверждена" } : visit
+            )));
+        } catch {
+            setError("Не удалось подтвердить запись");
+        } finally {
+            setPendingVisitId("");
+        }
     }
 
     function openCancelDialog(id) {
@@ -146,26 +157,41 @@ export default function MyVisits() {
         setCancelDialogVisitId(null);
     }
 
-    function confirmCancelVisit() {
-        if (!cancelDialogVisitId) {
+    async function confirmCancelVisit() {
+        if (!cancelDialogVisitId || !accessToken) {
             return;
         }
 
-        cancelVisit(cancelDialogVisitId);
-        closeCancelDialog();
+        try {
+            setPendingVisitId(cancelDialogVisitId);
+            setError("");
+            await updateAppointment(accessToken, {
+                appointmentId: cancelDialogVisitId,
+                isCanceled: true,
+            });
+            setVisits((prev) => prev.filter((visit) => visit.id !== cancelDialogVisitId));
+            closeCancelDialog();
+        } catch {
+            setError("Не удалось отменить запись");
+        } finally {
+            setPendingVisitId("");
+        }
     }
 
-    function rescheduleVisit() {
-        alert("Переход на страницу переноса (пока заглушка)");
+    function rescheduleVisit(visit) {
+        const params = new URLSearchParams({
+            appointmentId: visit.id,
+            specializationId: visit.specializationId,
+            doctorId: visit.doctorId,
+        });
+        nav(`/book?${params.toString()}`);
     }
-
-
 
     return (
         <PageLayout
             showBottom={true}
             bottomButtonText="Вернуться на главную"
-            onBottomButtonClick={() => { nav("/") }}
+            onBottomButtonClick={() => { nav("/"); }}
         >
             <Flex direction="column" gap={10}>
                 <CellHeader titleStyle="caps">Мои записи</CellHeader>
@@ -196,6 +222,7 @@ export default function MyVisits() {
                         <VisitCard
                             key={v.id}
                             v={v}
+                            pendingId={pendingVisitId}
                             onConfirm={confirmVisit}
                             onCancel={openCancelDialog}
                             onReschedule={rescheduleVisit}

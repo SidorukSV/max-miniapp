@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { authStart, authSetCity, authPhone, authSelectPatient, storeTokens, getMe, sendLogs, getCatalogsCities } from "../api";
 import { Flex, Container, Typography, CellList, CellSimple, CellHeader } from "@maxhub/max-ui";
-import "../app.css";
+import "../App.css";
 import { useMaxWebApp } from "../hooks/useMaxWebApp";
 import { dateISOFormat } from "../modules/DateFormat";
 import PageLayout from "./PageLayout";

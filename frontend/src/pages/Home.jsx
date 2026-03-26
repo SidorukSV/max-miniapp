@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { Container, Flex, Avatar, Typography, CellList, CellSimple, EllipsisText, Counter } from "@maxhub/max-ui";
 import { Calendar, LibraryBig, Gift, LogOut, ClipboardList } from "lucide-react";
 import PageLayout from "../components/PageLayout";
-import "../app.css";
+import "../App.css";
 import { useAuth } from "../context/AuthContext.jsx";
 import AuthScreen from "../components/AuthScreen.jsx";
 import { HomeLoadingCard } from "../components/loadingCard.jsx";
