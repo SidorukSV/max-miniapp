@@ -1,7 +1,7 @@
 import { Panel, Container } from "@maxhub/max-ui";
 import AppHeader from "./AppHeader";
 import AppBottomBar from "./AppBottomBar";
-import "../app.css";
+import "../App.css";
 
 export default function PageLayout({
     children,

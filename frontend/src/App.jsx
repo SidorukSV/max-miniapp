@@ -1,6 +1,7 @@
 import { Routes, Route, BrowserRouter } from "react-router-dom";
 import Home from "./pages/Home.jsx";
 import BookVisit from "./pages/BookVisit.jsx";
+import BookVisitSummary from "./pages/BookVisitSummary.jsx";
 import MyVisits from "./pages/MyVisits.jsx";
 import History from "./pages/History.jsx";
 import Bonuses from "./pages/Bonuses.jsx";
@@ -23,6 +24,7 @@ export default function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/book" element={<BookVisit />} />
+            <Route path="/book/summary" element={<BookVisitSummary />} />
             <Route path="/visits" element={<MyVisits />} />
             <Route path="/history" element={<History />} />
             <Route path="/bonuses" element={<Bonuses />} />

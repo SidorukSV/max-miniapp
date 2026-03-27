@@ -118,3 +118,46 @@ export async function getAppointmentsDocuments({ cityId, patient_id }) {
 
     return data;
 }
+
+export async function getAppointmentsSchedule({ cityId, specializationId }) {
+    const oneCConfig = getOneCConfig(cityId);
+    const params = new URLSearchParams();
+    if (specializationId) {
+        params.set("specializationId", specializationId);
+    }
+
+    const data = await onecFetch(oneCConfig.url.concat(`/documents/appointments/schedule${params.toString() ? `?${params}` : ""}`), {
+        method: "GET",
+        headers: {
+            Authorization: "Basic d2ViOjEyMzQ1",
+        },
+    });
+
+    if (!Array.isArray(data)) {
+        return [];
+    }
+
+    return data;
+}
+
+export async function createAppointmentDocument({ cityId, payload }) {
+    const oneCConfig = getOneCConfig(cityId);
+    return onecFetch(oneCConfig.url.concat("/documents/appointments"), {
+        method: "POST",
+        headers: {
+            Authorization: "Basic d2ViOjEyMzQ1",
+        },
+        body: JSON.stringify(payload),
+    });
+}
+
+export async function updateAppointmentDocument({ cityId, payload }) {
+    const oneCConfig = getOneCConfig(cityId);
+    return onecFetch(oneCConfig.url.concat("/documents/appointments"), {
+        method: "PUT",
+        headers: {
+            Authorization: "Basic d2ViOjEyMzQ1",
+        },
+        body: JSON.stringify(payload),
+    });
+}

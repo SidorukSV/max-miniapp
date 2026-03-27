@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Typography } from "@maxhub/max-ui";
-import "../app.css";
+import "../App.css";
 
 export default function AppHeader({
     title = "",
