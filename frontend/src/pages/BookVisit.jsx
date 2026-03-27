@@ -1,28 +1,22 @@
 import { useMemo, useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Container, Flex, Typography, Button } from "@maxhub/max-ui";
+import { Container, Flex, Typography } from "@maxhub/max-ui";
 import PageLayout from "../components/PageLayout.jsx";
-import "../app.css";
+import {
+    createAppointment,
+    getAppointmentsSchedule,
+    getStoredAccessToken,
+    updateAppointment,
+} from "../api";
+import "../App.css";
 
-const MOCK = {
-    specialties: ["Терапевт", "Кардиолог", "ЛОР", "Офтальмолог", "Невролог"],
-    doctorsBySpec: {
-        "Терапевт": ["Петров П.П.", "Сидорова А.А."],
-        "Кардиолог": ["Иванова И.А.", "Кузнецов Д.Д."],
-        "ЛОР": ["Смирнов С.С."],
-        "Офтальмолог": ["Орлова Е.Е."],
-        "Невролог": ["Фёдоров Ф.Ф."],
-    },
-    dates: ["03.03.2026", "04.03.2026", "05.03.2026", "06.03.2026", "07.03.2026"],
-    times: ["09:00", "09:30", "10:00", "10:30", "11:00", "11:30", "12:00"],
-};
-
-function Pill({ active, children, onClick }) {
+function Pill({ active, children, onClick, disabled = false }) {
     return (
         <button
             type="button"
             className={`pill ${active ? "pill--active" : ""}`}
             onClick={onClick}
+            disabled={disabled}
         >
             {children}
         </button>
@@ -33,230 +27,369 @@ function SectionTitle({ title, subtitle }) {
     return (
         <div className="pageTitle">
             <Typography.Title level={2}>{title}</Typography.Title>
-            {subtitle ? (
-                <Typography.Label style={{ marginTop: 6 }}>
-                    {subtitle}
-                </Typography.Label>
-            ) : null}
+            {subtitle ? <Typography.Label style={{ marginTop: 6 }}>{subtitle}</Typography.Label> : null}
         </div>
     );
+}
+
+function toRuDate(dateISO) {
+    const dateObj = new Date(dateISO);
+    if (Number.isNaN(dateObj.valueOf())) return "";
+    return dateObj.toLocaleDateString("ru-RU");
+}
+
+function toRuTime(dateISO) {
+    const dateObj = new Date(dateISO);
+    if (Number.isNaN(dateObj.valueOf())) return "";
+    return dateObj.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+}
+
+function buildSlots(startISO, endISO, delimiterMinutes) {
+    const slots = [];
+    const start = new Date(startISO);
+    const end = new Date(endISO);
+    const durationMs = Number(delimiterMinutes || 0) * 60 * 1000;
+
+    if (!durationMs || Number.isNaN(start.valueOf()) || Number.isNaN(end.valueOf())) {
+        return slots;
+    }
+
+    for (let cursor = start.getTime(); cursor + durationMs <= end.getTime(); cursor += durationMs) {
+        slots.push(new Date(cursor).toISOString());
+    }
+
+    return slots;
 }
 
 export default function BookVisit() {
     const nav = useNavigate();
     const [searchParams] = useSearchParams();
+    const accessToken = getStoredAccessToken();
 
-    const [spec, setSpec] = useState("");
-    const [doctor, setDoctor] = useState("");
+    const appointmentId = searchParams.get("appointmentId") || "";
+    const rescheduleSpecId = searchParams.get("specializationId") || "";
+    const rescheduleDoctorId = searchParams.get("doctorId") || "";
+    const isRescheduleMode = Boolean(appointmentId);
+
+    const [schedule, setSchedule] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState("");
+
+    const [specId, setSpecId] = useState("");
+    const [doctorId, setDoctorId] = useState("");
     const [date, setDate] = useState("");
-    const [time, setTime] = useState("");
+    const [timeISO, setTimeISO] = useState("");
 
     useEffect(() => {
-        const qSpec = searchParams.get("spec") || "";
-        const qDoctor = searchParams.get("doctor") || "";
-        // если пришла спец-ть и она есть в списке — применяем
-        if (qSpec && MOCK.specialties.includes(qSpec)) {
-            setSpec(qSpec);
-
-            // если пришёл врач и он есть в списке этой спец-ти
-            const docs = MOCK.doctorsBySpec[qSpec] || [];
-            if (qDoctor && docs.includes(qDoctor)) {
-                setDoctor(qDoctor);
-            } else {
-                setDoctor("");
+        async function loadSchedule() {
+            if (!accessToken) {
+                setError("Не найден токен авторизации");
+                setLoading(false);
+                return;
             }
 
-            // при повторе дату/время сбрасываем — выбирает пользователь
-            setDate("");
-            setTime("");
+            try {
+                setLoading(true);
+                setError("");
+                const response = await getAppointmentsSchedule(accessToken);
+                const items = Array.isArray(response?.items) ? response.items : [];
+                setSchedule(items);
+            } catch {
+                setError("Не удалось загрузить расписание");
+            } finally {
+                setLoading(false);
+            }
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
 
-    const doctors = useMemo(() => (spec ? MOCK.doctorsBySpec[spec] || [] : []), [spec]);
+        loadSchedule();
+    }, [accessToken]);
 
-    const step = useMemo(() => {
-        if (!spec) return 1;
-        if (!doctor) return 2;
-        if (!date) return 3;
-        if (!time) return 4;
-        return 5;
-    }, [spec, doctor, date, time]);
+    const specialties = useMemo(() => {
+        const map = new Map();
+        for (const row of schedule) {
+            if (!row?.specializationId) continue;
+            if (!map.has(row.specializationId)) {
+                map.set(row.specializationId, {
+                    id: row.specializationId,
+                    title: row.specializationTitle || "Без специальности",
+                });
+            }
+        }
+        return Array.from(map.values());
+    }, [schedule]);
 
-    const canConfirm = step === 5;
+    useEffect(() => {
+        if (!schedule.length) return;
 
-    function resetFrom(level) {
-        if (level <= 1) setSpec("");
-        if (level <= 2) setDoctor("");
-        if (level <= 3) setDate("");
-        if (level <= 4) setTime("");
-    }
+        if (isRescheduleMode) {
+            setSpecId(rescheduleSpecId);
+            setDoctorId(rescheduleDoctorId);
+            return;
+        }
 
-    function onPickSpec(s) {
-        setSpec(s);
-        setDoctor("");
+        if (!specId && specialties.length) {
+            setSpecId(specialties[0].id);
+        }
+    }, [isRescheduleMode, rescheduleDoctorId, rescheduleSpecId, schedule, specId, specialties]);
+
+    const doctorsByBranch = useMemo(() => {
+        if (!specId) return [];
+
+        const branchMap = new Map();
+
+        for (const row of schedule.filter((item) => item?.specializationId === specId)) {
+            const branchId = row?.branchId || "unknown-branch";
+            if (!branchMap.has(branchId)) {
+                branchMap.set(branchId, {
+                    branchId,
+                    branchTitle: row?.branchTitle || "Филиал не указан",
+                    doctors: new Map(),
+                });
+            }
+
+            const branch = branchMap.get(branchId);
+            if (!branch.doctors.has(row.doctorId)) {
+                branch.doctors.set(row.doctorId, {
+                    doctorId: row.doctorId,
+                    doctorTitle: row.doctorTitle,
+                    doctorName: [row?.doctorLastname, row?.doctorFurstname, row?.doctorPatronimic].filter(Boolean).join(" "),
+                });
+            }
+        }
+
+        return Array.from(branchMap.values()).map((branch) => ({
+            ...branch,
+            doctors: Array.from(branch.doctors.values()),
+        }));
+    }, [schedule, specId]);
+
+    useEffect(() => {
+        if (!doctorId && doctorsByBranch.length && doctorsByBranch[0].doctors.length) {
+            setDoctorId(doctorsByBranch[0].doctors[0].doctorId);
+        }
+    }, [doctorId, doctorsByBranch]);
+
+    const selectedRows = useMemo(() => {
+        if (!specId || !doctorId) return [];
+        return schedule.filter((row) => row?.specializationId === specId && row?.doctorId === doctorId);
+    }, [doctorId, schedule, specId]);
+
+    const dates = useMemo(() => {
+        const map = new Map();
+        for (const row of selectedRows) {
+            if (!row?.date) continue;
+            if (!map.has(row.date)) {
+                map.set(row.date, { value: row.date, title: toRuDate(row.date) });
+            }
+        }
+        return Array.from(map.values()).sort((a, b) => new Date(a.value) - new Date(b.value));
+    }, [selectedRows]);
+
+    const timeSlots = useMemo(() => {
+        if (!date) return [];
+
+        const values = [];
+        const rows = selectedRows.filter((row) => row?.date === date);
+        for (const row of rows) {
+            const slots = buildSlots(row.time_begin, row.time_end, row.time_delimiter);
+            for (const slot of slots) {
+                values.push({ value: slot, title: toRuTime(slot) });
+            }
+        }
+
+        const unique = new Map();
+        for (const slot of values) {
+            unique.set(slot.value, slot);
+        }
+
+        return Array.from(unique.values()).sort((a, b) => new Date(a.value) - new Date(b.value));
+    }, [date, selectedRows]);
+
+    const selectedSpecialty = specialties.find((item) => item.id === specId);
+    const selectedDoctorRow = selectedRows[0] || null;
+
+    const canConfirm = Boolean(specId && doctorId && date && timeISO && !saving);
+
+    function onPickSpec(nextSpecId) {
+        setSpecId(nextSpecId);
+        setDoctorId("");
         setDate("");
-        setTime("");
+        setTimeISO("");
     }
 
-    function onPickDoctor(d) {
-        setDoctor(d);
+    function onPickDoctor(nextDoctorId) {
+        setDoctorId(nextDoctorId);
         setDate("");
-        setTime("");
+        setTimeISO("");
     }
 
-    function onPickDate(d) {
-        setDate(d);
-        setTime("");
+    function onPickDate(nextDate) {
+        setDate(nextDate);
+        setTimeISO("");
     }
 
-    function confirm() {
-        // тут потом будет запрос на backend
-        alert(`Запись создана:\n${spec}\n${doctor}\n${date} ${time}`);
-        nav("/"); // или nav("/my-records")
+    async function confirm() {
+        if (!accessToken || !canConfirm) return;
+
+        const payload = {
+            specializationId: specId,
+            doctorId,
+            date,
+            datetimeBegin: timeISO,
+        };
+
+        try {
+            setSaving(true);
+            setError("");
+
+            const response = isRescheduleMode
+                ? await updateAppointment(accessToken, {
+                    appointmentId,
+                    ...payload,
+                })
+                : await createAppointment(accessToken, payload);
+
+            nav("/book/summary", {
+                state: {
+                    mode: isRescheduleMode ? "reschedule" : "create",
+                    appointment: response?.item || null,
+                    summary: {
+                        specialization: selectedSpecialty?.title || "—",
+                        doctor: selectedDoctorRow?.doctorName || selectedDoctorRow?.doctorTitle || "—",
+                        branch: selectedDoctorRow?.branchTitle || "—",
+                        cabinet: selectedDoctorRow?.cabinetTitle || "—",
+                        date: toRuDate(date),
+                        time: toRuTime(timeISO),
+                    },
+                },
+            });
+        } catch {
+            setError("Не удалось сохранить запись");
+        } finally {
+            setSaving(false);
+        }
     }
 
     return (
         <PageLayout
             showBottom={true}
-            bottomButtonText={canConfirm ? "Подтвердить запись" : "Выберите данные"}
+            bottomButtonText={saving ? "Сохраняем..." : isRescheduleMode ? "Перенести запись" : "Подтвердить запись"}
             onBottomButtonClick={canConfirm ? confirm : undefined}
             showBottomButton={true}
         >
             <Flex direction="column" gap={10}>
                 <SectionTitle
-                    title="Запись на приём"
-                    subtitle={`Шаг ${Math.min(step, 4)} из 4`}
+                    title={isRescheduleMode ? "Перенос записи" : "Запись на приём"}
+                    subtitle="Выберите параметры приёма"
                 />
 
-                {/* 1) Специальность */}
-                <Container className="card">
-                    <Flex align="center" justify="space-between" gap={12}>
-                        <Typography.Title level={3}>Специальность</Typography.Title>
-                        {spec ? (
-                            <button className="linkBtn" type="button" onClick={() => resetFrom(1)}>
-                                изменить
-                            </button>
-                        ) : null}
-                    </Flex>
+                {loading ? (
+                    <Container className="card">
+                        <Typography.Label>Загрузка расписания...</Typography.Label>
+                    </Container>
+                ) : null}
 
-                    <div className="pills">
-                        {MOCK.specialties.map((s) => (
-                            <Pill key={s} active={spec === s} onClick={() => onPickSpec(s)}>
-                                {s}
-                            </Pill>
-                        ))}
-                    </div>
-                </Container>
+                {!loading && error ? (
+                    <Container className="card">
+                        <Typography.Label>{error}</Typography.Label>
+                    </Container>
+                ) : null}
 
-                {/* 2) Врач */}
-                <Container className={`card ${spec ? "" : "card--disabled"}`}>
-                    <Flex align="center" justify="space-between" gap={12}>
-                        <Typography.Title level={3}>Врач</Typography.Title>
-                        {doctor ? (
-                            <button className="linkBtn" type="button" onClick={() => resetFrom(2)}>
-                                изменить
-                            </button>
-                        ) : null}
-                    </Flex>
-                    {!spec ? (
-                        <Typography.Label style={{ marginTop: 8 }}>
-                            Сначала выберите специальность
-                        </Typography.Label>
-                    ) : (
-                        <div className="pills">
-                            {doctors.map((d) => (
-                                <Pill key={d} active={doctor === d} onClick={() => onPickDoctor(d)}>
-                                    {d}
-                                </Pill>
-                            ))}
-                        </div>
-                    )}
-                </Container>
+                {!loading ? (
+                    <>
+                        <Container className="card">
+                            <Typography.Title level={3}>Специальность</Typography.Title>
+                            <div className="pills">
+                                {specialties.map((item) => (
+                                    <Pill
+                                        key={item.id}
+                                        active={specId === item.id}
+                                        onClick={() => onPickSpec(item.id)}
+                                        disabled={isRescheduleMode}
+                                    >
+                                        {item.title}
+                                    </Pill>
+                                ))}
+                            </div>
+                        </Container>
 
-                {/* 3) Дата */}
-                <Container className={`card ${doctor ? "" : "card--disabled"}`}>
-                    <Flex align="center" justify="space-between" gap={12}>
-                        <Typography.Title level={3}>Дата</Typography.Title>
-                        {date ? (
-                            <button className="linkBtn" type="button" onClick={() => resetFrom(3)}>
-                                изменить
-                            </button>
-                        ) : null}
-                    </Flex>
+                        <Container className={`card ${specId ? "" : "card--disabled"}`}>
+                            <Typography.Title level={3}>Врач (по филиалам)</Typography.Title>
+                            {!specId ? (
+                                <Typography.Label style={{ marginTop: 8 }}>Сначала выберите специальность</Typography.Label>
+                            ) : (
+                                <Flex direction="column" gap={10} style={{ marginTop: 12 }}>
+                                    {doctorsByBranch.map((branch) => (
+                                        <div key={branch.branchId}>
+                                            <Typography.Label>{branch.branchTitle}</Typography.Label>
+                                            <div className="pills">
+                                                {branch.doctors.map((doc) => (
+                                                    <Pill
+                                                        key={doc.doctorId}
+                                                        active={doctorId === doc.doctorId}
+                                                        onClick={() => onPickDoctor(doc.doctorId)}
+                                                        disabled={isRescheduleMode}
+                                                    >
+                                                        {doc.doctorName || doc.doctorTitle || "Врач"}
+                                                    </Pill>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </Flex>
+                            )}
+                        </Container>
 
-                    {!doctor ? (
-                        <Typography.Label style={{ marginTop: 8 }}>
-                            Сначала выберите врача
-                        </Typography.Label>
-                    ) : (
-                        <div className="pills">
-                            {MOCK.dates.map((d) => (
-                                <Pill key={d} active={date === d} onClick={() => onPickDate(d)}>
-                                    {d}
-                                </Pill>
-                            ))}
-                        </div>
-                    )}
-                </Container>
+                        <Container className={`card ${doctorId ? "" : "card--disabled"}`}>
+                            <Typography.Title level={3}>Дата</Typography.Title>
+                            <div className="pills">
+                                {dates.map((item) => (
+                                    <Pill key={item.value} active={date === item.value} onClick={() => onPickDate(item.value)}>
+                                        {item.title}
+                                    </Pill>
+                                ))}
+                            </div>
+                        </Container>
 
-                {/* 4) Время */}
-                <Container className={`card ${date ? "" : "card--disabled"}`}>
-                    <Flex align="center" justify="space-between" gap={12}>
-                        <Typography.Title level={3}>Время</Typography.Title>
-                        {time ? (
-                            <button className="linkBtn" type="button" onClick={() => resetFrom(4)}>
-                                изменить
-                            </button>
-                        ) : null}
-                    </Flex>
+                        <Container className={`card ${date ? "" : "card--disabled"}`}>
+                            <Typography.Title level={3}>Время</Typography.Title>
+                            <div className="pills">
+                                {timeSlots.map((item) => (
+                                    <Pill key={item.value} active={timeISO === item.value} onClick={() => setTimeISO(item.value)}>
+                                        {item.title}
+                                    </Pill>
+                                ))}
+                            </div>
+                        </Container>
 
-                    {!date ? (
-                        <Typography.Label style={{ marginTop: 8 }}>
-                            Сначала выберите дату
-                        </Typography.Label>
-                    ) : (
-                        <div className="pills">
-                            {MOCK.times.map((t) => (
-                                <Pill key={t} active={time === t} onClick={() => setTime(t)}>
-                                    {t}
-                                </Pill>
-                            ))}
-                        </div>
-                    )}
-                </Container>
-
-                {/* Резюме выбора */}
-                <Container className="card">
-                    <Typography.Title level={3}>Итог</Typography.Title>
-
-                    <div className="summary">
-                        <div className="summaryRow">
-                            <Typography.Label>Специальность</Typography.Label>
-                            <Typography.Label>{spec || "—"}</Typography.Label>
-                        </div>
-                        <div className="summaryRow">
-                            <Typography.Label>Врач</Typography.Label>
-                            <Typography.Label>{doctor || "—"}</Typography.Label>
-                        </div>
-                        <div className="summaryRow">
-                            <Typography.Label>Дата</Typography.Label>
-                            <Typography.Label>{date || "—"}</Typography.Label>
-                        </div>
-                        <div className="summaryRow">
-                            <Typography.Label>Время</Typography.Label>
-                            <Typography.Label>{time || "—"}</Typography.Label>
-                        </div>
-                    </div>
-
-                    <Button
-                        mode="secondary"
-                        style={{ marginTop: 12, width: "100%" }}
-                        onClick={() => nav("/")}
-                    >
-                        Назад на главную
-                    </Button>
-                </Container>
+                        <Container className="card">
+                            <Typography.Title level={3}>Итог</Typography.Title>
+                            <div className="summary">
+                                <div className="summaryRow">
+                                    <Typography.Label>Специальность</Typography.Label>
+                                    <Typography.Label>{selectedSpecialty?.title || "—"}</Typography.Label>
+                                </div>
+                                <div className="summaryRow">
+                                    <Typography.Label>Врач</Typography.Label>
+                                    <Typography.Label>{selectedDoctorRow?.doctorName || selectedDoctorRow?.doctorTitle || "—"}</Typography.Label>
+                                </div>
+                                <div className="summaryRow">
+                                    <Typography.Label>Дата</Typography.Label>
+                                    <Typography.Label>{date ? toRuDate(date) : "—"}</Typography.Label>
+                                </div>
+                                <div className="summaryRow">
+                                    <Typography.Label>Время</Typography.Label>
+                                    <Typography.Label>{timeISO ? toRuTime(timeISO) : "—"}</Typography.Label>
+                                </div>
+                                <div className="summaryRow">
+                                    <Typography.Label>Кабинет</Typography.Label>
+                                    <Typography.Label>{selectedDoctorRow?.cabinetTitle || "—"}</Typography.Label>
+                                </div>
+                            </div>
+                        </Container>
+                    </>
+                ) : null}
             </Flex>
         </PageLayout>
     );

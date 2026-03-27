@@ -1,6 +1,6 @@
 import { Container, Button, Typography } from "@maxhub/max-ui";
 import { useEffect, useState } from "react";
-import "../app.css";
+import "../App.css";
 
 export default function AppBottomBar({
     buttonText,

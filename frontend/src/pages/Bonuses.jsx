@@ -7,7 +7,7 @@ import PageLayout from "../components/PageLayout";
 import { BonusesLoadingCard } from "../components/loadingCard.jsx";
 import { useAuth } from "../context/AuthContext";
 import { getBonusTransactions, getStoredAccessToken } from "../api";
-import "../app.css";
+import "../App.css";
 
 function formatTransactionDate(dateISO) {
   if (!dateISO) {

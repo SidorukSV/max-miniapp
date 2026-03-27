@@ -103,6 +103,39 @@ export async function getAppointments(access_token) {
     });
 }
 
+export async function updateAppointment(access_token, payload) {
+    return apiFetch("/documents/appointments", {
+        method: "PUT",
+        headers: {
+            Authorization: `Bearer ${access_token}`,
+        },
+        body: JSON.stringify(payload),
+    });
+}
+
+export async function createAppointment(access_token, payload) {
+    return apiFetch("/documents/appointments", {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${access_token}`,
+        },
+        body: JSON.stringify(payload),
+    });
+}
+
+export async function getAppointmentsSchedule(access_token, specializationId) {
+    const params = new URLSearchParams();
+    if (specializationId) {
+        params.set("specializationId", specializationId);
+    }
+
+    return apiFetch(`/documents/appointments/schedule${params.toString() ? `?${params}` : ""}`, {
+        headers: {
+            Authorization: `Bearer ${access_token}`,
+        },
+    });
+}
+
 export async function getCatalogsCities() {
     return apiFetch("/catalogs/cities");
 }
