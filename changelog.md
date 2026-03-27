@@ -2,79 +2,39 @@
 
 Файл составлен на основе истории коммитов текущей ветки (`work`), которая содержит слияния PR в основную линию разработки.
 
-## [0.22.0.0] «Кэл Кестис — Бракка» — 2026-03-27
+## [0.17.0.0] «Кэл Кестис — Бракка» — 2026-03-27
 ### Основное
-- Слит PR #22 с анализом коммитов и первичной сборкой версионированного changelog.
-- Зафиксирован формат релизных блоков с кодовыми именами и ключевыми коммитами.
-
-### Ключевые коммиты
-- `e0ad72d` Merge pull request #22 from `SidorukSV/codex/analyze-commits-and-create-changelog`
-- `9450eba` docs: add versioned changelog with Star Wars codenames
-
-## [0.21.0.0] «Касссиан Андор — Феррикс» — 2026-03-27
-### Основное
-- Слит PR #21 с управлением записями на приём и «живым» расписанием.
-- Добавлен flow обновления записи и серверная интеграция расписания.
+- Сведены в единый релиз изменения конца итерации: управление записью на приём, live-расписание и фиксация структуры changelog.
+- Закрыты интеграционные задачи по стабилизации ветки перед публикацией.
 
 ### Ключевые коммиты
 - `d79b1a1` Merge pull request #21 from `SidorukSV/codex/implement-appointment-management-endpoint`
 - `cdaa440` Add appointment update flow and live booking schedule
+- `e0ad72d` Merge pull request #22 from `SidorukSV/codex/analyze-commits-and-create-changelog`
 
-## [0.20.0.0] «Сабин Врен — Лотал» — 2026-03-26
+## [0.16.0.0] «Сабин Врен — Лотал» — 2026-03-26
 ### Основное
-- Слит PR #20 с адаптацией mobile UX: скрытие нижней панели при открытии клавиатуры.
-- Обновлены loading-состояния главного экрана и ряд UI/hotfix-поправок.
-
-### Ключевые коммиты
-- `03ae7f9` Merge pull request #20 from `SidorukSV/codex/hide-footer-on-keyboard-open`
-- `5e1d6c2` Hide bottom bar when mobile keyboard is open
-- `5dd700f` update HomeSceleton
-
-## [0.19.0.0] «Джин Эрсо — Ламу» — 2026-03-26
-### Основное
-- Слит PR #19 с рефакторингом раздела визитов на backend API.
-- Добавлен endpoint документов по приёмам и связка `MyVisits` с сервером.
+- Объединены UX-доработки интерфейса: скрытие нижней панели при открытии клавиатуры, обновление скелетонов и визуальный рефреш брендинга.
+- Усилен backend-контур визитов: документы по приёмам, перевод `MyVisits` на API и перенос действия подтверждения телефона в footer.
 
 ### Ключевые коммиты
 - `a4a5be4` Merge pull request #19 from `SidorukSV/codex/refactor-myrecords-to-use-backend-api`
 - `af37b40` Add appointments documents endpoint and wire MyVisits to backend
-
-## [0.18.0.0] «Гера Синдулла — Рилот» — 2026-03-26
-### Основное
-- Слит PR #18 с переносом действия подтверждения телефона в footer `PageLayout`.
-- Улучшен UX экрана подтверждения контакта.
-
-### Ключевые коммиты
 - `b6c9e34` Merge pull request #18 from `SidorukSV/codex/update-phone-confirmation-page-layout`
-- `74b96ee` Move phone confirmation action to PageLayout footer
+- `5e1d6c2` Hide bottom bar when mobile keyboard is open
+- `03ae7f9` Merge pull request #20 from `SidorukSV/codex/hide-footer-on-keyboard-open`
 
-## [0.17.0.0] «Кайло Рен — Илум» — 2026-03-25
+## [0.15.0.0] «Эзра Бриджер — Перидея» — 2026-03-25
 ### Основное
-- Слит PR #17 с улучшением bootstrap-логики авторизации и fallback-поведения refresh.
-- Добавлены исправления logout/UI и сопутствующие hotfix-поправки.
-
-### Ключевые коммиты
-- `a04a0d3` Merge pull request #17 from `SidorukSV/codex/update-bootstrap-function-in-authcontext`
-- `598b272` Improve auth bootstrap refresh fallback
-- `f16ac02` logout fix and ui
-
-## [0.16.0.0] «Роуз Тико — Канто-Байт» — 2026-03-25
-### Основное
-- Слит PR #16 с развитием раздела анкет: счётчик новых анкет на главной.
-- Завершена интеграция доработок survey-flow в основной ветке.
+- Запущен блок анкет: раздел опросов, deep-link переход по `payload survey_id` и счётчик новых анкет на главной.
+- Улучшена устойчивость авторизации: доработан bootstrap refresh fallback и исправлены logout/UI сценарии.
 
 ### Ключевые коммиты
 - `b4714c1` Merge pull request #16 from `SidorukSV/codex/create-survey-page-with-functionality-wp1eob`
 - `9dce16a` Показывать счётчик новых анкет на главной
-
-## [0.15.0.0] «Эзра Бриджер — Перидея» — 2026-03-25
-### Основное
-- Слит PR #15 с запуском раздела анкет и deep-link переходом по `payload survey_id`.
-- Добавлен базовый пользовательский сценарий перехода в анкету из payload.
-
-### Ключевые коммиты
 - `20bb562` Merge pull request #15 from `SidorukSV/codex/create-survey-page-with-functionality`
 - `bf8dbf3` Добавить раздел анкет и переход по payload survey_id
+- `a04a0d3` Merge pull request #17 from `SidorukSV/codex/update-bootstrap-function-in-authcontext`
 
 ## [0.14.0.0] «Дин Джарин — Неварро» — 2026-03-25
 ### Основное
