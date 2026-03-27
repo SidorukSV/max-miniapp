@@ -136,6 +136,46 @@ export async function getAppointmentsSchedule(access_token, specializationId) {
     });
 }
 
+export async function getCatalogSpecializationsBySchedule(access_token) {
+    const params = new URLSearchParams({
+        search_type: "BySchedule",
+    });
+    return apiFetch(`/catalogs/specializations?${params}`, {
+        headers: {
+            Authorization: `Bearer ${access_token}`,
+        },
+    });
+}
+
+export async function getCatalogEmployeesBySpec(access_token, specializationId) {
+    const params = new URLSearchParams({
+        search_type: "BySpec",
+        specializationId,
+    });
+
+    return apiFetch(`/catalogs/employees?${params}`, {
+        headers: {
+            Authorization: `Bearer ${access_token}`,
+        },
+    });
+}
+
+export async function getDoctorSchedule(access_token, { doctorId, branchId, date, format }) {
+    const params = new URLSearchParams({
+        doctorId,
+        branchId,
+    });
+
+    if (date) params.set("date", date);
+    if (format) params.set("format", format);
+
+    return apiFetch(`/documents/schedule?${params}`, {
+        headers: {
+            Authorization: `Bearer ${access_token}`,
+        },
+    });
+}
+
 export async function getCatalogsCities() {
     return apiFetch("/catalogs/cities");
 }
