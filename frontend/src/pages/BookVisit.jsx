@@ -118,7 +118,6 @@ export default function BookVisit() {
 
     return (
         <PageLayout
-            headerTitle="Моя поликлиника"
             showBottom={true}
             bottomButtonText={canConfirm ? "Подтвердить запись" : "Выберите данные"}
             onBottomButtonClick={canConfirm ? confirm : undefined}

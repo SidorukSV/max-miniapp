@@ -187,9 +187,6 @@ export default function History() {
                     </div>
                 ))}
 
-                <Button mode="secondary" onClick={() => nav("/")}>
-                    На главную
-                </Button>
             </Flex>
         </PageLayout>
     );
