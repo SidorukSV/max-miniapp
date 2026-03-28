@@ -47,9 +47,17 @@ export async function onecFetch(path, options = {}) {
         storedCookie = refreshedCookie;
     }
 
-    const isJsonResponse = res.headers.get("content-type")?.includes("application/json");
-    const data = await res.json().catch(() => ({}));
+    const contentType = res.headers.get("content-type") || "";
+    const isJsonResponse = contentType.includes("application/json");
+    const data = isJsonResponse
+        ? await res.json().catch(() => ({}))
+        : await res.text().catch(() => "");
+
     if (!res.ok) {
+        if (!isJsonResponse && typeof data === "string" && data.trim()) {
+            console.error("1C XML error response:", data);
+        }
+
         const reason = data.error
             || data.message
             || (!isJsonResponse ? `api_error_${res.status}` : null)
@@ -57,7 +65,7 @@ export async function onecFetch(path, options = {}) {
         throw new Error(reason);
     }
 
-    return data;
+    return isJsonResponse ? data : {};
 }
 
 export function getOneCConfig(cityId) {
