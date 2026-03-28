@@ -59,16 +59,19 @@ export async function onecFetch(path, options = {}) {
         storedCookie = refreshedCookie;
     }
 
-    const contentType = res.headers.get("content-type") || "";
-    const isJsonResponse = contentType.includes("application/json");
-    const data = isJsonResponse
-        ? await res.json().catch(() => ({}))
-        : await res.text().catch(() => "");
+    const data = await res.json().
+        catch(async () => { return await res.text().catch(() => "") });
+    
+    let isJsonResponse = true;
+    if (typeof(data) === typeof(String)) {
+        isJsonResponse = false;
+    }
 
     if (!res.ok) {
         if (!isJsonResponse && typeof data === "string" && data.trim()) {
             console.error("1C XML error response:", data);
         }
+        console.log(res);
 
         const reason = data.error
             || data.message
