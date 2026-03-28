@@ -5,9 +5,4 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   base: "/max-miniapp/",
-  server: {
-    allowedHosts:[
-      "thoughtfully-bubbly-woodpecker.cloudpub.ru"
-    ]
-  }
 })

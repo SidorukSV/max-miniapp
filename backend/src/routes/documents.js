@@ -23,16 +23,6 @@ export async function documentsRoutes(app) {
         { preHandler: [authWiddleware] },
         async (req) => {
             const { city_id } = req.user;
-            const { specializationId } = req.query || {};
-            const items = await getAppointmentsSchedule({ cityId: city_id, specializationId });
-
-            return { items };
-        });
-
-    app.get("/api/v1/documents/schedule",
-        { preHandler: [authWiddleware] },
-        async (req) => {
-            const { city_id } = req.user;
             const { doctorId, branchId, date, format } = req.query || {};
 
             if (!doctorId || !branchId) {
