@@ -11,10 +11,5 @@ export const config = {
     maxInitDataMaxAgeSeconds: Number(process.env.MAX_INIT_DATA_MAX_AGE_SECONDS || 300),
     redisUrl: process.env.REDIS_URL || "redis://127.0.0.1:6379",
     redisConnectTimeoutMs: Number(process.env.REDIS_CONNECT_TIMEOUT_MS || 5000),
-    oneCConfigs: [
-        {
-            cityId: "RU-KJA",
-            url: "http://localhost:4545/UMC_MAX/hs/omni/v1/",
-        }
-    ],
+    oneCConfigs: [{cityId: "RU-KJA",url: "http://localhost:4545/UMC_MAX/hs/omni/v1/", basicAuth: "d2ViOjEyMzQ1"}]//JSON.parse(process.env.ONEC_CONFIGS),
 };

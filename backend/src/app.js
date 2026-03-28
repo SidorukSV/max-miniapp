@@ -13,6 +13,7 @@ export async function buildApp() {
 
     await app.register(cors, {
         origin: true,
+        methods: ["GET", "POST", "PUT"]
     });
 
     app.register(authRoutes);

@@ -12,7 +12,6 @@ export async function onecFetch(path, options = {}) {
     })
 
     const data = await res.json().catch(() => ({}));
-    console.log(data);
     if (!res.ok) {
         throw new Error(data.error || "api_error");
     }
@@ -40,7 +39,7 @@ export async function getPatientsByPhone({ cityId, phone}) {
     const data = onecFetch(oneCConfig.url.concat(`/catalogs/clients/?search_type=ByPhone&phone=${phone}`), {
         method: "GET",
         headers: {
-            Authorization: `Basic d2ViOjEyMzQ1`, // TODO: hardcode
+            Authorization: `Basic ${oneCConfig.basicAuth}`, // TODO: hardcode
         },
     });
 
@@ -105,7 +104,7 @@ export async function getBonusTransactions({ cityId, patient_id }) {
 
 export async function getAppointmentsDocuments({ cityId, patient_id }) {
     const oneCConfig = getOneCConfig(cityId);
-    const data = await onecFetch(oneCConfig.url.concat(`/documents/appointments?patient_id=${patient_id}`), {
+    const data = await onecFetch(oneCConfig.url.concat(`/documents/appointments?search_type=ByPatient&patient_id=${patient_id}`), {
         method: "GET",
         headers: {
             Authorization: `Basic d2ViOjEyMzQ1`, // TODO: hardcode
@@ -126,7 +125,7 @@ export async function getAppointmentsSchedule({ cityId, specializationId }) {
         params.set("specializationId", specializationId);
     }
 
-    const data = await onecFetch(oneCConfig.url.concat(`/documents/appointments/schedule${params.toString() ? `?${params}` : ""}`), {
+    const data = await onecFetch(oneCConfig.url.concat(`/documents/schedule${params.toString() ? `?${params}` : ""}`), {
         method: "GET",
         headers: {
             Authorization: "Basic d2ViOjEyMzQ1",

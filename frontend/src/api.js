@@ -129,7 +129,7 @@ export async function getAppointmentsSchedule(access_token, specializationId) {
         params.set("specializationId", specializationId);
     }
 
-    return apiFetch(`/documents/appointments/schedule${params.toString() ? `?${params}` : ""}`, {
+    return apiFetch(`/documents/schedule${params.toString() ? `?${params}` : ""}`, {
         headers: {
             Authorization: `Bearer ${access_token}`,
         },

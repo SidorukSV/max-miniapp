@@ -18,7 +18,7 @@ export async function documentsRoutes(app) {
             };
         });
 
-    app.get("/api/v1/documents/appointments/schedule",
+    app.get("/api/v1/documents/schedule",
         { preHandler: [authWiddleware] },
         async (req) => {
             const { city_id } = req.user;
@@ -43,10 +43,11 @@ export async function documentsRoutes(app) {
 
     app.put("/api/v1/documents/appointments",
         { preHandler: [authWiddleware] },
+        
         async (req) => {
             const { patient_id, city_id } = req.user;
             const payload = {
-                ...(req.body || {}),
+                ...(JSON.parse(req.body) || {}),
                 patient_id,
             };
 

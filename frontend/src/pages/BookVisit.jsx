@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Container, Flex, Typography } from "@maxhub/max-ui";
+import { Container, Flex, Typography, Button } from "@maxhub/max-ui";
 import PageLayout from "../components/PageLayout.jsx";
 import {
     createAppointment,
@@ -390,6 +390,13 @@ export default function BookVisit() {
                         </Container>
                     </>
                 ) : null}
+                <Button
+                mode="secondary"
+                onClick={() => nav("/")}
+                stretched={true}
+                >
+                    Вернуться на главную
+                </Button>
             </Flex>
         </PageLayout>
     );

@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { authStart, authSetCity, authPhone, authSelectPatient, storeTokens, getMe, sendLogs, getCatalogsCities } from "../api";
-import { Flex, Container, Typography, CellList, CellSimple, CellHeader } from "@maxhub/max-ui";
+import { Flex, Container, Typography, CellList, CellSimple, CellHeader, Input } from "@maxhub/max-ui";
 import "../App.css";
 import { useMaxWebApp } from "../hooks/useMaxWebApp";
 import { dateISOFormat } from "../modules/DateFormat";
@@ -164,7 +164,8 @@ export default function AuthScreen() {
                         </Typography.Label>
 
                         {isBrowserLocalhost && (
-                            <input
+                            <Input
+                                mode="secondary"
                                 type="tel"
                                 value={manualPhone}
                                 onChange={(event) => setManualPhone(event.target.value)}
