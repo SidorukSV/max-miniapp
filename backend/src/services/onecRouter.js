@@ -1,15 +1,38 @@
 import { config } from "../config.js";
 
+const ibSessionCookies = new Map();
+
+function resolveOneCConfigByUrl(path) {
+    return config.oneCConfigs.find((cityConfig) => path.startsWith(cityConfig.url));
+}
+
+function parseIbSessionCookie(setCookieHeader) {
+    if (!setCookieHeader) {
+        return null;
+    }
+
+    const match = setCookieHeader.match(/ibsession=([^;,\s]+)/i);
+    if (!match?.[1]) {
+        return null;
+    }
+
+    return `ibsession=${match[1]}`;
+}
+
 export async function onecFetch(path, options = {}) {
+    const cityConfig = resolveOneCConfigByUrl(path);
+    const storedCookie = cityConfig ? ibSessionCookies.get(cityConfig.cityId) : null;
     const hasBody = options.body !== undefined;
+    const hasCookieHeader = Boolean(options.headers?.Cookie || options.headers?.cookie);
 
     const res = await fetch(path, {
         headers: {
             ...(hasBody ? { "Content-Type": "application/json" } : {}),
+            ...(storedCookie && !hasCookieHeader ? { Cookie: storedCookie } : {}),
             ...(options.headers || {}),
         },
         ...options,
-    })
+    });
 
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
@@ -32,6 +55,68 @@ export function getOneCConfig(cityId) {
 
     return oneCConfigs.find((cityConfig) => cityConfig.cityId === resolvedCityId );
 
+}
+
+export async function startOneCSessions() {
+    await Promise.all(config.oneCConfigs.map(startOneCSession));
+}
+
+export async function finishOneCSessions() {
+    await Promise.all(config.oneCConfigs.map(finishOneCSession));
+}
+
+async function startOneCSession(oneCConfig) {
+    const startUrl = oneCConfig.url.concat("startIBSession");
+
+    try {
+        const res = await fetch(startUrl, {
+            method: "HEAD",
+            headers: {
+                Authorization: `Basic ${oneCConfig.basicAuth}`,
+                IBSession: "start",
+            },
+        });
+
+        if (!res.ok) {
+            console.warn(`Failed to start 1C IB session for ${oneCConfig.cityId}: ${res.status}`);
+            return;
+        }
+
+        const cookie = parseIbSessionCookie(res.headers.get("set-cookie"));
+        if (!cookie) {
+            console.warn(`1C IB session cookie missing for ${oneCConfig.cityId}`);
+            return;
+        }
+
+        ibSessionCookies.set(oneCConfig.cityId, cookie);
+        console.log(`1C IB session initialized for ${oneCConfig.cityId}`);
+    } catch (error) {
+        console.warn(`1C IB session start error for ${oneCConfig.cityId}`, error);
+    }
+}
+
+async function finishOneCSession(oneCConfig) {
+    const finishUrl = oneCConfig.url.concat("finishIBSession");
+    const cookie = ibSessionCookies.get(oneCConfig.cityId);
+
+    try {
+        const res = await fetch(finishUrl, {
+            method: "HEAD",
+            headers: {
+                Authorization: `Basic ${oneCConfig.basicAuth}`,
+                IBSession: "finish",
+                ...(cookie ? { Cookie: cookie } : {}),
+            },
+        });
+
+        if (!res.ok) {
+            console.warn(`Failed to finish 1C IB session for ${oneCConfig.cityId}: ${res.status}`);
+        }
+    } catch (error) {
+        console.warn(`1C IB session finish error for ${oneCConfig.cityId}`, error);
+    } finally {
+        ibSessionCookies.delete(oneCConfig.cityId);
+    }
 }
 
 export async function getPatientsByPhone({ cityId, phone}) {
