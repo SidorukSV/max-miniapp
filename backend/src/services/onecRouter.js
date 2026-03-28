@@ -21,26 +21,38 @@ function parseIbSessionCookie(setCookieHeader) {
 
 export async function onecFetch(path, options = {}) {
     const cityConfig = resolveOneCConfigByUrl(path);
+    const { headers: optionHeaders, ...restOptions } = options;
     const hasBody = options.body !== undefined;
-    const hasCookieHeader = Boolean(options.headers?.Cookie || options.headers?.cookie);
+    const initialHeaders = new Headers(optionHeaders || {});
+    const hasCookieHeader = initialHeaders.has("Cookie");
 
     const requestWithCookie = async (cookie) => {
+        const headers = new Headers(optionHeaders || {});
+
+        if (hasBody && !headers.has("Content-Type")) {
+            headers.set("Content-Type", "application/json");
+        }
+
+        if (cookie && !hasCookieHeader) {
+            headers.set("Cookie", cookie);
+        }
+
         return fetch(path, {
-            headers: {
-                ...(hasBody ? { "Content-Type": "application/json" } : {}),
-                ...(cookie && !hasCookieHeader ? { Cookie: cookie } : {}),
-                ...(options.headers || {}),
-            },
-            ...options,
+            ...restOptions,
+            headers,
         });
     };
 
     let storedCookie = cityConfig ? ibSessionCookies.get(cityConfig.cityId) : null;
+    if (cityConfig && !storedCookie && !hasCookieHeader) {
+        storedCookie = await startOneCSession(cityConfig);
+    }
+
     let res = await requestWithCookie(storedCookie);
 
     // 1C can invalidate IB sessions unexpectedly.
     // If the cookie became stale, recreate the session and retry once.
-    if (res.status === 400 && cityConfig && storedCookie && !hasCookieHeader) {
+    if (res.status === 400 && cityConfig && !hasCookieHeader) {
         ibSessionCookies.delete(cityConfig.cityId);
         const refreshedCookie = await startOneCSession(cityConfig);
         res = await requestWithCookie(refreshedCookie);
