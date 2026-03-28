@@ -1,19 +1,60 @@
 import { config } from "../config.js";
 
+const ibSessionCookies = new Map();
+
+function resolveOneCConfigByUrl(path) {
+    return config.oneCConfigs.find((cityConfig) => path.startsWith(cityConfig.url));
+}
+
+function parseIbSessionCookie(setCookieHeader) {
+    if (!setCookieHeader) {
+        return null;
+    }
+
+    const match = setCookieHeader.match(/ibsession=([^;,\s]+)/i);
+    if (!match?.[1]) {
+        return null;
+    }
+
+    return `ibsession=${match[1]}`;
+}
+
 export async function onecFetch(path, options = {}) {
+    const cityConfig = resolveOneCConfigByUrl(path);
     const hasBody = options.body !== undefined;
+    const hasCookieHeader = Boolean(options.headers?.Cookie || options.headers?.cookie);
 
-    const res = await fetch(path, {
-        headers: {
-            ...(hasBody ? { "Content-Type": "application/json" } : {}),
-            ...(options.headers || {}),
-        },
-        ...options,
-    })
+    const requestWithCookie = async (cookie) => {
+        return fetch(path, {
+            headers: {
+                ...(hasBody ? { "Content-Type": "application/json" } : {}),
+                ...(cookie && !hasCookieHeader ? { Cookie: cookie } : {}),
+                ...(options.headers || {}),
+            },
+            ...options,
+        });
+    };
 
+    let storedCookie = cityConfig ? ibSessionCookies.get(cityConfig.cityId) : null;
+    let res = await requestWithCookie(storedCookie);
+
+    // 1C can invalidate IB sessions unexpectedly.
+    // If the cookie became stale, recreate the session and retry once.
+    if (res.status === 400 && cityConfig && storedCookie && !hasCookieHeader) {
+        ibSessionCookies.delete(cityConfig.cityId);
+        const refreshedCookie = await startOneCSession(cityConfig);
+        res = await requestWithCookie(refreshedCookie);
+        storedCookie = refreshedCookie;
+    }
+
+    const isJsonResponse = res.headers.get("content-type")?.includes("application/json");
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-        throw new Error(data.error || "api_error");
+        const reason = data.error
+            || data.message
+            || (!isJsonResponse ? `api_error_${res.status}` : null)
+            || "api_error";
+        throw new Error(reason);
     }
 
     return data;
@@ -32,6 +73,70 @@ export function getOneCConfig(cityId) {
 
     return oneCConfigs.find((cityConfig) => cityConfig.cityId === resolvedCityId );
 
+}
+
+export async function startOneCSessions() {
+    await Promise.all(config.oneCConfigs.map(startOneCSession));
+}
+
+export async function finishOneCSessions() {
+    await Promise.all(config.oneCConfigs.map(finishOneCSession));
+}
+
+async function startOneCSession(oneCConfig) {
+    const startUrl = oneCConfig.url.concat("startIBSession");
+
+    try {
+        const res = await fetch(startUrl, {
+            method: "HEAD",
+            headers: {
+                Authorization: `Basic ${oneCConfig.basicAuth}`,
+                IBSession: "start",
+            },
+        });
+
+        if (!res.ok) {
+            console.warn(`Failed to start 1C IB session for ${oneCConfig.cityId}: ${res.status}`);
+            return;
+        }
+
+        const cookie = parseIbSessionCookie(res.headers.get("set-cookie"));
+        if (!cookie) {
+            console.warn(`1C IB session cookie missing for ${oneCConfig.cityId}`);
+            return null;
+        }
+
+        ibSessionCookies.set(oneCConfig.cityId, cookie);
+        console.log(`1C IB session initialized for ${oneCConfig.cityId}`);
+        return cookie;
+    } catch (error) {
+        console.warn(`1C IB session start error for ${oneCConfig.cityId}`, error);
+        return null;
+    }
+}
+
+async function finishOneCSession(oneCConfig) {
+    const finishUrl = oneCConfig.url.concat("finishIBSession");
+    const cookie = ibSessionCookies.get(oneCConfig.cityId);
+
+    try {
+        const res = await fetch(finishUrl, {
+            method: "HEAD",
+            headers: {
+                Authorization: `Basic ${oneCConfig.basicAuth}`,
+                IBSession: "finish",
+                ...(cookie ? { Cookie: cookie } : {}),
+            },
+        });
+
+        if (!res.ok) {
+            console.warn(`Failed to finish 1C IB session for ${oneCConfig.cityId}: ${res.status}`);
+        }
+    } catch (error) {
+        console.warn(`1C IB session finish error for ${oneCConfig.cityId}`, error);
+    } finally {
+        ibSessionCookies.delete(oneCConfig.cityId);
+    }
 }
 
 export async function getPatientsByPhone({ cityId, phone}) {
