@@ -139,6 +139,71 @@ export async function getAppointmentsSchedule({ cityId, specializationId }) {
     return data;
 }
 
+export async function getCatalogSpecializationsBySchedule({ cityId }) {
+    const oneCConfig = getOneCConfig(cityId);
+    const data = await onecFetch(oneCConfig.url.concat("/catalogs/specializations?search_type=BySchedule"), {
+        method: "GET",
+        headers: {
+            Authorization: "Basic d2ViOjEyMzQ1",
+        },
+    });
+
+    if (!Array.isArray(data)) {
+        return [];
+    }
+
+    return data;
+}
+
+export async function getCatalogEmployeesBySpec({ cityId, specializationId }) {
+    const oneCConfig = getOneCConfig(cityId);
+    const params = new URLSearchParams({
+        search_type: "BySpec",
+        specializationId,
+    });
+    const data = await onecFetch(oneCConfig.url.concat(`/catalogs/employees?${params}`), {
+        method: "GET",
+        headers: {
+            Authorization: "Basic d2ViOjEyMzQ1",
+        },
+    });
+
+    if (!Array.isArray(data)) {
+        return [];
+    }
+
+    return data;
+}
+
+export async function getDoctorSchedule({ cityId, doctorId, branchId, date, format }) {
+    const oneCConfig = getOneCConfig(cityId);
+    const params = new URLSearchParams({
+        doctorId,
+        branchId,
+    });
+
+    if (date) {
+        params.set("date", date);
+    }
+
+    if (format) {
+        params.set("format", format);
+    }
+
+    const data = await onecFetch(oneCConfig.url.concat(`/documents/schedule?${params}`), {
+        method: "GET",
+        headers: {
+            Authorization: "Basic d2ViOjEyMzQ1",
+        },
+    });
+
+    if (!Array.isArray(data)) {
+        return [];
+    }
+
+    return data;
+}
+
 export async function createAppointmentDocument({ cityId, payload }) {
     const oneCConfig = getOneCConfig(cityId);
     return onecFetch(oneCConfig.url.concat("/documents/appointments"), {

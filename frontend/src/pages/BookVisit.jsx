@@ -4,7 +4,9 @@ import { Container, Flex, Typography, Button } from "@maxhub/max-ui";
 import PageLayout from "../components/PageLayout.jsx";
 import {
     createAppointment,
-    getAppointmentsSchedule,
+    getCatalogEmployeesBySpec,
+    getCatalogSpecializationsBySchedule,
+    getDoctorSchedule,
     getStoredAccessToken,
     updateAppointment,
 } from "../api";
@@ -44,21 +46,88 @@ function toRuTime(dateISO) {
     return dateObj.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
 }
 
-function buildSlots(startISO, endISO, delimiterMinutes) {
+function getTimeMinutes(dateISO) {
+    const match = String(dateISO || "").match(/T(\d{2}):(\d{2})/);
+    if (!match) return null;
+
+    const hours = Number(match[1]);
+    const minutes = Number(match[2]);
+    if (Number.isNaN(hours) || Number.isNaN(minutes)) return null;
+
+    return hours * 60 + minutes;
+}
+
+function minutesToTime(minutes) {
+    const hours = String(Math.floor(minutes / 60)).padStart(2, "0");
+    const mins = String(minutes % 60).padStart(2, "0");
+    return `${hours}:${mins}`;
+}
+
+function buildSlotsByShifts(rows, doctorDuration, selectedDate) {
+    const duration = Number(doctorDuration || 0);
+    if (!duration || !selectedDate || !Array.isArray(rows) || rows.length === 0) {
+        return [];
+    }
+
+    const workIntervals = [];
+    const blockedIntervals = [];
+
+    for (const row of rows) {
+        const start = getTimeMinutes(row?.time_begin);
+        const end = getTimeMinutes(row?.time_end);
+        if (start === null || end === null || end <= start) {
+            continue;
+        }
+
+        if (row?.isWorkTime) {
+            workIntervals.push({ start, end, cabinetId: row?.cabinetId, cabinetTitle: row?.cabinetTitle });
+        } else {
+            blockedIntervals.push({ start, end });
+        }
+    }
+
     const slots = [];
-    const start = new Date(startISO);
-    const end = new Date(endISO);
-    const durationMs = Number(delimiterMinutes || 0) * 60 * 1000;
+    for (const work of workIntervals) {
+        for (let start = work.start; start + duration <= work.end; start += duration) {
+            const slotEnd = start + duration;
+            const intersectsBlocked = blockedIntervals.some((blocked) => start < blocked.end && slotEnd > blocked.start);
+            if (intersectsBlocked) {
+                continue;
+            }
 
-    if (!durationMs || Number.isNaN(start.valueOf()) || Number.isNaN(end.valueOf())) {
-        return slots;
+            const time = minutesToTime(start);
+            const value = `${selectedDate}T${time}:00`;
+            slots.push({
+                value,
+                title: toRuTime(value),
+                cabinetId: work.cabinetId,
+                cabinetTitle: work.cabinetTitle,
+            });
+        }
     }
 
-    for (let cursor = start.getTime(); cursor + durationMs <= end.getTime(); cursor += durationMs) {
-        slots.push(new Date(cursor).toISOString());
+    const unique = new Map();
+    for (const slot of slots) {
+        unique.set(slot.value, slot);
     }
 
-    return slots;
+    return Array.from(unique.values()).sort((a, b) => new Date(a.value) - new Date(b.value));
+}
+
+function normalizeDateValue(item) {
+    if (typeof item === "string") {
+        return item;
+    }
+
+    if (item && typeof item === "object") {
+        return item.date || item.value || "";
+    }
+
+    return "";
+}
+
+function getDoctorLabel(doctor) {
+    return [doctor?.doctorLastname, doctor?.doctorFirstname, doctor?.doctorPatronymic].filter(Boolean).join(" ") || doctor?.doctorTitle || "Врач";
 }
 
 export default function BookVisit() {
@@ -71,162 +140,228 @@ export default function BookVisit() {
     const rescheduleDoctorId = searchParams.get("doctorId") || "";
     const isRescheduleMode = Boolean(appointmentId);
 
-    const [schedule, setSchedule] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState("");
 
+    const [specialties, setSpecialties] = useState([]);
+    const [doctors, setDoctors] = useState([]);
+    const [dates, setDates] = useState([]);
+    const [daySchedule, setDaySchedule] = useState([]);
+
     const [specId, setSpecId] = useState("");
     const [doctorId, setDoctorId] = useState("");
+    const [branchId, setBranchId] = useState("");
     const [date, setDate] = useState("");
     const [timeISO, setTimeISO] = useState("");
 
     useEffect(() => {
-        async function loadSchedule() {
+        async function loadSpecializations() {
             if (!accessToken) {
                 setError("Не найден токен авторизации");
-                setLoading(false);
                 return;
             }
 
             try {
                 setLoading(true);
                 setError("");
-                const response = await getAppointmentsSchedule(accessToken);
+                const response = await getCatalogSpecializationsBySchedule(accessToken);
                 const items = Array.isArray(response?.items) ? response.items : [];
-                setSchedule(items);
+                setSpecialties(items.map((item) => ({
+                    id: item.specializationId,
+                    title: item.specializationTitle || "Без специальности",
+                })));
             } catch {
-                setError("Не удалось загрузить расписание");
+                setError("Не удалось загрузить специализации");
             } finally {
                 setLoading(false);
             }
         }
 
-        loadSchedule();
+        loadSpecializations();
     }, [accessToken]);
 
-    const specialties = useMemo(() => {
-        const map = new Map();
-        for (const row of schedule) {
-            if (!row?.specializationId) continue;
-            if (!map.has(row.specializationId)) {
-                map.set(row.specializationId, {
-                    id: row.specializationId,
-                    title: row.specializationTitle || "Без специальности",
-                });
-            }
-        }
-        return Array.from(map.values());
-    }, [schedule]);
-
     useEffect(() => {
-        if (!schedule.length) return;
+        if (!specialties.length) return;
 
-        if (isRescheduleMode) {
+        if (isRescheduleMode && rescheduleSpecId) {
             setSpecId(rescheduleSpecId);
-            setDoctorId(rescheduleDoctorId);
             return;
         }
 
-        if (!specId && specialties.length) {
+        if (!specId) {
             setSpecId(specialties[0].id);
         }
-    }, [isRescheduleMode, rescheduleDoctorId, rescheduleSpecId, schedule, specId, specialties]);
-
-    const doctorsByBranch = useMemo(() => {
-        if (!specId) return [];
-
-        const branchMap = new Map();
-
-        for (const row of schedule.filter((item) => item?.specializationId === specId)) {
-            const branchId = row?.branchId || "unknown-branch";
-            if (!branchMap.has(branchId)) {
-                branchMap.set(branchId, {
-                    branchId,
-                    branchTitle: row?.branchTitle || "Филиал не указан",
-                    doctors: new Map(),
-                });
-            }
-
-            const branch = branchMap.get(branchId);
-            if (!branch.doctors.has(row.doctorId)) {
-                branch.doctors.set(row.doctorId, {
-                    doctorId: row.doctorId,
-                    doctorTitle: row.doctorTitle,
-                    doctorName: [row?.doctorLastname, row?.doctorFurstname, row?.doctorPatronimic].filter(Boolean).join(" "),
-                });
-            }
-        }
-
-        return Array.from(branchMap.values()).map((branch) => ({
-            ...branch,
-            doctors: Array.from(branch.doctors.values()),
-        }));
-    }, [schedule, specId]);
+    }, [isRescheduleMode, rescheduleSpecId, specialties, specId]);
 
     useEffect(() => {
-        if (!doctorId && doctorsByBranch.length && doctorsByBranch[0].doctors.length) {
-            setDoctorId(doctorsByBranch[0].doctors[0].doctorId);
-        }
-    }, [doctorId, doctorsByBranch]);
-
-    const selectedRows = useMemo(() => {
-        if (!specId || !doctorId) return [];
-        return schedule.filter((row) => row?.specializationId === specId && row?.doctorId === doctorId);
-    }, [doctorId, schedule, specId]);
-
-    const dates = useMemo(() => {
-        const map = new Map();
-        for (const row of selectedRows) {
-            if (!row?.date) continue;
-            if (!map.has(row.date)) {
-                map.set(row.date, { value: row.date, title: toRuDate(row.date) });
+        async function loadDoctors() {
+            if (!accessToken || !specId) {
+                setDoctors([]);
+                return;
             }
-        }
-        return Array.from(map.values()).sort((a, b) => new Date(a.value) - new Date(b.value));
-    }, [selectedRows]);
 
-    const timeSlots = useMemo(() => {
-        if (!date) return [];
-
-        const values = [];
-        const rows = selectedRows.filter((row) => row?.date === date);
-        for (const row of rows) {
-            const slots = buildSlots(row.time_begin, row.time_end, row.time_delimiter);
-            for (const slot of slots) {
-                values.push({ value: slot, title: toRuTime(slot) });
+            try {
+                setLoading(true);
+                setError("");
+                const response = await getCatalogEmployeesBySpec(accessToken, specId);
+                const items = Array.isArray(response?.items) ? response.items : [];
+                setDoctors(items);
+            } catch {
+                setError("Не удалось загрузить врачей");
+                setDoctors([]);
+            } finally {
+                setLoading(false);
             }
         }
 
-        const unique = new Map();
-        for (const slot of values) {
-            unique.set(slot.value, slot);
+        setDoctorId("");
+        setBranchId("");
+        setDate("");
+        setTimeISO("");
+        setDates([]);
+        setDaySchedule([]);
+        loadDoctors();
+    }, [accessToken, specId]);
+
+    const doctorsByBranch = useMemo(() => {
+        const branchMap = new Map();
+
+        for (const row of doctors) {
+            if (!row?.doctorId || !row?.branchId) continue;
+
+            if (!branchMap.has(row.branchId)) {
+                branchMap.set(row.branchId, {
+                    branchId: row.branchId,
+                    branchTitle: row.branchTitle || "Филиал не указан",
+                    doctors: [],
+                });
+            }
+
+            branchMap.get(row.branchId).doctors.push(row);
         }
 
-        return Array.from(unique.values()).sort((a, b) => new Date(a.value) - new Date(b.value));
-    }, [date, selectedRows]);
+        return Array.from(branchMap.values());
+    }, [doctors]);
+
+    useEffect(() => {
+        if (!doctors.length) return;
+
+        if (isRescheduleMode && rescheduleDoctorId) {
+            const matched = doctors.find((item) => item.doctorId === rescheduleDoctorId);
+            if (matched) {
+                setDoctorId(matched.doctorId);
+                setBranchId(matched.branchId);
+                return;
+            }
+        }
+
+        const first = doctors[0];
+        if (!doctorId && first) {
+            setDoctorId(first.doctorId);
+            setBranchId(first.branchId);
+        }
+    }, [doctors, doctorId, isRescheduleMode, rescheduleDoctorId]);
+
+    useEffect(() => {
+        async function loadDates() {
+            if (!accessToken || !doctorId || !branchId) {
+                setDates([]);
+                return;
+            }
+
+            try {
+                setLoading(true);
+                setError("");
+                const response = await getDoctorSchedule(accessToken, {
+                    doctorId,
+                    branchId,
+                    format: "OnlyDate",
+                });
+
+                const items = Array.isArray(response?.items) ? response.items : [];
+                const normalized = items
+                    .map((item) => normalizeDateValue(item))
+                    .filter(Boolean)
+                    .map((value) => ({ value, title: toRuDate(value) }))
+                    .sort((a, b) => new Date(a.value) - new Date(b.value));
+
+                setDates(normalized);
+            } catch {
+                setError("Не удалось загрузить доступные даты");
+                setDates([]);
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        setDate("");
+        setTimeISO("");
+        setDaySchedule([]);
+        loadDates();
+    }, [accessToken, doctorId, branchId]);
+
+    useEffect(() => {
+        if (!dates.length || date) return;
+        setDate(dates[0].value);
+    }, [dates, date]);
+
+    useEffect(() => {
+        async function loadScheduleByDate() {
+            if (!accessToken || !doctorId || !branchId || !date) {
+                setDaySchedule([]);
+                return;
+            }
+
+            try {
+                setLoading(true);
+                setError("");
+                const response = await getDoctorSchedule(accessToken, {
+                    doctorId,
+                    branchId,
+                    date,
+                });
+
+                const items = Array.isArray(response?.items) ? response.items : [];
+                setDaySchedule(items);
+            } catch {
+                setError("Не удалось загрузить доступное время");
+                setDaySchedule([]);
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        setTimeISO("");
+        loadScheduleByDate();
+    }, [accessToken, doctorId, branchId, date]);
 
     const selectedSpecialty = specialties.find((item) => item.id === specId);
-    const selectedDoctorRow = selectedRows[0] || null;
+    const selectedDoctor = doctors.find((item) => item.doctorId === doctorId && item.branchId === branchId) || null;
 
-    const canConfirm = Boolean(specId && doctorId && date && timeISO && !saving);
+    const timeSlots = useMemo(() => {
+        if (!date || !selectedDoctor) {
+            return [];
+        }
+
+        return buildSlotsByShifts(daySchedule, selectedDoctor?.doctorDuration, date);
+    }, [date, daySchedule, selectedDoctor]);
+
+    const selectedSlot = timeSlots.find((item) => item.value === timeISO) || null;
+
+    const canConfirm = Boolean(specId && doctorId && branchId && date && timeISO && !saving);
 
     function onPickSpec(nextSpecId) {
         setSpecId(nextSpecId);
-        setDoctorId("");
-        setDate("");
-        setTimeISO("");
     }
 
-    function onPickDoctor(nextDoctorId) {
+    function onPickDoctor(nextDoctorId, nextBranchId) {
         setDoctorId(nextDoctorId);
-        setDate("");
-        setTimeISO("");
+        setBranchId(nextBranchId);
     }
 
     function onPickDate(nextDate) {
         setDate(nextDate);
-        setTimeISO("");
     }
 
     async function confirm() {
@@ -235,6 +370,7 @@ export default function BookVisit() {
         const payload = {
             specializationId: specId,
             doctorId,
+            branchId,
             date,
             datetimeBegin: timeISO,
         };
@@ -256,9 +392,9 @@ export default function BookVisit() {
                     appointment: response?.item || null,
                     summary: {
                         specialization: selectedSpecialty?.title || "—",
-                        doctor: selectedDoctorRow?.doctorName || selectedDoctorRow?.doctorTitle || "—",
-                        branch: selectedDoctorRow?.branchTitle || "—",
-                        cabinet: selectedDoctorRow?.cabinetTitle || "—",
+                        doctor: getDoctorLabel(selectedDoctor),
+                        branch: selectedDoctor?.branchTitle || "—",
+                        cabinet: selectedSlot?.cabinetTitle || "—",
                         date: toRuDate(date),
                         time: toRuTime(timeISO),
                     },
@@ -286,7 +422,7 @@ export default function BookVisit() {
 
                 {loading ? (
                     <Container className="card">
-                        <Typography.Label>Загрузка расписания...</Typography.Label>
+                        <Typography.Label>Загрузка данных...</Typography.Label>
                     </Container>
                 ) : null}
 
@@ -296,100 +432,96 @@ export default function BookVisit() {
                     </Container>
                 ) : null}
 
-                {!loading ? (
-                    <>
-                        <Container className="card">
-                            <Typography.Title level={3}>Специальность</Typography.Title>
-                            <div className="pills">
-                                {specialties.map((item) => (
-                                    <Pill
-                                        key={item.id}
-                                        active={specId === item.id}
-                                        onClick={() => onPickSpec(item.id)}
-                                        disabled={isRescheduleMode}
-                                    >
-                                        {item.title}
-                                    </Pill>
-                                ))}
-                            </div>
-                        </Container>
+                <Container className="card">
+                    <Typography.Title level={3}>Специальность</Typography.Title>
+                    <div className="pills">
+                        {specialties.map((item) => (
+                            <Pill
+                                key={item.id}
+                                active={specId === item.id}
+                                onClick={() => onPickSpec(item.id)}
+                                disabled={isRescheduleMode}
+                            >
+                                {item.title}
+                            </Pill>
+                        ))}
+                    </div>
+                </Container>
 
-                        <Container className={`card ${specId ? "" : "card--disabled"}`}>
-                            <Typography.Title level={3}>Врач (по филиалам)</Typography.Title>
-                            {!specId ? (
-                                <Typography.Label style={{ marginTop: 8 }}>Сначала выберите специальность</Typography.Label>
-                            ) : (
-                                <Flex direction="column" gap={10} style={{ marginTop: 12 }}>
-                                    {doctorsByBranch.map((branch) => (
-                                        <div key={branch.branchId}>
-                                            <Typography.Label>{branch.branchTitle}</Typography.Label>
-                                            <div className="pills">
-                                                {branch.doctors.map((doc) => (
-                                                    <Pill
-                                                        key={doc.doctorId}
-                                                        active={doctorId === doc.doctorId}
-                                                        onClick={() => onPickDoctor(doc.doctorId)}
-                                                        disabled={isRescheduleMode}
-                                                    >
-                                                        {doc.doctorName || doc.doctorTitle || "Врач"}
-                                                    </Pill>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </Flex>
-                            )}
-                        </Container>
+                <Container className={`card ${specId ? "" : "card--disabled"}`}>
+                    <Typography.Title level={3}>Врач (по филиалам)</Typography.Title>
+                    {!specId ? (
+                        <Typography.Label style={{ marginTop: 8 }}>Сначала выберите специальность</Typography.Label>
+                    ) : (
+                        <Flex direction="column" gap={10} style={{ marginTop: 12 }}>
+                            {doctorsByBranch.map((branch) => (
+                                <div key={branch.branchId}>
+                                    <Typography.Label>{branch.branchTitle}</Typography.Label>
+                                    <div className="pills">
+                                        {branch.doctors.map((doc) => (
+                                            <Pill
+                                                key={`${doc.branchId}:${doc.doctorId}`}
+                                                active={doctorId === doc.doctorId && branchId === doc.branchId}
+                                                onClick={() => onPickDoctor(doc.doctorId, doc.branchId)}
+                                                disabled={isRescheduleMode}
+                                            >
+                                                {getDoctorLabel(doc)}
+                                            </Pill>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+                        </Flex>
+                    )}
+                </Container>
 
-                        <Container className={`card ${doctorId ? "" : "card--disabled"}`}>
-                            <Typography.Title level={3}>Дата</Typography.Title>
-                            <div className="pills">
-                                {dates.map((item) => (
-                                    <Pill key={item.value} active={date === item.value} onClick={() => onPickDate(item.value)}>
-                                        {item.title}
-                                    </Pill>
-                                ))}
-                            </div>
-                        </Container>
+                <Container className={`card ${doctorId ? "" : "card--disabled"}`}>
+                    <Typography.Title level={3}>Дата</Typography.Title>
+                    <div className="pills">
+                        {dates.map((item) => (
+                            <Pill key={item.value} active={date === item.value} onClick={() => onPickDate(item.value)}>
+                                {item.title}
+                            </Pill>
+                        ))}
+                    </div>
+                </Container>
 
-                        <Container className={`card ${date ? "" : "card--disabled"}`}>
-                            <Typography.Title level={3}>Время</Typography.Title>
-                            <div className="pills">
-                                {timeSlots.map((item) => (
-                                    <Pill key={item.value} active={timeISO === item.value} onClick={() => setTimeISO(item.value)}>
-                                        {item.title}
-                                    </Pill>
-                                ))}
-                            </div>
-                        </Container>
+                <Container className={`card ${date ? "" : "card--disabled"}`}>
+                    <Typography.Title level={3}>Время</Typography.Title>
+                    <div className="pills">
+                        {timeSlots.map((item) => (
+                            <Pill key={item.value} active={timeISO === item.value} onClick={() => setTimeISO(item.value)}>
+                                {item.title}
+                            </Pill>
+                        ))}
+                    </div>
+                </Container>
 
-                        <Container className="card">
-                            <Typography.Title level={3}>Итог</Typography.Title>
-                            <div className="summary">
-                                <div className="summaryRow">
-                                    <Typography.Label>Специальность</Typography.Label>
-                                    <Typography.Label>{selectedSpecialty?.title || "—"}</Typography.Label>
-                                </div>
-                                <div className="summaryRow">
-                                    <Typography.Label>Врач</Typography.Label>
-                                    <Typography.Label>{selectedDoctorRow?.doctorName || selectedDoctorRow?.doctorTitle || "—"}</Typography.Label>
-                                </div>
-                                <div className="summaryRow">
-                                    <Typography.Label>Дата</Typography.Label>
-                                    <Typography.Label>{date ? toRuDate(date) : "—"}</Typography.Label>
-                                </div>
-                                <div className="summaryRow">
-                                    <Typography.Label>Время</Typography.Label>
-                                    <Typography.Label>{timeISO ? toRuTime(timeISO) : "—"}</Typography.Label>
-                                </div>
-                                <div className="summaryRow">
-                                    <Typography.Label>Кабинет</Typography.Label>
-                                    <Typography.Label>{selectedDoctorRow?.cabinetTitle || "—"}</Typography.Label>
-                                </div>
-                            </div>
-                        </Container>
-                    </>
-                ) : null}
+                <Container className="card">
+                    <Typography.Title level={3}>Итог</Typography.Title>
+                    <div className="summary">
+                        <div className="summaryRow">
+                            <Typography.Label>Специальность</Typography.Label>
+                            <Typography.Label>{selectedSpecialty?.title || "—"}</Typography.Label>
+                        </div>
+                        <div className="summaryRow">
+                            <Typography.Label>Врач</Typography.Label>
+                            <Typography.Label>{getDoctorLabel(selectedDoctor) || "—"}</Typography.Label>
+                        </div>
+                        <div className="summaryRow">
+                            <Typography.Label>Дата</Typography.Label>
+                            <Typography.Label>{date ? toRuDate(date) : "—"}</Typography.Label>
+                        </div>
+                        <div className="summaryRow">
+                            <Typography.Label>Время</Typography.Label>
+                            <Typography.Label>{timeISO ? toRuTime(timeISO) : "—"}</Typography.Label>
+                        </div>
+                        <div className="summaryRow">
+                            <Typography.Label>Кабинет</Typography.Label>
+                            <Typography.Label>{selectedSlot?.cabinetTitle || "—"}</Typography.Label>
+                        </div>
+                    </div>
+                </Container>
                 <Button
                 mode="secondary"
                 onClick={() => nav("/")}

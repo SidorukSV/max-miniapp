@@ -1,6 +1,7 @@
 import { authWiddleware } from "../middleware/auth.js";
 import {
     createAppointmentDocument,
+    getDoctorSchedule,
     getAppointmentsDocuments,
     getAppointmentsSchedule,
     updateAppointmentDocument,
@@ -24,6 +25,27 @@ export async function documentsRoutes(app) {
             const { city_id } = req.user;
             const { specializationId } = req.query || {};
             const items = await getAppointmentsSchedule({ cityId: city_id, specializationId });
+
+            return { items };
+        });
+
+    app.get("/api/v1/documents/schedule",
+        { preHandler: [authWiddleware] },
+        async (req) => {
+            const { city_id } = req.user;
+            const { doctorId, branchId, date, format } = req.query || {};
+
+            if (!doctorId || !branchId) {
+                return { items: [] };
+            }
+
+            const items = await getDoctorSchedule({
+                cityId: city_id,
+                doctorId,
+                branchId,
+                date,
+                format,
+            });
 
             return { items };
         });
