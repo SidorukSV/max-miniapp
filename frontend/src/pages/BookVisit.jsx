@@ -167,7 +167,7 @@ export default function BookVisit() {
                 setError("");
                 const response = await getCatalogSpecializationsBySchedule(accessToken);
                 const items = Array.isArray(response?.items) ? response.items : [];
-                var sorted_items = items .sort((a, b) => {
+                const sorted_items = items .sort((a, b) => {
                     return a.specializationTitle.toUpperCase().
                         localeCompare(b.specializationTitle.toUpperCase())
                 });
