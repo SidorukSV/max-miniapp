@@ -91,11 +91,6 @@ export async function onecFetch(path, options = {}) {
     }
 
     if (!res.ok) {
-        if (!isJsonResponse && typeof data === "string" && data.trim()) {
-            console.error("1C XML error response:", data);
-        }
-        console.log(res);
-        console.log(data);
         const reason = data.error
             || data.message
             || (!isJsonResponse ? `api_error_${res.status}` : null)
@@ -139,21 +134,17 @@ async function startOneCSession(oneCConfig) {
         });
 
         if (!res.ok) {
-            console.warn(`Failed to start 1C IB session for ${oneCConfig.cityId}: ${res.status}`);
-            return;
+            return null;
         }
 
         const cookie = parseIbSessionCookie(res.headers.get("set-cookie"));
         if (!cookie) {
-            console.warn(`1C IB session cookie missing for ${oneCConfig.cityId}`);
             return null;
         }
 
         ibSessionCookies.set(oneCConfig.cityId, cookie);
-        console.log(`1C IB session initialized for ${oneCConfig.cityId}`);
         return cookie;
-    } catch (error) {
-        console.warn(`1C IB session start error for ${oneCConfig.cityId}`, error);
+    } catch {
         return null;
     }
 }
@@ -172,11 +163,8 @@ async function finishOneCSession(oneCConfig) {
             },
         });
 
-        if (!res.ok) {
-            console.warn(`Failed to finish 1C IB session for ${oneCConfig.cityId}: ${res.status}`);
-        }
-    } catch (error) {
-        console.warn(`1C IB session finish error for ${oneCConfig.cityId}`, error);
+    } catch {
+        // no-op: session cleanup is best effort
     } finally {
         ibSessionCookies.delete(oneCConfig.cityId);
     }
@@ -184,12 +172,18 @@ async function finishOneCSession(oneCConfig) {
 
 export async function getPatientsByPhone({ cityId, phone}) {
     const oneCConfig = getOneCConfig(cityId);
-    const data = onecFetch(oneCConfig.url.concat(`/catalogs/clients/?search_type=ByPhone&phone=${phone}`), {
-        method: "GET",
-        headers: {
-            Authorization: `Basic ${oneCConfig.basicAuth}`,
-        },
-    });
+    const endpoint = "/catalogs/clients";
+    let data;
+    try {
+        data = await onecFetch(oneCConfig.url.concat(`${endpoint}/?search_type=ByPhone&phone=${phone}`), {
+            method: "GET",
+            headers: {
+                Authorization: `Basic ${oneCConfig.basicAuth}`,
+            },
+        });
+    } catch (error) {
+        throw new Error(`onec_request_failed:endpoint=${endpoint};cityId=${cityId};operation=getPatientsByPhone;reason=${error.message}`);
+    }
 
     if (data?.error) {
         return [];
@@ -202,12 +196,18 @@ export async function getPatientsByPhone({ cityId, phone}) {
 
 export async function getPatientById({ cityId, patient_id}) {
     const oneCConfig = getOneCConfig(cityId);
-    const data = onecFetch(oneCConfig.url.concat(`/catalogs/clients/?search_type=ByID&patient_id=${patient_id}`), {
-        method: "GET",
-        headers: {
-            Authorization: `Basic ${oneCConfig.basicAuth}`,
-        },
-    });
+    const endpoint = "/catalogs/clients";
+    let data;
+    try {
+        data = await onecFetch(oneCConfig.url.concat(`${endpoint}/?search_type=ByID&patient_id=${patient_id}`), {
+            method: "GET",
+            headers: {
+                Authorization: `Basic ${oneCConfig.basicAuth}`,
+            },
+        });
+    } catch (error) {
+        throw new Error(`onec_request_failed:endpoint=${endpoint};cityId=${cityId};operation=getPatientById;reason=${error.message}`);
+    }
 
     if (data?.error) {
         return [];
@@ -220,13 +220,19 @@ export async function getPatientById({ cityId, patient_id}) {
 
 export async function getBonusTransactions({ cityId, patient_id }) {
     const oneCConfig = getOneCConfig(cityId);
-    const data = await onecFetch(oneCConfig.url.concat(`/transactions/bonus`), {
-        method: "POST",
-        headers: {
-            Authorization: `Basic ${oneCConfig.basicAuth}`,
-        },
-        body: JSON.stringify({ patient_id }),
-    });
+    const endpoint = "/transactions/bonus";
+    let data;
+    try {
+        data = await onecFetch(oneCConfig.url.concat(endpoint), {
+            method: "POST",
+            headers: {
+                Authorization: `Basic ${oneCConfig.basicAuth}`,
+            },
+            body: JSON.stringify({ patient_id }),
+        });
+    } catch (error) {
+        throw new Error(`onec_request_failed:endpoint=${endpoint};cityId=${cityId};operation=getBonusTransactions;reason=${error.message}`);
+    }
 
     if (!Array.isArray(data)) {
         return [];
