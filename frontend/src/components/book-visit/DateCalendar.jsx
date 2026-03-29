@@ -1,3 +1,5 @@
+import { toISODateOnly } from "../../modules/bookVisitHelpers";
+
 const WEEK_DAYS = ["пн", "вт", "ср", "чт", "пт", "сб", "вс"];
 
 export default function DateCalendar({
@@ -9,7 +11,6 @@ export default function DateCalendar({
     selectedDate,
     availableDates,
     onPickDate,
-    toISODateOnly,
 }) {
     return (
         <div className="calendar">

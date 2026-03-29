@@ -1,6 +1,7 @@
 import { Container, Flex, Typography } from "@maxhub/max-ui";
 import Pill from "./Pill.jsx";
 import DoctorsSkeleton from "./skeletons/DoctorsSkeleton.jsx";
+import { getDoctorLabel } from "../../modules/bookVisitHelpers";
 
 export default function DoctorSection({
     specId,
@@ -10,7 +11,6 @@ export default function DoctorSection({
     branchId,
     onPickDoctor,
     isRescheduleMode,
-    getDoctorLabel,
 }) {
     return (
         <Container className={`card ${specId ? "" : "card--disabled"}`}>
