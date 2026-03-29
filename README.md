@@ -54,3 +54,20 @@ npm run dev
 ```bash
 REDIS_URL=redis://<host>:6379 npm run dev
 ```
+
+## Конфиг oneC в отдельном `.yml`
+
+Backend теперь поддерживает загрузку `oneCConfigs` из YAML-файла.
+
+- Путь по умолчанию: `backend/onec-configs.yml` (если запускать из папки `backend`, то просто `onec-configs.yml`).
+- Можно указать свой путь через `ONEC_CONFIGS_FILE`.
+- Для примера используйте `backend/onec-configs.example.yml`.
+
+Пример запуска с кастомным путем:
+
+```bash
+cd backend
+ONEC_CONFIGS_FILE=./onec-configs.example.yml npm run dev
+```
+
+> `ONEC_CONFIGS` (JSON в env) оставлен как fallback для обратной совместимости.
