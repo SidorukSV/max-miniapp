@@ -540,12 +540,12 @@ export default function BookVisit() {
                     doctorId={doctorId}
                     isLoading={isDatesLoading}
                     monthTitle={monthTitle}
-                    goPrevMonth={goPrevMonth}
-                    goNextMonth={goNextMonth}
+                    onPrevMonth={goPrevMonth}
+                    onNextMonth={goNextMonth}
                     monthGrid={monthGrid}
                     monthCursor={monthCursor}
                     availableDates={availableDates}
-                    date={date}
+                    selectedDate={date}
                     onPickDate={onPickDate}
                     toISODateOnly={toISODateOnly}
                 />

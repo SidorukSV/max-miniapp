@@ -1,17 +1,16 @@
 import { Container, Typography } from "@maxhub/max-ui";
-
-const WEEK_DAYS = ["пн", "вт", "ср", "чт", "пт", "сб", "вс"];
+import DateCalendar from "./DateCalendar.jsx";
 
 export default function DateSection({
     doctorId,
     isLoading,
     monthTitle,
-    goPrevMonth,
-    goNextMonth,
+    onPrevMonth,
+    onNextMonth,
     monthGrid,
     monthCursor,
     availableDates,
-    date,
+    selectedDate,
     onPickDate,
     toISODateOnly,
 }) {
@@ -34,44 +33,18 @@ export default function DateSection({
                     </div>
                 </div>
             ) : (
-                <div className="calendar" aria-disabled={!doctorId}>
-                    <div className="calendarHeader">
-                        <Typography.Label className="calendarTitle">{monthTitle}</Typography.Label>
-                        <div className="calendarNav">
-                            <button type="button" className="calendarArrow" onClick={goPrevMonth} aria-label="Предыдущий месяц">
-                                ‹
-                            </button>
-                            <button type="button" className="calendarArrow" onClick={goNextMonth} aria-label="Следующий месяц">
-                                ›
-                            </button>
-                        </div>
-                    </div>
-
-                    <div className="calendarWeekdays">
-                        {WEEK_DAYS.map((dayLabel) => (
-                            <span key={dayLabel}>{dayLabel}</span>
-                        ))}
-                    </div>
-
-                    <div className="calendarGrid">
-                        {monthGrid.map((gridDate) => {
-                            const isoDay = toISODateOnly(gridDate);
-                            const isCurrentMonth = gridDate.getMonth() === monthCursor.getMonth();
-                            const isAvailable = availableDates.has(isoDay);
-                            const isSelected = date === isoDay;
-                            return (
-                                <button
-                                    key={isoDay}
-                                    type="button"
-                                    className={`calendarDay ${isCurrentMonth ? "" : "calendarDay--outside"} ${isAvailable ? "calendarDay--available" : ""} ${isSelected ? "calendarDay--selected" : ""}`}
-                                    onClick={() => onPickDate(isoDay)}
-                                    disabled={!isAvailable}
-                                >
-                                    {gridDate.getDate()}
-                                </button>
-                            );
-                        })}
-                    </div>
+                <div aria-disabled={!doctorId}>
+                    <DateCalendar
+                        monthTitle={monthTitle}
+                        monthGrid={monthGrid}
+                        monthCursor={monthCursor}
+                        onPrevMonth={onPrevMonth}
+                        onNextMonth={onNextMonth}
+                        selectedDate={selectedDate}
+                        availableDates={availableDates}
+                        onPickDate={onPickDate}
+                        toISODateOnly={toISODateOnly}
+                    />
                 </div>
             )}
         </Container>
