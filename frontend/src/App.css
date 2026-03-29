@@ -712,6 +712,80 @@ body {
   width: 85%;
 }
 
+.bookVisitSkeleton {
+  border-radius: 999px;
+}
+
+.bookVisitSkeletonPills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.bookVisitSkeleton--pill {
+  width: 130px;
+  height: 36px;
+}
+
+.bookVisitSkeleton--time {
+  width: 84px;
+}
+
+.bookVisitSkeletonDoctors {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.bookVisitSkeleton--label {
+  width: 170px;
+  height: 14px;
+  border-radius: 6px;
+}
+
+.bookVisitSkeletonCalendar {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bookVisitSkeletonCalendarHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.bookVisitSkeleton--month {
+  width: 170px;
+  height: 18px;
+  border-radius: 8px;
+}
+
+.bookVisitSkeletonNav {
+  display: flex;
+  gap: 8px;
+}
+
+.bookVisitSkeleton--navBtn {
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+}
+
+.bookVisitSkeletonCalendarGrid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.bookVisitSkeleton--day {
+  width: 100%;
+  height: 36px;
+  border-radius: 10px;
+}
+
 @keyframes skeletonShimmer {
   0% {
     background-position: 100% 50%;
