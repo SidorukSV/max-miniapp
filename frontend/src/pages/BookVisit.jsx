@@ -365,6 +365,7 @@ export default function BookVisit() {
                     doctorId,
                     branchId,
                     date,
+                    format: "Full"
                 });
 
                 const items = Array.isArray(response?.items) ? response.items : [];
