@@ -1,4 +1,4 @@
-import { authWiddleware } from "../middleware/auth.js";
+import { authMiddleware } from "../middleware/auth.js";
 import {
     createAppointmentDocument,
     getDoctorSchedule,
@@ -9,7 +9,7 @@ import {
 
 export async function documentsRoutes(app) {
     app.get("/api/v1/documents/appointments",
-        { preHandler: [authWiddleware] },
+        { preHandler: [authMiddleware] },
         async (req) => {
             const { patient_id, city_id } = req.user;
             const items = await getAppointmentsDocuments({ cityId: city_id, patient_id });
@@ -20,7 +20,7 @@ export async function documentsRoutes(app) {
         });
 
     app.get("/api/v1/documents/schedule",
-        { preHandler: [authWiddleware] },
+        { preHandler: [authMiddleware] },
         async (req) => {
             const { city_id } = req.user;
             const { doctorId, branchId, date, format } = req.query || {};
@@ -41,7 +41,7 @@ export async function documentsRoutes(app) {
         });
 
     app.post("/api/v1/documents/appointments",
-        { preHandler: [authWiddleware] },
+        { preHandler: [authMiddleware] },
         async (req) => {
             const { patient_id, city_id } = req.user;
             const payload = {
@@ -54,7 +54,7 @@ export async function documentsRoutes(app) {
         });
 
     app.put("/api/v1/documents/appointments",
-        { preHandler: [authWiddleware] },
+        { preHandler: [authMiddleware] },
         
         async (req) => {
             const { patient_id, city_id } = req.user;

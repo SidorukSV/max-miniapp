@@ -1,9 +1,9 @@
-import { authWiddleware } from "../middleware/auth.js";
+import { authMiddleware } from "../middleware/auth.js";
 import { getBonusTransactions, getPatientById } from "../services/onecRouter.js";
 
 export async function meRoutes(app) {
     app.get("/api/v1/me",
-        { preHandler: [authWiddleware] },
+        { preHandler: [authMiddleware] },
         async (req, reply) => {
             const { patient_id, city_id, phone, channel } = req.user;
             try {
@@ -26,7 +26,7 @@ export async function meRoutes(app) {
         });
 
     app.get("/api/v1/me/bonus-transactions",
-        { preHandler: [authWiddleware] },
+        { preHandler: [authMiddleware] },
         async (req, reply) => {
             const { patient_id, city_id } = req.user;
             try {
