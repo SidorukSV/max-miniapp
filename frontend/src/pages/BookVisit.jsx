@@ -130,6 +130,32 @@ function getDoctorLabel(doctor) {
     return [doctor?.doctorLastname, doctor?.doctorFirstname, doctor?.doctorPatronymic].filter(Boolean).join(" ") || doctor?.doctorTitle || "Врач";
 }
 
+function getMonthStart(value) {
+    const baseDate = value ? new Date(value) : new Date();
+    return new Date(baseDate.getFullYear(), baseDate.getMonth(), 1);
+}
+
+function formatMonthLabel(dateValue) {
+    return new Intl.DateTimeFormat("ru-RU", { month: "long", year: "numeric" }).format(dateValue);
+}
+
+function buildMonthGrid(monthStart) {
+    const monthStartDay = monthStart.getDay();
+    const mondayStartOffset = monthStartDay === 0 ? 6 : monthStartDay - 1;
+    const gridStart = new Date(monthStart);
+    gridStart.setDate(monthStart.getDate() - mondayStartOffset);
+
+    return Array.from({ length: 42 }, (_, index) => {
+        const day = new Date(gridStart);
+        day.setDate(gridStart.getDate() + index);
+        return day;
+    });
+}
+
+function toISODateOnly(dateValue) {
+    return dateValue.toISOString().split("T")[0];
+}
+
 export default function BookVisit() {
     const nav = useNavigate();
     const [searchParams] = useSearchParams();
@@ -154,6 +180,7 @@ export default function BookVisit() {
     const [branchId, setBranchId] = useState("");
     const [date, setDate] = useState("");
     const [timeISO, setTimeISO] = useState("");
+    const [monthCursor, setMonthCursor] = useState(() => getMonthStart());
 
     useEffect(() => {
         async function loadSpecializations() {
@@ -167,11 +194,11 @@ export default function BookVisit() {
                 setError("");
                 const response = await getCatalogSpecializationsBySchedule(accessToken);
                 const items = Array.isArray(response?.items) ? response.items : [];
-                const sorted_items = items .sort((a, b) => {
+                const sortedItems = [...items].sort((a, b) => {
                     return a.specializationTitle.toUpperCase().
-                        localeCompare(b.specializationTitle.toUpperCase())
+                        localeCompare(b.specializationTitle.toUpperCase());
                 });
-                setSpecialties(sorted_items.map((item) => ({
+                setSpecialties(sortedItems.map((item) => ({
                     id: item.specializationId,
                     title: item.specializationTitle || "Без специальности",
                 })));
@@ -311,6 +338,17 @@ export default function BookVisit() {
     }, [dates, date]);
 
     useEffect(() => {
+        if (date) {
+            setMonthCursor(getMonthStart(date));
+            return;
+        }
+
+        if (dates.length) {
+            setMonthCursor(getMonthStart(dates[0].value));
+        }
+    }, [date, dates]);
+
+    useEffect(() => {
         async function loadScheduleByDate() {
             if (!accessToken || !doctorId || !branchId || !date) {
                 setDaySchedule([]);
@@ -352,6 +390,10 @@ export default function BookVisit() {
     }, [date, daySchedule, selectedDoctor]);
 
     const selectedSlot = timeSlots.find((item) => item.value === timeISO) || null;
+    const availableDates = useMemo(() => new Set(dates.map((item) => item.value)), [dates]);
+    const monthTitle = useMemo(() => formatMonthLabel(monthCursor), [monthCursor]);
+    const monthGrid = useMemo(() => buildMonthGrid(monthCursor), [monthCursor]);
+    const weekDays = ["пн", "вт", "ср", "чт", "пт", "сб", "вс"];
 
     const canConfirm = Boolean(specId && doctorId && branchId && date && timeISO && !saving);
 
@@ -366,6 +408,14 @@ export default function BookVisit() {
 
     function onPickDate(nextDate) {
         setDate(nextDate);
+    }
+
+    function goPrevMonth() {
+        setMonthCursor((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+    }
+
+    function goNextMonth() {
+        setMonthCursor((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
     }
 
     async function confirm() {
@@ -481,12 +531,44 @@ export default function BookVisit() {
 
                 <Container className={`card ${doctorId ? "" : "card--disabled"}`}>
                     <Typography.Title level={3}>Дата</Typography.Title>
-                    <div className="pills">
-                        {dates.map((item) => (
-                            <Pill key={item.value} active={date === item.value} onClick={() => onPickDate(item.value)}>
-                                {item.title}
-                            </Pill>
-                        ))}
+                    <div className="calendar" aria-disabled={!doctorId}>
+                        <div className="calendarHeader">
+                            <Typography.Label className="calendarTitle">{monthTitle}</Typography.Label>
+                            <div className="calendarNav">
+                                <button type="button" className="calendarArrow" onClick={goPrevMonth} aria-label="Предыдущий месяц">
+                                    ‹
+                                </button>
+                                <button type="button" className="calendarArrow" onClick={goNextMonth} aria-label="Следующий месяц">
+                                    ›
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="calendarWeekdays">
+                            {weekDays.map((dayLabel) => (
+                                <span key={dayLabel}>{dayLabel}</span>
+                            ))}
+                        </div>
+
+                        <div className="calendarGrid">
+                            {monthGrid.map((gridDate) => {
+                                const isoDay = toISODateOnly(gridDate);
+                                const isCurrentMonth = gridDate.getMonth() === monthCursor.getMonth();
+                                const isAvailable = availableDates.has(isoDay);
+                                const isSelected = date === isoDay;
+                                return (
+                                    <button
+                                        key={isoDay}
+                                        type="button"
+                                        className={`calendarDay ${isCurrentMonth ? "" : "calendarDay--outside"} ${isAvailable ? "calendarDay--available" : ""} ${isSelected ? "calendarDay--selected" : ""}`}
+                                        onClick={() => onPickDate(isoDay)}
+                                        disabled={!isAvailable}
+                                    >
+                                        {gridDate.getDate()}
+                                    </button>
+                                );
+                            })}
+                        </div>
                     </div>
                 </Container>
 
