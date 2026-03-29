@@ -1,5 +1,6 @@
 import { Container, Typography } from "@maxhub/max-ui";
 import DateCalendar from "./DateCalendar.jsx";
+import CalendarSkeleton from "./skeletons/CalendarSkeleton.jsx";
 
 export default function DateSection({
     doctorId,
@@ -17,22 +18,7 @@ export default function DateSection({
     return (
         <Container className={`card ${doctorId ? "" : "card--disabled"}`}>
             <Typography.Title level={3}>Дата</Typography.Title>
-            {isLoading ? (
-                <div className="bookVisitSkeletonCalendar">
-                    <div className="bookVisitSkeletonCalendarHeader">
-                        <div className="skeleton bookVisitSkeleton bookVisitSkeleton--month" />
-                        <div className="bookVisitSkeletonNav">
-                            <div className="skeleton bookVisitSkeleton bookVisitSkeleton--navBtn" />
-                            <div className="skeleton bookVisitSkeleton bookVisitSkeleton--navBtn" />
-                        </div>
-                    </div>
-                    <div className="bookVisitSkeletonCalendarGrid">
-                        {Array.from({ length: 14 }).map((_, index) => (
-                            <div key={index} className="skeleton bookVisitSkeleton bookVisitSkeleton--day" />
-                        ))}
-                    </div>
-                </div>
-            ) : (
+            {isLoading ? <CalendarSkeleton /> : (
                 <div aria-disabled={!doctorId}>
                     <DateCalendar
                         monthTitle={monthTitle}

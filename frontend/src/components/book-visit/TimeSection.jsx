@@ -1,5 +1,6 @@
 import { Container, Flex, Typography } from "@maxhub/max-ui";
 import Pill from "./Pill.jsx";
+import TimesSkeleton from "./skeletons/TimesSkeleton.jsx";
 
 export default function TimeSection({
     date,
@@ -11,13 +12,7 @@ export default function TimeSection({
     return (
         <Container className={`card ${date ? "" : "card--disabled"}`}>
             <Typography.Title level={3}>Время</Typography.Title>
-            {isLoading ? (
-                <div className="bookVisitSkeletonPills">
-                    {Array.from({ length: 8 }).map((_, index) => (
-                        <div key={index} className="skeleton bookVisitSkeleton bookVisitSkeleton--pill bookVisitSkeleton--time" />
-                    ))}
-                </div>
-            ) : (
+            {isLoading ? <TimesSkeleton /> : (
                 <Flex direction="column" gap={10} style={{ marginTop: 12 }}>
                     {groupedTimeSlots.map((group) => (
                         <div key={group.key}>
