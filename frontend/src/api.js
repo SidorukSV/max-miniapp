@@ -45,7 +45,7 @@ export async function authStart() {
 }
 
 export async function authSetCity({ auth_session_id, city_id }) {
-    return apiFetch("/api/set-city", {
+    return apiFetch("/auth/set-city", {
         method: "POST",
         body: JSON.stringify({ auth_session_id, city_id }),
     });
