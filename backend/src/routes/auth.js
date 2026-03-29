@@ -27,8 +27,11 @@ export async function authRoutes(app) {
             }
 
             req.session = await updateSession(req.session.id, { city_id });
-            console.log(req.session);
-            console.log({ city_id });
+            req.log.info({
+                endpoint: "/api/v1/auth/set-city",
+                cityId: city_id,
+                operation: "updateSessionCity",
+            }, "Auth city selected");
 
             return { ok: true };
         });
@@ -51,6 +54,12 @@ export async function authRoutes(app) {
                         maxAgeSeconds: config.maxInitDataMaxAgeSeconds,
                     });
                 } catch (err) {
+                    req.log.warn({
+                        endpoint: "/api/v1/auth/phone",
+                        cityId,
+                        operation: "verifyMaxInitData",
+                        err,
+                    }, "MAX init data verification failed");
                     return reply.code(401).send({ error: err?.message || "init_data_invalid" });
                 }
             }
@@ -81,7 +90,6 @@ export async function authRoutes(app) {
         async (req, reply) => {
             const { patient_id } = req.body || {};
             const session = req.session;
-            console.log(req.body);
             if (!patient_id) {
                 return reply.code(400).send({ error: "patient_id_required" });
             }
@@ -120,6 +128,11 @@ export async function authRoutes(app) {
             req.session = await updateSession(session.id, {
                 selected_patient_id: patient.id,
             });
+            req.log.info({
+                endpoint: "/api/v1/auth/select-patient",
+                cityId,
+                operation: "selectPatient",
+            }, "Patient selected for auth session");
 
             return {
                 access_token: access_token,
