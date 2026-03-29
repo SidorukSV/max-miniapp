@@ -167,7 +167,11 @@ export default function BookVisit() {
                 setError("");
                 const response = await getCatalogSpecializationsBySchedule(accessToken);
                 const items = Array.isArray(response?.items) ? response.items : [];
-                setSpecialties(items.map((item) => ({
+                var sorted_items = items .sort((a, b) => {
+                    return a.specializationTitle.toUpperCase().
+                        localeCompare(b.specializationTitle.toUpperCase())
+                });
+                setSpecialties(items.map((sorted_items) => ({
                     id: item.specializationId,
                     title: item.specializationTitle || "Без специальности",
                 })));
