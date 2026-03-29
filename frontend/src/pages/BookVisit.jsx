@@ -171,7 +171,7 @@ export default function BookVisit() {
                     return a.specializationTitle.toUpperCase().
                         localeCompare(b.specializationTitle.toUpperCase())
                 });
-                setSpecialties(items.map((sorted_items) => ({
+                setSpecialties(sorted_items.map((item) => ({
                     id: item.specializationId,
                     title: item.specializationTitle || "Без специальности",
                 })));

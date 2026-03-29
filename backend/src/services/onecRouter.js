@@ -52,7 +52,7 @@ export async function onecFetch(path, options = {}) {
 
     // 1C can invalidate IB sessions unexpectedly.
     // If the cookie became stale, recreate the session and retry once.
-    if (res.status === 400 && cityConfig && !hasCookieHeader) {
+    if (res.status >= 400 && cityConfig && !hasCookieHeader) {
         ibSessionCookies.delete(cityConfig.cityId);
         const refreshedCookie = await startOneCSession(cityConfig);
         res = await requestWithCookie(refreshedCookie);
@@ -72,7 +72,7 @@ export async function onecFetch(path, options = {}) {
             console.error("1C XML error response:", data);
         }
         console.log(res);
-
+        console.log(data);
         const reason = data.error
             || data.message
             || (!isJsonResponse ? `api_error_${res.status}` : null)
