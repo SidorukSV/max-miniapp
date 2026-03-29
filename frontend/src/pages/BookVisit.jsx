@@ -184,6 +184,7 @@ export default function BookVisit() {
     const [date, setDate] = useState("");
     const [timeISO, setTimeISO] = useState("");
     const [monthCursor, setMonthCursor] = useState(() => getMonthStart());
+    const [showMissingWarning, setShowMissingWarning] = useState(false);
 
     useEffect(() => {
         async function loadSpecializations() {
@@ -317,6 +318,8 @@ export default function BookVisit() {
                 const normalized = items
                     .map((item) => normalizeDateValue(item))
                     .filter(Boolean)
+                    .map((value) => String(value).split("T")[0])
+                    .filter((value) => /^\d{4}-\d{2}-\d{2}$/.test(value))
                     .map((value) => ({ value, title: toRuDate(value) }))
                     .sort((a, b) => new Date(a.value) - new Date(b.value));
 
@@ -393,6 +396,28 @@ export default function BookVisit() {
     }, [date, daySchedule, selectedDoctor]);
 
     const selectedSlot = timeSlots.find((item) => item.value === timeISO) || null;
+    const groupedTimeSlots = useMemo(() => {
+        const groups = [
+            { key: "morning", title: "Утро", slots: [] },
+            { key: "day", title: "День", slots: [] },
+            { key: "evening", title: "Вечер", slots: [] },
+        ];
+
+        for (const slot of timeSlots) {
+            const slotMinutes = getTimeMinutes(slot.value);
+            if (slotMinutes === null || !slot.title) continue;
+
+            if (slotMinutes <= 12 * 60) {
+                groups[0].slots.push(slot);
+            } else if (slotMinutes <= 18 * 60) {
+                groups[1].slots.push(slot);
+            } else {
+                groups[2].slots.push(slot);
+            }
+        }
+
+        return groups.filter((group) => group.slots.length > 0);
+    }, [timeSlots]);
     const availableDates = useMemo(() => new Set(dates.map((item) => item.value.split("T")[0])), [dates]);
     const monthTitle = useMemo(() => formatMonthLabel(monthCursor), [monthCursor]);
     const monthGrid = useMemo(() => buildMonthGrid(monthCursor), [monthCursor]);
@@ -403,6 +428,12 @@ export default function BookVisit() {
     const isTimesLoading = loadingSpecialties || loadingDoctors || loadingDates || loadingTimes;
 
     const canConfirm = Boolean(specId && doctorId && branchId && date && timeISO && !saving);
+
+    useEffect(() => {
+        if (canConfirm && showMissingWarning) {
+            setShowMissingWarning(false);
+        }
+    }, [canConfirm, showMissingWarning]);
 
     function onPickSpec(nextSpecId) {
         setSpecId(nextSpecId);
@@ -468,11 +499,26 @@ export default function BookVisit() {
         }
     }
 
+    function onBottomButtonClick() {
+        if (canConfirm) {
+            confirm();
+            return;
+        }
+
+        setShowMissingWarning(true);
+    }
+
     return (
         <PageLayout
             showBottom={true}
             bottomButtonText={saving ? "Сохраняем..." : isRescheduleMode ? "Перенести запись" : "Подтвердить запись"}
-            onBottomButtonClick={canConfirm ? confirm : undefined}
+            onBottomButtonClick={onBottomButtonClick}
+            before={showMissingWarning ? (
+                <Typography.Label className="bookVisitWarning">
+                    Чтобы продолжить, выберите специальность, врача, дату и время.
+                </Typography.Label>
+            ) : null}
+            bottomButtonDisabled={saving}
             showBottomButton={true}
         >
             <Flex direction="column" gap={10}>
@@ -622,13 +668,20 @@ export default function BookVisit() {
                             ))}
                         </div>
                     ) : (
-                        <div className="pills">
-                            {timeSlots.map((item) => (
-                                <Pill key={item.value} active={timeISO === item.value} onClick={() => setTimeISO(item.value)}>
-                                    {item.title}
-                                </Pill>
+                        <Flex direction="column" gap={10} style={{ marginTop: 12 }}>
+                            {groupedTimeSlots.map((group) => (
+                                <div key={group.key}>
+                                    <Typography.Label>{group.title}</Typography.Label>
+                                    <div className="pills">
+                                        {group.slots.map((item) => (
+                                            <Pill key={item.value} active={timeISO === item.value} onClick={() => setTimeISO(item.value)}>
+                                                {item.title}
+                                            </Pill>
+                                        ))}
+                                    </div>
+                                </div>
                             ))}
-                        </div>
+                        </Flex>
                     )}
                 </Container>
 

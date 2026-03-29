@@ -270,8 +270,17 @@ body {
   font-weight: 600;
 }
 
+.bottomBefore {
+  margin-bottom: 10px;
+}
+
 .bottomAfter {
   margin-top: 10px;
+}
+
+.bookVisitWarning {
+  color: #b42318;
+  display: block;
 }
 
 .bottomNote {

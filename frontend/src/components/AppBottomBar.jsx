@@ -7,6 +7,7 @@ export default function AppBottomBar({
     onButtonClick,
     buttonDisabled = false,
     showButton = true,
+    before = null,
     after = null
 }) {
     const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
@@ -30,6 +31,11 @@ export default function AppBottomBar({
     return (
         <footer className={`bottomBar ${isKeyboardOpen ? "bottomBar--hidden" : ""}`}>
             <Container className="bottomBarInner">
+                {before && (
+                    <div className="bottomBefore">
+                        {before}
+                    </div>
+                )}
                 {showButton && (
                     <Button className="bottomPrimary" onClick={onButtonClick} disabled={buttonDisabled}>
                         {buttonText}

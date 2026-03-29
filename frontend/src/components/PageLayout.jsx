@@ -12,6 +12,7 @@ export default function PageLayout({
     onBottomButtonClick,
     bottomButtonDisabled = false,
     showBottomButton = true,
+    before = null,
     after = null,
     roundedLogo = false
 }) {
@@ -25,6 +26,7 @@ export default function PageLayout({
                     onButtonClick={onBottomButtonClick}
                     buttonDisabled={bottomButtonDisabled}
                     showButton={showBottomButton}
+                    before={before}
                     after={after}
                 />
             )}
