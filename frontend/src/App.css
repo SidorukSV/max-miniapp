@@ -292,6 +292,87 @@ body {
   margin-top: 12px;
 }
 
+.calendar {
+  margin-top: 12px;
+}
+
+.calendarHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.calendarTitle {
+  text-transform: capitalize;
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.calendarNav {
+  display: flex;
+  gap: 8px;
+}
+
+.calendarArrow {
+  border: 1px solid var(--border);
+  background: transparent;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.calendarWeekdays,
+.calendarGrid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.calendarWeekdays {
+  margin-bottom: 8px;
+}
+
+.calendarWeekdays span {
+  text-align: center;
+  color: var(--muted);
+  font-size: 16px;
+  text-transform: lowercase;
+}
+
+.calendarDay {
+  border: none;
+  background: transparent;
+  color: rgba(0, 0, 0, 0.22);
+  height: 40px;
+  border-radius: 12px;
+  font-size: 18px;
+  cursor: default;
+}
+
+.calendarDay--outside {
+  color: rgba(0, 0, 0, 0.14);
+}
+
+.calendarDay--available {
+  color: var(--text);
+  cursor: pointer;
+}
+
+.calendarDay--selected {
+  background: #000;
+  color: #fff;
+  font-weight: 700;
+}
+
+.calendarDay:disabled {
+  pointer-events: none;
+}
+
 .pill {
   border: 1px solid var(--border);
   background: var(--surface);
