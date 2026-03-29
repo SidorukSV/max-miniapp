@@ -166,7 +166,10 @@ export default function BookVisit() {
     const rescheduleDoctorId = searchParams.get("doctorId") || "";
     const isRescheduleMode = Boolean(appointmentId);
 
-    const [loading, setLoading] = useState(false);
+    const [loadingSpecialties, setLoadingSpecialties] = useState(false);
+    const [loadingDoctors, setLoadingDoctors] = useState(false);
+    const [loadingDates, setLoadingDates] = useState(false);
+    const [loadingTimes, setLoadingTimes] = useState(false);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState("");
 
@@ -190,7 +193,7 @@ export default function BookVisit() {
             }
 
             try {
-                setLoading(true);
+                setLoadingSpecialties(true);
                 setError("");
                 const response = await getCatalogSpecializationsBySchedule(accessToken);
                 const items = Array.isArray(response?.items) ? response.items : [];
@@ -205,7 +208,7 @@ export default function BookVisit() {
             } catch {
                 setError("Не удалось загрузить специализации");
             } finally {
-                setLoading(false);
+                setLoadingSpecialties(false);
             }
         }
 
@@ -233,7 +236,7 @@ export default function BookVisit() {
             }
 
             try {
-                setLoading(true);
+                setLoadingDoctors(true);
                 setError("");
                 const response = await getCatalogEmployeesBySpec(accessToken, specId);
                 const items = Array.isArray(response?.items) ? response.items : [];
@@ -242,7 +245,7 @@ export default function BookVisit() {
                 setError("Не удалось загрузить врачей");
                 setDoctors([]);
             } finally {
-                setLoading(false);
+                setLoadingDoctors(false);
             }
         }
 
@@ -302,7 +305,7 @@ export default function BookVisit() {
             }
 
             try {
-                setLoading(true);
+                setLoadingDates(true);
                 setError("");
                 const response = await getDoctorSchedule(accessToken, {
                     doctorId,
@@ -322,7 +325,7 @@ export default function BookVisit() {
                 setError("Не удалось загрузить доступные даты");
                 setDates([]);
             } finally {
-                setLoading(false);
+                setLoadingDates(false);
             }
         }
 
@@ -356,7 +359,7 @@ export default function BookVisit() {
             }
 
             try {
-                setLoading(true);
+                setLoadingTimes(true);
                 setError("");
                 const response = await getDoctorSchedule(accessToken, {
                     doctorId,
@@ -370,7 +373,7 @@ export default function BookVisit() {
                 setError("Не удалось загрузить доступное время");
                 setDaySchedule([]);
             } finally {
-                setLoading(false);
+                setLoadingTimes(false);
             }
         }
 
@@ -394,6 +397,10 @@ export default function BookVisit() {
     const monthTitle = useMemo(() => formatMonthLabel(monthCursor), [monthCursor]);
     const monthGrid = useMemo(() => buildMonthGrid(monthCursor), [monthCursor]);
     const weekDays = ["пн", "вт", "ср", "чт", "пт", "сб", "вс"];
+    const isSpecialtiesLoading = loadingSpecialties;
+    const isDoctorsLoading = loadingSpecialties || loadingDoctors;
+    const isDatesLoading = loadingSpecialties || loadingDoctors || loadingDates;
+    const isTimesLoading = loadingSpecialties || loadingDoctors || loadingDates || loadingTimes;
 
     const canConfirm = Boolean(specId && doctorId && branchId && date && timeISO && !saving);
 
@@ -474,13 +481,7 @@ export default function BookVisit() {
                     subtitle="Выберите параметры приёма"
                 />
 
-                {loading ? (
-                    <Container className="card">
-                        <Typography.Label>Загрузка данных...</Typography.Label>
-                    </Container>
-                ) : null}
-
-                {!loading && error ? (
+                {!isTimesLoading && error ? (
                     <Container className="card">
                         <Typography.Label>{error}</Typography.Label>
                     </Container>
@@ -488,23 +489,46 @@ export default function BookVisit() {
 
                 <Container className="card">
                     <Typography.Title level={3}>Специальность</Typography.Title>
-                    <div className="pills">
-                        {specialties.map((item) => (
-                            <Pill
-                                key={item.id}
-                                active={specId === item.id}
-                                onClick={() => onPickSpec(item.id)}
-                                disabled={isRescheduleMode}
-                            >
-                                {item.title}
-                            </Pill>
-                        ))}
-                    </div>
+                    {isSpecialtiesLoading ? (
+                        <div className="bookVisitSkeletonPills">
+                            {Array.from({ length: 5 }).map((_, index) => (
+                                <div key={index} className="skeleton bookVisitSkeleton bookVisitSkeleton--pill" />
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="pills">
+                            {specialties.map((item) => (
+                                <Pill
+                                    key={item.id}
+                                    active={specId === item.id}
+                                    onClick={() => onPickSpec(item.id)}
+                                    disabled={isRescheduleMode}
+                                >
+                                    {item.title}
+                                </Pill>
+                            ))}
+                        </div>
+                    )}
                 </Container>
 
                 <Container className={`card ${specId ? "" : "card--disabled"}`}>
                     <Typography.Title level={3}>Врач</Typography.Title>
-                    {!specId ? (
+                    {isDoctorsLoading ? (
+                        <div className="bookVisitSkeletonDoctors">
+                            <div className="skeleton bookVisitSkeleton bookVisitSkeleton--label" />
+                            <div className="bookVisitSkeletonPills">
+                                {Array.from({ length: 4 }).map((_, index) => (
+                                    <div key={index} className="skeleton bookVisitSkeleton bookVisitSkeleton--pill" />
+                                ))}
+                            </div>
+                            <div className="skeleton bookVisitSkeleton bookVisitSkeleton--label" />
+                            <div className="bookVisitSkeletonPills">
+                                {Array.from({ length: 3 }).map((_, index) => (
+                                    <div key={index} className="skeleton bookVisitSkeleton bookVisitSkeleton--pill" />
+                                ))}
+                            </div>
+                        </div>
+                    ) : !specId ? (
                         <Typography.Label style={{ marginTop: 8 }}>Сначала выберите специальность</Typography.Label>
                     ) : (
                         <Flex direction="column" gap={10} style={{ marginTop: 12 }}>
@@ -531,56 +555,81 @@ export default function BookVisit() {
 
                 <Container className={`card ${doctorId ? "" : "card--disabled"}`}>
                     <Typography.Title level={3}>Дата</Typography.Title>
-                    <div className="calendar" aria-disabled={!doctorId}>
-                        <div className="calendarHeader">
-                            <Typography.Label className="calendarTitle">{monthTitle}</Typography.Label>
-                            <div className="calendarNav">
-                                <button type="button" className="calendarArrow" onClick={goPrevMonth} aria-label="Предыдущий месяц">
-                                    ‹
-                                </button>
-                                <button type="button" className="calendarArrow" onClick={goNextMonth} aria-label="Следующий месяц">
-                                    ›
-                                </button>
+                    {isDatesLoading ? (
+                        <div className="bookVisitSkeletonCalendar">
+                            <div className="bookVisitSkeletonCalendarHeader">
+                                <div className="skeleton bookVisitSkeleton bookVisitSkeleton--month" />
+                                <div className="bookVisitSkeletonNav">
+                                    <div className="skeleton bookVisitSkeleton bookVisitSkeleton--navBtn" />
+                                    <div className="skeleton bookVisitSkeleton bookVisitSkeleton--navBtn" />
+                                </div>
+                            </div>
+                            <div className="bookVisitSkeletonCalendarGrid">
+                                {Array.from({ length: 14 }).map((_, index) => (
+                                    <div key={index} className="skeleton bookVisitSkeleton bookVisitSkeleton--day" />
+                                ))}
                             </div>
                         </div>
-
-                        <div className="calendarWeekdays">
-                            {weekDays.map((dayLabel) => (
-                                <span key={dayLabel}>{dayLabel}</span>
-                            ))}
-                        </div>
-
-                        <div className="calendarGrid">
-                            {monthGrid.map((gridDate) => {
-                                const isoDay = toISODateOnly(gridDate);
-                                const isCurrentMonth = gridDate.getMonth() === monthCursor.getMonth();
-                                const isAvailable = availableDates.has(isoDay);
-                                const isSelected = date === isoDay;
-                                return (
-                                    <button
-                                        key={isoDay}
-                                        type="button"
-                                        className={`calendarDay ${isCurrentMonth ? "" : "calendarDay--outside"} ${isAvailable ? "calendarDay--available" : ""} ${isSelected ? "calendarDay--selected" : ""}`}
-                                        onClick={() => onPickDate(isoDay)}
-                                        disabled={!isAvailable}
-                                    >
-                                        {gridDate.getDate()}
+                    ) : (
+                        <div className="calendar" aria-disabled={!doctorId}>
+                            <div className="calendarHeader">
+                                <Typography.Label className="calendarTitle">{monthTitle}</Typography.Label>
+                                <div className="calendarNav">
+                                    <button type="button" className="calendarArrow" onClick={goPrevMonth} aria-label="Предыдущий месяц">
+                                        ‹
                                     </button>
-                                );
-                            })}
+                                    <button type="button" className="calendarArrow" onClick={goNextMonth} aria-label="Следующий месяц">
+                                        ›
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="calendarWeekdays">
+                                {weekDays.map((dayLabel) => (
+                                    <span key={dayLabel}>{dayLabel}</span>
+                                ))}
+                            </div>
+
+                            <div className="calendarGrid">
+                                {monthGrid.map((gridDate) => {
+                                    const isoDay = toISODateOnly(gridDate);
+                                    const isCurrentMonth = gridDate.getMonth() === monthCursor.getMonth();
+                                    const isAvailable = availableDates.has(isoDay);
+                                    const isSelected = date === isoDay;
+                                    return (
+                                        <button
+                                            key={isoDay}
+                                            type="button"
+                                            className={`calendarDay ${isCurrentMonth ? "" : "calendarDay--outside"} ${isAvailable ? "calendarDay--available" : ""} ${isSelected ? "calendarDay--selected" : ""}`}
+                                            onClick={() => onPickDate(isoDay)}
+                                            disabled={!isAvailable}
+                                        >
+                                            {gridDate.getDate()}
+                                        </button>
+                                    );
+                                })}
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </Container>
 
                 <Container className={`card ${date ? "" : "card--disabled"}`}>
                     <Typography.Title level={3}>Время</Typography.Title>
-                    <div className="pills">
-                        {timeSlots.map((item) => (
-                            <Pill key={item.value} active={timeISO === item.value} onClick={() => setTimeISO(item.value)}>
-                                {item.title}
-                            </Pill>
-                        ))}
-                    </div>
+                    {isTimesLoading ? (
+                        <div className="bookVisitSkeletonPills">
+                            {Array.from({ length: 8 }).map((_, index) => (
+                                <div key={index} className="skeleton bookVisitSkeleton bookVisitSkeleton--pill bookVisitSkeleton--time" />
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="pills">
+                            {timeSlots.map((item) => (
+                                <Pill key={item.value} active={timeISO === item.value} onClick={() => setTimeISO(item.value)}>
+                                    {item.title}
+                                </Pill>
+                            ))}
+                        </div>
+                    )}
                 </Container>
 
                 <Container className="card">
