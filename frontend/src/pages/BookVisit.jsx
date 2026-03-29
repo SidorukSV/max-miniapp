@@ -2,6 +2,12 @@ import { useMemo, useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Container, Flex, Typography, Button } from "@maxhub/max-ui";
 import PageLayout from "../components/PageLayout.jsx";
+import SectionTitle from "../components/book-visit/SectionTitle.jsx";
+import SpecializationSection from "../components/book-visit/SpecializationSection.jsx";
+import DoctorSection from "../components/book-visit/DoctorSection.jsx";
+import DateSection from "../components/book-visit/DateSection.jsx";
+import TimeSection from "../components/book-visit/TimeSection.jsx";
+import SummarySection from "../components/book-visit/SummarySection.jsx";
 import {
     createAppointment,
     getCatalogEmployeesBySpec,
@@ -11,28 +17,6 @@ import {
     updateAppointment,
 } from "../api";
 import "../App.css";
-
-function Pill({ active, children, onClick, disabled = false }) {
-    return (
-        <button
-            type="button"
-            className={`pill ${active ? "pill--active" : ""}`}
-            onClick={onClick}
-            disabled={disabled}
-        >
-            {children}
-        </button>
-    );
-}
-
-function SectionTitle({ title, subtitle }) {
-    return (
-        <div className="pageTitle">
-            <Typography.Title level={2}>{title}</Typography.Title>
-            {subtitle ? <Typography.Label style={{ marginTop: 6 }}>{subtitle}</Typography.Label> : null}
-        </div>
-    );
-}
 
 function toRuDate(dateISO) {
     const dateObj = new Date(dateISO);
@@ -422,7 +406,6 @@ export default function BookVisit() {
     const availableDates = useMemo(() => new Set(dates.map((item) => item.value.split("T")[0])), [dates]);
     const monthTitle = useMemo(() => formatMonthLabel(monthCursor), [monthCursor]);
     const monthGrid = useMemo(() => buildMonthGrid(monthCursor), [monthCursor]);
-    const weekDays = ["пн", "вт", "ср", "чт", "пт", "сб", "вс"];
     const isSpecialtiesLoading = loadingSpecialties;
     const isDoctorsLoading = loadingSpecialties || loadingDoctors;
     const isDatesLoading = loadingSpecialties || loadingDoctors || loadingDates;
@@ -534,183 +517,54 @@ export default function BookVisit() {
                     </Container>
                 ) : null}
 
-                <Container className="card">
-                    <Typography.Title level={3}>Специальность</Typography.Title>
-                    {isSpecialtiesLoading ? (
-                        <div className="bookVisitSkeletonPills">
-                            {Array.from({ length: 5 }).map((_, index) => (
-                                <div key={index} className="skeleton bookVisitSkeleton bookVisitSkeleton--pill" />
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="pills">
-                            {specialties.map((item) => (
-                                <Pill
-                                    key={item.id}
-                                    active={specId === item.id}
-                                    onClick={() => onPickSpec(item.id)}
-                                    disabled={isRescheduleMode}
-                                >
-                                    {item.title}
-                                </Pill>
-                            ))}
-                        </div>
-                    )}
-                </Container>
+                <SpecializationSection
+                    specialties={specialties}
+                    specId={specId}
+                    onPickSpec={onPickSpec}
+                    isLoading={isSpecialtiesLoading}
+                    isRescheduleMode={isRescheduleMode}
+                />
 
-                <Container className={`card ${specId ? "" : "card--disabled"}`}>
-                    <Typography.Title level={3}>Врач</Typography.Title>
-                    {isDoctorsLoading ? (
-                        <div className="bookVisitSkeletonDoctors">
-                            <div className="skeleton bookVisitSkeleton bookVisitSkeleton--label" />
-                            <div className="bookVisitSkeletonPills">
-                                {Array.from({ length: 4 }).map((_, index) => (
-                                    <div key={index} className="skeleton bookVisitSkeleton bookVisitSkeleton--pill" />
-                                ))}
-                            </div>
-                            <div className="skeleton bookVisitSkeleton bookVisitSkeleton--label" />
-                            <div className="bookVisitSkeletonPills">
-                                {Array.from({ length: 3 }).map((_, index) => (
-                                    <div key={index} className="skeleton bookVisitSkeleton bookVisitSkeleton--pill" />
-                                ))}
-                            </div>
-                        </div>
-                    ) : !specId ? (
-                        <Typography.Label style={{ marginTop: 8 }}>Сначала выберите специальность</Typography.Label>
-                    ) : (
-                        <Flex direction="column" gap={10} style={{ marginTop: 12 }}>
-                            {doctorsByBranch.map((branch) => (
-                                <div key={branch.branchId}>
-                                    <Typography.Label>{branch.branchTitle}</Typography.Label>
-                                    <div className="pills">
-                                        {branch.doctors.map((doc) => (
-                                            <Pill
-                                                key={`${doc.branchId}:${doc.doctorId}`}
-                                                active={doctorId === doc.doctorId && branchId === doc.branchId}
-                                                onClick={() => onPickDoctor(doc.doctorId, doc.branchId)}
-                                                disabled={isRescheduleMode}
-                                            >
-                                                {getDoctorLabel(doc)}
-                                            </Pill>
-                                        ))}
-                                    </div>
-                                </div>
-                            ))}
-                        </Flex>
-                    )}
-                </Container>
+                <DoctorSection
+                    specId={specId}
+                    isLoading={isDoctorsLoading}
+                    doctorsByBranch={doctorsByBranch}
+                    doctorId={doctorId}
+                    branchId={branchId}
+                    onPickDoctor={onPickDoctor}
+                    isRescheduleMode={isRescheduleMode}
+                    getDoctorLabel={getDoctorLabel}
+                />
 
-                <Container className={`card ${doctorId ? "" : "card--disabled"}`}>
-                    <Typography.Title level={3}>Дата</Typography.Title>
-                    {isDatesLoading ? (
-                        <div className="bookVisitSkeletonCalendar">
-                            <div className="bookVisitSkeletonCalendarHeader">
-                                <div className="skeleton bookVisitSkeleton bookVisitSkeleton--month" />
-                                <div className="bookVisitSkeletonNav">
-                                    <div className="skeleton bookVisitSkeleton bookVisitSkeleton--navBtn" />
-                                    <div className="skeleton bookVisitSkeleton bookVisitSkeleton--navBtn" />
-                                </div>
-                            </div>
-                            <div className="bookVisitSkeletonCalendarGrid">
-                                {Array.from({ length: 14 }).map((_, index) => (
-                                    <div key={index} className="skeleton bookVisitSkeleton bookVisitSkeleton--day" />
-                                ))}
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="calendar" aria-disabled={!doctorId}>
-                            <div className="calendarHeader">
-                                <Typography.Label className="calendarTitle">{monthTitle}</Typography.Label>
-                                <div className="calendarNav">
-                                    <button type="button" className="calendarArrow" onClick={goPrevMonth} aria-label="Предыдущий месяц">
-                                        ‹
-                                    </button>
-                                    <button type="button" className="calendarArrow" onClick={goNextMonth} aria-label="Следующий месяц">
-                                        ›
-                                    </button>
-                                </div>
-                            </div>
+                <DateSection
+                    doctorId={doctorId}
+                    isLoading={isDatesLoading}
+                    monthTitle={monthTitle}
+                    goPrevMonth={goPrevMonth}
+                    goNextMonth={goNextMonth}
+                    monthGrid={monthGrid}
+                    monthCursor={monthCursor}
+                    availableDates={availableDates}
+                    date={date}
+                    onPickDate={onPickDate}
+                    toISODateOnly={toISODateOnly}
+                />
 
-                            <div className="calendarWeekdays">
-                                {weekDays.map((dayLabel) => (
-                                    <span key={dayLabel}>{dayLabel}</span>
-                                ))}
-                            </div>
+                <TimeSection
+                    date={date}
+                    isLoading={isTimesLoading}
+                    groupedTimeSlots={groupedTimeSlots}
+                    timeISO={timeISO}
+                    onPickTime={setTimeISO}
+                />
 
-                            <div className="calendarGrid">
-                                {monthGrid.map((gridDate) => {
-                                    const isoDay = toISODateOnly(gridDate);
-                                    const isCurrentMonth = gridDate.getMonth() === monthCursor.getMonth();
-                                    const isAvailable = availableDates.has(isoDay);
-                                    const isSelected = date === isoDay;
-                                    return (
-                                        <button
-                                            key={isoDay}
-                                            type="button"
-                                            className={`calendarDay ${isCurrentMonth ? "" : "calendarDay--outside"} ${isAvailable ? "calendarDay--available" : ""} ${isSelected ? "calendarDay--selected" : ""}`}
-                                            onClick={() => onPickDate(isoDay)}
-                                            disabled={!isAvailable}
-                                        >
-                                            {gridDate.getDate()}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    )}
-                </Container>
-
-                <Container className={`card ${date ? "" : "card--disabled"}`}>
-                    <Typography.Title level={3}>Время</Typography.Title>
-                    {isTimesLoading ? (
-                        <div className="bookVisitSkeletonPills">
-                            {Array.from({ length: 8 }).map((_, index) => (
-                                <div key={index} className="skeleton bookVisitSkeleton bookVisitSkeleton--pill bookVisitSkeleton--time" />
-                            ))}
-                        </div>
-                    ) : (
-                        <Flex direction="column" gap={10} style={{ marginTop: 12 }}>
-                            {groupedTimeSlots.map((group) => (
-                                <div key={group.key}>
-                                    <Typography.Label>{group.title}</Typography.Label>
-                                    <div className="pills">
-                                        {group.slots.map((item) => (
-                                            <Pill key={item.value} active={timeISO === item.value} onClick={() => setTimeISO(item.value)}>
-                                                {item.title}
-                                            </Pill>
-                                        ))}
-                                    </div>
-                                </div>
-                            ))}
-                        </Flex>
-                    )}
-                </Container>
-
-                <Container className="card">
-                    <Typography.Title level={3}>Итог</Typography.Title>
-                    <div className="summary">
-                        <div className="summaryRow">
-                            <Typography.Label>Специальность</Typography.Label>
-                            <Typography.Label>{selectedSpecialty?.title || "—"}</Typography.Label>
-                        </div>
-                        <div className="summaryRow">
-                            <Typography.Label>Врач</Typography.Label>
-                            <Typography.Label>{getDoctorLabel(selectedDoctor) || "—"}</Typography.Label>
-                        </div>
-                        <div className="summaryRow">
-                            <Typography.Label>Дата</Typography.Label>
-                            <Typography.Label>{date ? toRuDate(date) : "—"}</Typography.Label>
-                        </div>
-                        <div className="summaryRow">
-                            <Typography.Label>Время</Typography.Label>
-                            <Typography.Label>{timeISO ? toRuTime(timeISO) : "—"}</Typography.Label>
-                        </div>
-                        <div className="summaryRow">
-                            <Typography.Label>Кабинет</Typography.Label>
-                            <Typography.Label>{selectedSlot?.cabinetTitle || "—"}</Typography.Label>
-                        </div>
-                    </div>
-                </Container>
+                <SummarySection
+                    specialization={selectedSpecialty?.title || "—"}
+                    doctor={getDoctorLabel(selectedDoctor) || "—"}
+                    date={date ? toRuDate(date) : "—"}
+                    time={timeISO ? toRuTime(timeISO) : "—"}
+                    cabinet={selectedSlot?.cabinetTitle || "—"}
+                />
                 <Button
                 mode="secondary"
                 onClick={() => nav("/")}
