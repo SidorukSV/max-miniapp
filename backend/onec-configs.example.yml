@@ -1,0 +1,9 @@
+# Copy this file to backend/onec-configs.yml (or set ONEC_CONFIGS_FILE)
+# and fill values for each city.
+- cityId: "city-a"
+  url: "https://example.com/onec/city-a/"
+  basicAuth: "base64_login_password"
+
+- cityId: "city-b"
+  url: "https://example.com/onec/city-b/"
+  basicAuth: "base64_login_password"
