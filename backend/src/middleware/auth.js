@@ -1,6 +1,6 @@
 import { verifyToken } from "../auth/jwt.js";
 
-export async function authWiddleware(req, reply) {
+export async function authMiddleware(req, reply) {
     try {
         const authHeader = req.headers.authorization;
 

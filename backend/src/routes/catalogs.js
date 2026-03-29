@@ -1,4 +1,4 @@
-import { authWiddleware } from "../middleware/auth.js";
+import { authMiddleware } from "../middleware/auth.js";
 import { getCatalogEmployeesBySpec, getCatalogSpecializationsBySchedule } from "../services/onecRouter.js";
 
 export async function catalogsRoutes(app) {
@@ -12,7 +12,7 @@ export async function catalogsRoutes(app) {
         });
 
     app.get("/api/v1/catalogs/specializations",
-        { preHandler: [authWiddleware] },
+        { preHandler: [authMiddleware] },
         async (req) => {
             const { city_id } = req.user;
             const items = await getCatalogSpecializationsBySchedule({ cityId: city_id });
@@ -20,7 +20,7 @@ export async function catalogsRoutes(app) {
         });
 
     app.get("/api/v1/catalogs/employees",
-        { preHandler: [authWiddleware] },
+        { preHandler: [authMiddleware] },
         async (req) => {
             const { city_id } = req.user;
             const { specializationId } = req.query || {};
