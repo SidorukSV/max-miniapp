@@ -2,8 +2,31 @@ import { config } from "../config.js";
 
 const ibSessionCookies = new Map();
 
+
+function validateOneCConfig(oneCConfig, cityIdForMessage) {
+    if (!oneCConfig) {
+        throw new Error(`city_config_not_found:${cityIdForMessage}`);
+    }
+
+    if (!oneCConfig.url) {
+        throw new Error(`city_config_url_missing:${cityIdForMessage}`);
+    }
+
+    if (!oneCConfig.basicAuth) {
+        throw new Error(`city_config_basic_auth_missing:${cityIdForMessage}`);
+    }
+
+    return oneCConfig;
+}
+
 function resolveOneCConfigByUrl(path) {
-    return config.oneCConfigs.find((cityConfig) => path.startsWith(cityConfig.url));
+    const cityConfig = config.oneCConfigs.find((item) => item.url && path.startsWith(item.url));
+
+    if (!cityConfig) {
+        return null;
+    }
+
+    return validateOneCConfig(cityConfig, cityConfig.cityId);
 }
 
 function parseIbSessionCookie(setCookieHeader) {
@@ -86,16 +109,13 @@ export async function onecFetch(path, options = {}) {
 export function getOneCConfig(cityId) {
     const resolvedCityId = cityId || config.defaultCityId;
 
-    console.log(resolvedCityId);
-
-    if(!resolvedCityId) {
+    if (!resolvedCityId) {
         throw new Error("city_id_not_resolved");
     }
 
-    const { oneCConfigs }  = config;
+    const oneCConfig = config.oneCConfigs.find((cityConfig) => cityConfig.cityId === resolvedCityId);
 
-    return oneCConfigs.find((cityConfig) => cityConfig.cityId === resolvedCityId );
-
+    return validateOneCConfig(oneCConfig, resolvedCityId);
 }
 
 export async function startOneCSessions() {
@@ -167,7 +187,7 @@ export async function getPatientsByPhone({ cityId, phone}) {
     const data = onecFetch(oneCConfig.url.concat(`/catalogs/clients/?search_type=ByPhone&phone=${phone}`), {
         method: "GET",
         headers: {
-            Authorization: `Basic ${oneCConfig.basicAuth}`, // TODO: hardcode
+            Authorization: `Basic ${oneCConfig.basicAuth}`,
         },
     });
 
@@ -185,7 +205,7 @@ export async function getPatientById({ cityId, patient_id}) {
     const data = onecFetch(oneCConfig.url.concat(`/catalogs/clients/?search_type=ByID&patient_id=${patient_id}`), {
         method: "GET",
         headers: {
-            Authorization: `Basic d2ViOjEyMzQ1`, // TODO: hardcode
+            Authorization: `Basic ${oneCConfig.basicAuth}`,
         },
     });
 
@@ -203,7 +223,7 @@ export async function getBonusTransactions({ cityId, patient_id }) {
     const data = await onecFetch(oneCConfig.url.concat(`/transactions/bonus`), {
         method: "POST",
         headers: {
-            Authorization: `Basic d2ViOjEyMzQ1`, // TODO: hardcode
+            Authorization: `Basic ${oneCConfig.basicAuth}`,
         },
         body: JSON.stringify({ patient_id }),
     });
@@ -235,7 +255,7 @@ export async function getAppointmentsDocuments({ cityId, patient_id }) {
     const data = await onecFetch(oneCConfig.url.concat(`/documents/appointments?search_type=ByPatient&patient_id=${patient_id}`), {
         method: "GET",
         headers: {
-            Authorization: `Basic d2ViOjEyMzQ1`, // TODO: hardcode
+            Authorization: `Basic ${oneCConfig.basicAuth}`,
         },
     });
 
@@ -256,7 +276,7 @@ export async function getAppointmentsSchedule({ cityId, specializationId }) {
     const data = await onecFetch(oneCConfig.url.concat(`/documents/schedule${params.toString() ? `?${params}` : ""}`), {
         method: "GET",
         headers: {
-            Authorization: "Basic d2ViOjEyMzQ1",
+            Authorization: `Basic ${oneCConfig.basicAuth}`,
         },
     });
 
@@ -272,7 +292,7 @@ export async function getCatalogSpecializationsBySchedule({ cityId }) {
     const data = await onecFetch(oneCConfig.url.concat("/catalogs/specializations?search_type=BySchedule"), {
         method: "GET",
         headers: {
-            Authorization: "Basic d2ViOjEyMzQ1",
+            Authorization: `Basic ${oneCConfig.basicAuth}`,
         },
     });
 
@@ -292,7 +312,7 @@ export async function getCatalogEmployeesBySpec({ cityId, specializationId }) {
     const data = await onecFetch(oneCConfig.url.concat(`/catalogs/employees?${params}`), {
         method: "GET",
         headers: {
-            Authorization: "Basic d2ViOjEyMzQ1",
+            Authorization: `Basic ${oneCConfig.basicAuth}`,
         },
     });
 
@@ -321,7 +341,7 @@ export async function getDoctorSchedule({ cityId, doctorId, branchId, date, form
     const data = await onecFetch(oneCConfig.url.concat(`/documents/schedule?${params}`), {
         method: "GET",
         headers: {
-            Authorization: "Basic d2ViOjEyMzQ1",
+            Authorization: `Basic ${oneCConfig.basicAuth}`,
         },
     });
 
@@ -337,7 +357,7 @@ export async function createAppointmentDocument({ cityId, payload }) {
     return onecFetch(oneCConfig.url.concat("/documents/appointments"), {
         method: "POST",
         headers: {
-            Authorization: "Basic d2ViOjEyMzQ1",
+            Authorization: `Basic ${oneCConfig.basicAuth}`,
         },
         body: JSON.stringify(payload),
     });
@@ -348,7 +368,7 @@ export async function updateAppointmentDocument({ cityId, payload }) {
     return onecFetch(oneCConfig.url.concat("/documents/appointments"), {
         method: "PUT",
         headers: {
-            Authorization: "Basic d2ViOjEyMzQ1",
+            Authorization: `Basic ${oneCConfig.basicAuth}`,
         },
         body: JSON.stringify(payload),
     });
