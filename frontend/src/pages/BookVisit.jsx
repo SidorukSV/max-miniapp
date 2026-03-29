@@ -449,7 +449,7 @@ export default function BookVisit() {
                 </Container>
 
                 <Container className={`card ${specId ? "" : "card--disabled"}`}>
-                    <Typography.Title level={3}>Врач (по филиалам)</Typography.Title>
+                    <Typography.Title level={3}>Врач</Typography.Title>
                     {!specId ? (
                         <Typography.Label style={{ marginTop: 8 }}>Сначала выберите специальность</Typography.Label>
                     ) : (
