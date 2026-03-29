@@ -13,7 +13,6 @@ export default function DateSection({
     availableDates,
     selectedDate,
     onPickDate,
-    toISODateOnly,
 }) {
     return (
         <Container className={`card ${doctorId ? "" : "card--disabled"}`}>
@@ -29,7 +28,6 @@ export default function DateSection({
                         selectedDate={selectedDate}
                         availableDates={availableDates}
                         onPickDate={onPickDate}
-                        toISODateOnly={toISODateOnly}
                     />
                 </div>
             )}
