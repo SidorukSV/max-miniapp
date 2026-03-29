@@ -153,7 +153,7 @@ function buildMonthGrid(monthStart) {
 }
 
 function toISODateOnly(dateValue) {
-    return dateValue.toISOString().split("T")[0];
+    return dateValue.toLocaleDateString("sv");
 }
 
 export default function BookVisit() {
@@ -390,7 +390,7 @@ export default function BookVisit() {
     }, [date, daySchedule, selectedDoctor]);
 
     const selectedSlot = timeSlots.find((item) => item.value === timeISO) || null;
-    const availableDates = useMemo(() => new Set(dates.map((item) => item.value)), [dates]);
+    const availableDates = useMemo(() => new Set(dates.map((item) => item.value.split("T")[0])), [dates]);
     const monthTitle = useMemo(() => formatMonthLabel(monthCursor), [monthCursor]);
     const monthGrid = useMemo(() => buildMonthGrid(monthCursor), [monthCursor]);
     const weekDays = ["пн", "вт", "ср", "чт", "пт", "сб", "вс"];
