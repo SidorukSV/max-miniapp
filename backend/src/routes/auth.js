@@ -79,7 +79,7 @@ export async function authRoutes(app) {
                 patients,
             });
 
-            const patients_sorted = patients.sort((a, b) => { a.fullName.toUpperCase().localeCompare(b.fullName.toUpperCase()) }); 
+            const patients_sorted = patients.sort((a, b) => { return a.fullName.toUpperCase().localeCompare(b.fullName.toUpperCase()) }); 
 
             return {
                 need_select_patient: true,
