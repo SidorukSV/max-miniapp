@@ -1,3 +1,4 @@
+import { config } from "../config.js";
 import { authMiddleware } from "../middleware/auth.js";
 import { getBonusTransactions, getPatientById } from "../services/onecRouter.js";
 
@@ -10,7 +11,7 @@ export async function meRoutes(app) {
                 const patient = await getPatientById({ cityId: city_id, patient_id });
                 return {
                     ...patient,
-                    city_id,
+                    city_id: city_id,
                     phone,
                     channel,
                 };

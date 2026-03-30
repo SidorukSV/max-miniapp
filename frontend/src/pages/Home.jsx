@@ -110,10 +110,10 @@ export default function Home() {
             const cityPhone = cities.find((city) => city.id === me?.city_id)?.appointment_phone || "";
             const offline = items
                 .filter((item) => item?.appointment_type === "phone" || item?.appointment_type === "phone_and_chat")
-                .sort((a, b) => String(a?.title || "").localeCompare(String(b?.title || "")))
+                .sort((a, b) => String(a?.specializationTitle.toUpperCase() || "").localeCompare(String(b?.specializationTitle.toUpperCase() || "")))
                 .map((item) => ({
-                    id: item.id,
-                    title: item.title || "Без названия",
+                    id: item.specializationId,
+                    title: item.specializationTitle || "Без названия",
                     appointmentType: item.appointment_type,
                     appointmentPhone: item.appointement_phone || item.appointment_phone || cityPhone || "",
                 }));

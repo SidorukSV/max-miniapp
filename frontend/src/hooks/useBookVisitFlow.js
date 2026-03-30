@@ -69,7 +69,8 @@ export default function useBookVisitFlow() {
                 setSpecialties(sortedItems.map((item) => ({
                     id: item.specializationId,
                     title: item.specializationTitle || "Без специальности",
-                })));
+                    type: item.appointment_type
+                })).filter((item) => item?.type === "online"));
             } catch {
                 setError("Не удалось загрузить специализации");
             } finally {
