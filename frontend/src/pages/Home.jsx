@@ -13,13 +13,40 @@ import { getFallbackGradientByInitials } from "../modules/avatarGradient.js";
 import { getSurveys } from "../modules/surveyStore.js";
 import { SURVEY_STATUSES } from "../data/mockSurveys.js";
 
+function formatPhoneToInternational(phone) {
+    if (!phone) return "";
+
+    const cleaned = String(phone).replace(/[^\d+]/g, "");
+    const digits = cleaned.replace(/\D/g, "");
+    const formatRu = (normalizedRuDigits) => `+7 ${normalizedRuDigits.slice(1, 4)} ${normalizedRuDigits.slice(4, 7)} ${normalizedRuDigits.slice(7, 9)} ${normalizedRuDigits.slice(9, 11)}`;
+
+    if (digits.length === 11 && (digits.startsWith("7") || digits.startsWith("8"))) {
+        const normalized = `7${digits.slice(1)}`;
+        return formatRu(normalized);
+    }
+
+    if (digits.length === 10) {
+        return formatRu(`7${digits}`);
+    }
+
+    if (cleaned.startsWith("+")) {
+        return `+${digits}`;
+    }
+
+    if (digits.length > 0) {
+        return `+${digits}`;
+    }
+
+    return phone;
+}
+
 export default function Home() {
     const nav = useNavigate();
     const { me, loading, isAuthorized, setMe } = useAuth();
 
     const [busy, setBusy] = useState(false);
     const username = me?.fullName || "Иван Иванов";
-    const phone = me?.phone || "79123456789";
+    const phone = formatPhoneToInternational(me?.phone || "79123456789");
     const parts = username.trim().split(/\s+/, 2);
     const initials = parts.map(p => p[0]?.toUpperCase()).join("");
     const bonus = me?.bonus || 0;
