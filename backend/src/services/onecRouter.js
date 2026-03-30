@@ -91,9 +91,9 @@ export async function onecFetch(path, options = {}) {
     }
 
     if (!res.ok) {
-        const reason = data.error
-            || data.message
-            || (!isJsonResponse ? `api_error_${res.status}` : null)
+        const reason = data.desc
+            || data.error
+            || (!isJsonResponse ? data : JSON.stringify(data))
             || "api_error";
         throw new Error(reason);
     }
@@ -122,7 +122,7 @@ export async function finishOneCSessions() {
 }
 
 async function startOneCSession(oneCConfig) {
-    const startUrl = oneCConfig.url.concat("startIBSession");
+    const startUrl = oneCConfig.url.concat("/startIBSession");
 
     try {
         const res = await fetch(startUrl, {
@@ -150,7 +150,7 @@ async function startOneCSession(oneCConfig) {
 }
 
 async function finishOneCSession(oneCConfig) {
-    const finishUrl = oneCConfig.url.concat("finishIBSession");
+    const finishUrl = oneCConfig.url.concat("/finishIBSession");
     const cookie = ibSessionCookies.get(oneCConfig.cityId);
 
     try {

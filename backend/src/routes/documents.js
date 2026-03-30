@@ -45,7 +45,7 @@ export async function documentsRoutes(app) {
         async (req) => {
             const { patient_id, city_id } = req.user;
             const payload = {
-                ...(req.body || {}),
+                ...(JSON.parse(req.body) || {}),
                 patient_id,
             };
 
