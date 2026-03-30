@@ -507,6 +507,52 @@ body {
   flex-wrap: wrap;
 }
 
+
+.visitSkeletonCard {
+  padding: 14px;
+}
+
+.visitSkeletonHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.visitSkeletonDate {
+  height: 18px;
+  width: 58%;
+}
+
+.visitSkeletonStatus {
+  width: 92px;
+  height: 28px;
+  border-radius: 999px;
+}
+
+.visitSkeletonLine {
+  margin-top: 12px;
+  height: 14px;
+  width: 92%;
+}
+
+.visitSkeletonLine--short {
+  width: 70%;
+}
+
+.visitSkeletonActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+
+.visitSkeletonButton {
+  height: 34px;
+  width: 120px;
+  border-radius: 10px;
+}
+
 .status--ok {
   background: var(--ok-bg);
   color: var(--ok-text);
@@ -898,6 +944,8 @@ body {
   box-shadow: var(--shadow-card);
   max-height: 85vh;
   overflow-y: auto;
+  will-change: transform;
+  transition: transform 0.2s ease;
 }
 
 .appointmentSheetHandle {
