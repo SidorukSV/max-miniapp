@@ -10,6 +10,7 @@ import {
     getStoredAccessToken,
 } from "../api.js";
 import "../App.css";
+import HistorySkeleton from "../components/history/HistorySkeleton.jsx";
 
 function parseMedicalDate(value) {
     if (!value) return null;
@@ -218,7 +219,7 @@ export default function History() {
             <Flex direction="column" gap={12}>
                 <Typography.Title level={2}>История приемов</Typography.Title>
 
-                {loading ? <Typography.Label>Загружаем историю...</Typography.Label> : null}
+                {loading ? <HistorySkeleton /> : null}
                 {!loading && error ? <Typography.Label className="authErrorLabel">{error}</Typography.Label> : null}
                 {!loading && !error && !items.length ? (
                     <Typography.Label>История приемов пока пуста</Typography.Label>

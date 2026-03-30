@@ -4,10 +4,10 @@ import { Container, Flex, Typography, CellHeader } from "@maxhub/max-ui";
 import { format, isValid, parse, parseISO } from "date-fns";
 import { ru } from "date-fns/locale";
 import PageLayout from "../components/PageLayout";
-import { BonusesLoadingCard } from "../components/loadingCard.jsx";
 import { useAuth } from "../context/AuthContext";
 import { getBonusTransactions, getStoredAccessToken } from "../api";
 import "../App.css";
+import BonusesSkeleton from "../components/bonuses/BonusesSkeleton.jsx";
 
 function formatTransactionDate(dateISO) {
   if (!dateISO) {
@@ -88,55 +88,59 @@ export default function Bonuses() {
       onBottomButtonClick={() => { nav("/") }}
     >
       <Flex direction="column" gap={10}>
-        <Container className="card">
-          <Flex direction="column" gap={10}>
-            <Typography.Title level={2}>{balance} ₽</Typography.Title>
-            <Typography.Label>Текущий остаток бонусов</Typography.Label>
-          </Flex>
-        </Container>
+        {loading ? (
+          <BonusesSkeleton />
+        ) : (
+          <>
+            <Container className="card">
+              <Flex direction="column" gap={10}>
+                <Typography.Title level={2}>{balance} ₽</Typography.Title>
+                <Typography.Label>Текущий остаток бонусов</Typography.Label>
+              </Flex>
+            </Container>
 
-        <Container className="card">
-          <Flex direction="column" gap={10}>
-            <Typography.Title level={3}>История операций</Typography.Title>
+            <Container className="card">
+              <Flex direction="column" gap={10}>
+                <Typography.Title level={3}>История операций</Typography.Title>
 
-            {loading ? <BonusesLoadingCard /> : null}
+                {error ? <Typography.Label>{error}</Typography.Label> : null}
 
-            {!loading && error ? <Typography.Label>{error}</Typography.Label> : null}
+                {!error && items.length === 0 ? (
+                  <Typography.Label>Операций пока нет</Typography.Label>
+                ) : null}
 
-            {!loading && !error && items.length === 0 ? (
-              <Typography.Label>Операций пока нет</Typography.Label>
-            ) : null}
+                {!error && items.length > 0
+                  ? groupedItems.map(([dateLabel, dateItems]) => (
+                    <div key={dateLabel} className="bonusesDateGroup">
+                      <CellHeader titleStyle="caps" className="bonusesDateHeader">{dateLabel}</CellHeader>
 
-            {!loading && !error && items.length > 0
-              ? groupedItems.map(([dateLabel, dateItems]) => (
-                <div key={dateLabel} className="bonusesDateGroup">
-                  <CellHeader titleStyle="caps" className="bonusesDateHeader">{dateLabel}</CellHeader>
+                      {dateItems.map((item, index) => {
+                        const isCredit = item.operation === "credit";
 
-                  {dateItems.map((item, index) => {
-                    const isCredit = item.operation === "credit";
+                        return (
+                          <div key={`${item.operation}-${item.sum}-${index}`} className="bonusesTxRow">
+                            <div className="bonusesTxLeft">
+                              <Typography.Label>{item.description || "Без описания"}</Typography.Label>
 
-                    return (
-                      <div key={`${item.operation}-${item.sum}-${index}`} className="bonusesTxRow">
-                        <div className="bonusesTxLeft">
-                          <Typography.Label>{item.description || "Без описания"}</Typography.Label>
+                              {item.operation_sum !== 0 ? (
+                                <Typography.Label className="roleLine">Сумма покупки: {item.operation_sum} ₽</Typography.Label>
+                              ) : null}
+                            </div>
 
-                          {item.operation_sum !== 0 ? (
-                            <Typography.Label className="roleLine">Сумма покупки: {item.operation_sum} ₽</Typography.Label>
-                          ) : null}
-                        </div>
-
-                        <div className={`bonusesTxAmount ${isCredit ? "bonusesTxAmount--credit" : "bonusesTxAmount--debit"}`}>
-                          {isCredit ? "+" : "-"}
-                          {item.sum} ₽
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ))
-              : null}
-          </Flex>
-        </Container>
+                            <div className={`bonusesTxAmount ${isCredit ? "bonusesTxAmount--credit" : "bonusesTxAmount--debit"}`}>
+                              {isCredit ? "+" : "-"}
+                              {item.sum} ₽
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ))
+                  : null}
+              </Flex>
+            </Container>
+          </>
+        )}
       </Flex>
     </PageLayout>
   );
