@@ -158,10 +158,11 @@ export default function AuthScreen() {
                 <Container className="card">
                     <Flex direction="column" gap={10}>
                         <Typography.Title level={2}>Вход в личный кабинет</Typography.Title>
-
-                        <Typography.Label className="roleLine">
-                            Подтвердите номер телефона, чтобы продолжить.
-                        </Typography.Label>
+                        {!patients.length && (
+                            <Typography.Label className="roleLine">
+                                Подтвердите номер телефона, чтобы продолжить.
+                            </Typography.Label>
+                        )}
 
                         {isBrowserLocalhost && (
                             <Input

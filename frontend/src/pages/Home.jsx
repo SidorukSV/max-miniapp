@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Container, Flex, Avatar, Typography, CellList, CellSimple, EllipsisText, Counter } from "@maxhub/max-ui";
+import { Container, Flex, Avatar, Typography, CellList, CellSimple, EllipsisText, Counter, Button } from "@maxhub/max-ui";
 import { Calendar, LibraryBig, Gift, LogOut, ClipboardList } from "lucide-react";
 import PageLayout from "../components/PageLayout";
 import "../App.css";
