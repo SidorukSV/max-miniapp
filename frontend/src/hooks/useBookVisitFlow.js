@@ -26,8 +26,9 @@ export default function useBookVisitFlow() {
     const accessToken = getStoredAccessToken();
 
     const appointmentId = searchParams.get("appointmentId") || "";
-    const rescheduleSpecId = searchParams.get("specializationId") || "";
-    const rescheduleDoctorId = searchParams.get("doctorId") || "";
+    const initialSpecId = searchParams.get("specializationId") || "";
+    const initialDoctorId = searchParams.get("doctorId") || "";
+    const initialBranchId = searchParams.get("branchId") || "";
     const isRescheduleMode = Boolean(appointmentId);
 
     const [loadingSpecialties, setLoadingSpecialties] = useState(false);
@@ -84,15 +85,23 @@ export default function useBookVisitFlow() {
     useEffect(() => {
         if (!specialties.length) return;
 
-        if (isRescheduleMode && rescheduleSpecId) {
-            setSpecId(rescheduleSpecId);
+        if (initialSpecId) {
+            const matchedSpecialization = specialties.some((item) => item.id === initialSpecId);
+            if (matchedSpecialization) {
+                setSpecId(initialSpecId);
+                return;
+            }
+        }
+
+        if (isRescheduleMode && initialSpecId) {
+            setSpecId(initialSpecId);
             return;
         }
 
         if (!specId) {
             setSpecId(specialties[0].id);
         }
-    }, [isRescheduleMode, rescheduleSpecId, specialties, specId]);
+    }, [isRescheduleMode, initialSpecId, specialties, specId]);
 
     useEffect(() => {
         async function loadDoctors() {
@@ -147,8 +156,17 @@ export default function useBookVisitFlow() {
     useEffect(() => {
         if (!doctors.length) return;
 
-        if (isRescheduleMode && rescheduleDoctorId) {
-            const matched = doctors.find((item) => item.doctorId === rescheduleDoctorId);
+        if (initialDoctorId && initialBranchId) {
+            const matched = doctors.find((item) => item.doctorId === initialDoctorId && item.branchId === initialBranchId);
+            if (matched) {
+                setDoctorId(matched.doctorId);
+                setBranchId(matched.branchId);
+                return;
+            }
+        }
+
+        if (isRescheduleMode && initialDoctorId) {
+            const matched = doctors.find((item) => item.doctorId === initialDoctorId);
             if (matched) {
                 setDoctorId(matched.doctorId);
                 setBranchId(matched.branchId);
@@ -161,7 +179,7 @@ export default function useBookVisitFlow() {
             setDoctorId(first.doctorId);
             setBranchId(first.branchId);
         }
-    }, [doctors, doctorId, isRescheduleMode, rescheduleDoctorId]);
+    }, [doctors, doctorId, isRescheduleMode, initialDoctorId, initialBranchId]);
 
     useEffect(() => {
         async function loadDates() {

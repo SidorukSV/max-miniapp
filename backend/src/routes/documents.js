@@ -3,6 +3,7 @@ import {
     createAppointmentDocument,
     getDoctorSchedule,
     getAppointmentsDocuments,
+    getMedicalDocuments,
     getAppointmentsSchedule,
     updateAppointmentDocument,
 } from "../services/onecRouter.js";
@@ -38,6 +39,17 @@ export async function documentsRoutes(app) {
             });
 
             return { items };
+        });
+
+    app.get("/api/v1/documents/medical",
+        { preHandler: [authMiddleware] },
+        async (req) => {
+            const { patient_id, city_id } = req.user;
+            const items = await getMedicalDocuments({ cityId: city_id, patient_id });
+
+            return {
+                items,
+            };
         });
 
     app.post("/api/v1/documents/appointments",
