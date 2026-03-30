@@ -290,6 +290,21 @@ body {
   color: var(--muted);
 }
 
+.authPolicyText {
+  line-height: 1.4;
+}
+
+.authPolicyLink,
+.legalLink {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.legalCard {
+  margin-top: 6px;
+}
+
 /* ================================== */
 /* 4) BOOK VISIT FLOW                 */
 /* ================================== */
