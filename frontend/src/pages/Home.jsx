@@ -1,12 +1,13 @@
 import { useNavigate } from "react-router-dom";
 import { Container, Flex, Avatar, Typography, CellList, CellSimple, EllipsisText, Counter, Button } from "@maxhub/max-ui";
-import { Calendar, LibraryBig, Gift, LogOut, ClipboardList, ChevronRight, MessageCircle, Phone } from "lucide-react";
+import { Calendar, LibraryBig, Gift, LogOut, ClipboardList } from "lucide-react";
 import PageLayout from "../components/PageLayout";
 import "../App.css";
 import { useAuth } from "../context/AuthContext.jsx";
 import AuthScreen from "../components/AuthScreen.jsx";
 import { HomeLoadingCard } from "../components/loadingCard.jsx";
 import { useState } from "react";
+import AppointmentOptionsSheet from "../components/AppointmentOptionsSheet.jsx";
 import {
     clearTokens,
     authLogout,
@@ -149,7 +150,8 @@ export default function Home() {
 
     return (
         <PageLayout
-            bottomButtonText="Записаться на прием"
+            bottomButtonText={specSheetLoading ? "Загружаем варианты..." : "Записаться на прием"}
+            bottomButtonDisabled={specSheetLoading}
             onBottomButtonClick={handleBookClick}
         >
             <Flex direction="column" gap={10}>
@@ -235,63 +237,20 @@ export default function Home() {
                     </CellList>
                 </Container>
             </Flex>
-            {specSheetOpen && (
-                <div className="appointmentSheetBackdrop" onClick={() => setSpecSheetOpen(false)}>
-                    <div className="appointmentSheet" onClick={(event) => event.stopPropagation()}>
-                        <div className="appointmentSheetHandle" />
-                        {onlineCount > 0 && (
-                            <button
-                                type="button"
-                                className="appointmentRow appointmentRow--chevron"
-                                onClick={() => {
-                                    setSpecSheetOpen(false);
-                                    nav("/book");
-                                }}
-                            >
-                                <div>
-                                    <Typography.Title level={2}>Запись на прием врача</Typography.Title>
-                                    <Typography.Label className="roleLine">Онлайн-запись на удобное время</Typography.Label>
-                                </div>
-                                <ChevronRight size={24} />
-                            </button>
-                        )}
-
-                        {offlineSpecs.map((spec) => (
-                            <div key={spec.id} className="appointmentRow">
-                                <div>
-                                    <Typography.Title level={2}>{spec.title}</Typography.Title>
-                                    <Typography.Label className="roleLine">
-                                        {spec.appointmentType === "phone_and_chat" ? "Запись по телефону или в чате" : "Запись по телефону"}
-                                    </Typography.Label>
-                                </div>
-                                <div className="appointmentRowActions">
-                                    <button
-                                        type="button"
-                                        className="appointmentIconButton"
-                                        onClick={() => openPhone(spec.appointmentPhone)}
-                                        aria-label={`Позвонить по специальности ${spec.title}`}
-                                        disabled={!spec.appointmentPhone}
-                                    >
-                                        <Phone size={22} />
-                                    </button>
-                                    {spec.appointmentType === "phone_and_chat" && (
-                                        <button
-                                            type="button"
-                                            className="appointmentIconButton"
-                                            onClick={openChat}
-                                            aria-label={`Открыть чат для специальности ${spec.title}`}
-                                        >
-                                            <MessageCircle size={22} />
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-                        ))}
-                        {specSheetLoading && <Typography.Label className="roleLine">Загрузка...</Typography.Label>}
-                        {specSheetError && <Typography.Label className="authErrorLabel">{specSheetError}</Typography.Label>}
-                    </div>
-                </div>
-            )}
+            <AppointmentOptionsSheet
+                open={specSheetOpen}
+                onlineCount={onlineCount}
+                offlineSpecs={offlineSpecs}
+                loading={specSheetLoading}
+                error={specSheetError}
+                onClose={() => setSpecSheetOpen(false)}
+                onOnlineBook={() => {
+                    setSpecSheetOpen(false);
+                    nav("/book");
+                }}
+                onPhoneCall={openPhone}
+                onOpenChat={openChat}
+            />
         </PageLayout >
     );
 }

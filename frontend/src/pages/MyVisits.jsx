@@ -5,6 +5,7 @@ import PageLayout from "../components/PageLayout";
 import QuestionDialog from "../components/QuestionDialog";
 import { getAppointments, getStoredAccessToken, updateAppointment } from "../api";
 import "../App.css";
+import MyVisitsSkeleton from "../components/my-visits/MyVisitsSkeleton.jsx";
 
 function normalizeAppointment(item, index) {
     const sourceDate = item?.datetimeBegin || item?.appointment_date || "";
@@ -196,11 +197,7 @@ export default function MyVisits() {
             <Flex direction="column" gap={10}>
                 <CellHeader titleStyle="caps">Мои записи</CellHeader>
 
-                {loading ? (
-                    <Container className="card">
-                        <Typography.Label>Загрузка записей...</Typography.Label>
-                    </Container>
-                ) : null}
+                {loading ? <MyVisitsSkeleton /> : null}
 
                 {!loading && error ? (
                     <Container className="card">
