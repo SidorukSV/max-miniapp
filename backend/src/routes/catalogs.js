@@ -6,8 +6,8 @@ export async function catalogsRoutes(app) {
         async (req) => {
 
             return [
-                { id: "RU-CXT", name: "Чита" },
-                { id: "RU-KJA", name: "Красноярск" },
+                { id: "RU-CXT", name: "Чита", appointment_phone: "+73022222222" },
+                { id: "RU-KJA", name: "Красноярск", appointment_phone: "+73912222222" },
             ];
         });
 

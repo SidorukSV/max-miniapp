@@ -863,3 +863,79 @@ body {
     background-position: 0 0;
   }
 }
+
+.appointmentSheetBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.34);
+  z-index: 120;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 12px;
+}
+
+.appointmentSheet {
+  width: min(560px, 100%);
+  background: var(--surface);
+  border-radius: 24px;
+  padding: 8px 16px calc(14px + var(--inset-bottom));
+  box-shadow: var(--shadow-card);
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.appointmentSheetHandle {
+  width: 72px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--border);
+  margin: 4px auto 8px;
+}
+
+.appointmentRow {
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid var(--border-soft);
+  background: transparent;
+  padding: 16px 0;
+  text-align: left;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+.appointmentRow:last-child {
+  border-bottom: none;
+}
+
+.appointmentRow--chevron {
+  cursor: pointer;
+}
+
+.appointmentRowActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.appointmentIconButton {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 1px solid var(--border-soft);
+  background: var(--surface-2);
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.appointmentIconButton:disabled {
+  opacity: 0.45;
+}
+
+.authErrorLabel {
+  color: var(--danger-plain);
+}
