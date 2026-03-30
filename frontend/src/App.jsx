@@ -7,6 +7,8 @@ import History from "./pages/History.jsx";
 import Bonuses from "./pages/Bonuses.jsx";
 import MySurveys from "./pages/MySurveys.jsx";
 import SurveyDetails from "./pages/SurveyDetails.jsx";
+import PrivacyPolicy from "./pages/PrivacyPolicy.jsx";
+import PersonalDataConsent from "./pages/PersonalDataConsent.jsx";
 import PayloadSurveyRedirect from "./components/PayloadSurveyRedirect.jsx";
 import { useMaxWebApp } from "./hooks/useMaxWebApp.js";
 import { MaxContext } from "./context/MaxContext.jsx";
@@ -30,6 +32,8 @@ export default function App() {
             <Route path="/bonuses" element={<Bonuses />} />
             <Route path="/surveys" element={<MySurveys />} />
             <Route path="/surveys/:id" element={<SurveyDetails />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/personal-data-consent" element={<PersonalDataConsent />} />
           </Routes>
         </BrowserRouter>
       </MaxContext.Provider>

@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { authStart, authSetCity, authPhone, authSelectPatient, storeTokens, getMe, sendLogs, getCatalogsCities } from "../api";
 import { Flex, Container, Typography, CellList, CellSimple, CellHeader, Input } from "@maxhub/max-ui";
@@ -149,8 +150,10 @@ export default function AuthScreen() {
             bottomButtonDisabled={busy}
             after={(
                 <Typography.Label className="authPolicyText">
-                    Нажимая кнопку &quot;Подтвердить номер телефона&quot; вы соглашаетесь
-                    с Политикой на обработку персональных данных.
+                    Нажимая кнопку &quot;Подтвердить номер телефона&quot; вы соглашаетесь с 
+                    <Link to="/privacy-policy" className="authPolicyLink">политикой обработки персональных данных</Link>
+                    {" "}и 
+                    <Link to="/personal-data-consent" className="authPolicyLink">согласием на обработку персональных данных</Link>.
                 </Typography.Label>
             )}
         >
