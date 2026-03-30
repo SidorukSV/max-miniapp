@@ -1,129 +1,106 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Container, Flex, Typography, Button } from "@maxhub/max-ui";
 import PageLayout from "../components/PageLayout";
+import AppointmentOptionsSheet from "../components/AppointmentOptionsSheet.jsx";
+import { useAuth } from "../context/AuthContext.jsx";
+import {
+    getCatalogsCities,
+    getMedicalHistory,
+    getStoredAccessToken,
+} from "../api.js";
 import "../App.css";
 
-const mockHistory = [
-    {
-        id: "h1",
-        date: "25.02.2026",
-        time: "12:00",
-        doctor: "Иванова И.А.",
-        spec: "Кардиолог",
-        clinic: "Филиал на Мира, 5",
-        place: "Кабинет 110",
-        status: "Завершён",
-        note: "Рекомендации выданы",
-    },
-    {
-        id: "h2",
-        date: "18.02.2026",
-        time: "09:30",
-        doctor: "Орлова Е.Е.",
-        spec: "Офтальмолог",
-        clinic: "Филиал на Центральной, 8",
-        place: "Кабинет 410",
-        status: "Завершён",
-        note: "Проверка зрения",
-    },
-    {
-        id: "h3",
-        date: "02.02.2026",
-        time: "15:00",
-        doctor: "Смирнов С.С.",
-        spec: "ЛОР",
-        clinic: "Филиал на Победы, 3",
-        place: "Кабинет 305",
-        status: "Отменён",
-        note: "Отменено пациентом",
-    },
-    {
-        id: "h4",
-        date: "15.01.2026",
-        time: "10:30",
-        doctor: "Петров П.П.",
-        spec: "Терапевт",
-        clinic: "Филиал на Ленина, 10",
-        place: "Кабинет 203",
-        status: "Завершён",
-        note: "Осмотр",
-    },
-    {
-        id: "h5",
-        date: "09.01.2026",
-        time: "14:30",
-        doctor: "Фёдоров Ф.Ф.",
-        spec: "Невролог",
-        clinic: "Филиал на Центральной, 8",
-        place: "Кабинет 502",
-        status: "Неявка",
-        note: "Неявка",
-    },
-    {
-        id: "h6",
-        date: "22.12.2025",
-        time: "11:00",
-        doctor: "Кузнецов Д.Д.",
-        spec: "Кардиолог",
-        clinic: "Филиал на Мира, 5",
-        place: "Кабинет 112",
-        status: "Завершён",
-        note: "Контроль давления",
-    },
-];
+function parseMedicalDate(value) {
+    if (!value) return null;
 
-function parseDateDDMMYYYY(s) {
-    // "25.02.2026" -> Date(2026-02-25)
-    const [dd, mm, yyyy] = s.split(".");
-    return new Date(Number(yyyy), Number(mm) - 1, Number(dd));
+    const normalized = String(value).trim();
+
+    if (/^\d{2}\.\d{2}\.\d{4}/.test(normalized)) {
+        const [datePart, timePart = ""] = normalized.split(" ");
+        const [dd, mm, yyyy] = datePart.split(".");
+        const [hh = "00", min = "00", sec = "00"] = timePart.split(":");
+        return new Date(Number(yyyy), Number(mm) - 1, Number(dd), Number(hh), Number(min), Number(sec));
+    }
+
+    const parsed = new Date(normalized);
+    if (Number.isNaN(parsed.getTime())) return null;
+    return parsed;
 }
 
-function monthKey(dateStr) {
-    const d = parseDateDDMMYYYY(dateStr);
+function toLocalDateLabel(dateValue) {
+    const parsed = parseMedicalDate(dateValue);
+    if (!parsed) return "—";
+
+    return parsed.toLocaleDateString("ru-RU", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+    });
+}
+
+function toLocalTimeLabel(dateValue) {
+    const parsed = parseMedicalDate(dateValue);
+    if (!parsed) return "";
+
+    return parsed.toLocaleTimeString("ru-RU", {
+        hour: "2-digit",
+        minute: "2-digit",
+    });
+}
+
+function monthKey(dateValue) {
+    const parsed = parseMedicalDate(dateValue);
+    if (!parsed) return "Без даты";
+
     const monthNames = [
         "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
-        "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"
+        "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь",
     ];
-    return `${monthNames[d.getMonth()]} ${d.getFullYear()}`;
+
+    return `${monthNames[parsed.getMonth()]} ${parsed.getFullYear()}`;
+}
+
+function getDoctorName(item) {
+    const parts = [item?.doctorLastname, item?.doctorFirstname, item?.doctorPatronymic]
+        .map((part) => String(part || "").trim())
+        .filter(Boolean);
+
+    if (parts.length) {
+        return parts.join(" ");
+    }
+
+    return "Врач не указан";
 }
 
 function HistoryCard({ item, onRepeat }) {
-    const statusClass =
-        item.status === "Завершён"
-            ? "status--ok"
-            : item.status === "Отменён"
-                ? "status--danger"
-                : "status--muted";
+    const dateLabel = toLocalDateLabel(item.date);
+    const timeLabel = toLocalTimeLabel(item.date);
+    const doctorName = getDoctorName(item);
+    const services = Array.isArray(item?.servicesList) ? item.servicesList.filter(Boolean) : [];
 
     return (
         <Container className="card">
             <Flex direction="column" gap={10}>
-                <Flex align="center" justify="space-between" gap={10}>
-                    <Typography.Title level={3}>
-                        {item.date} • {item.time}
-                    </Typography.Title>
-
-                    <span className={`statusPill ${statusClass}`}>{item.status}</span>
-                </Flex>
+                <Typography.Title level={3}>
+                    {dateLabel}{timeLabel ? ` • ${timeLabel}` : ""}
+                </Typography.Title>
 
                 <div className="visitLine">
                     <Typography.Label>Врач</Typography.Label>
                     <Typography.Label>
-                        {item.spec} • {item.doctor}
+                        {item?.specializationTitle || "Специальность не указана"} • {doctorName}
                     </Typography.Label>
                 </div>
 
                 <div className="visitLine">
-                    <Typography.Label>Место</Typography.Label>
-                    <Typography.Label>
-                        {item.clinic}, {item.place}
-                    </Typography.Label>
+                    <Typography.Label>Филиал</Typography.Label>
+                    <Typography.Label>{item?.branchTitle || "Не указан"}</Typography.Label>
                 </div>
 
-                {item.note ? (
+                {services.length > 0 ? (
                     <Typography.Label style={{ marginTop: 2 }}>
-                        {item.note}
+                        Услуги: {services.join(", ")}
                     </Typography.Label>
                 ) : null}
 
@@ -131,46 +108,123 @@ function HistoryCard({ item, onRepeat }) {
                     Повторить запись
                 </Button>
             </Flex>
-        </Container >
+        </Container>
     );
 }
 
 export default function History() {
     const nav = useNavigate();
+    const { me } = useAuth();
 
-    const grouped = useMemo(() => {
-        const sorted = [...mockHistory].sort(
-            (a, b) => parseDateDDMMYYYY(b.date) - parseDateDDMMYYYY(a.date)
-        );
+    const [items, setItems] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
+    const [specSheetOpen, setSpecSheetOpen] = useState(false);
+    const [offlineSpec, setOfflineSpec] = useState(null);
 
-        const map = new Map();
-        for (const item of sorted) {
-            const key = monthKey(item.date);
-            if (!map.has(key)) map.set(key, []);
-            map.get(key).push(item);
+    useEffect(() => {
+        async function loadHistory() {
+            const accessToken = getStoredAccessToken();
+            if (!accessToken) {
+                setError("Не найден токен авторизации");
+                setLoading(false);
+                return;
+            }
+
+            try {
+                setLoading(true);
+                setError("");
+                const response = await getMedicalHistory(accessToken);
+                const rows = Array.isArray(response?.items) ? response.items : [];
+                const sortedRows = [...rows].sort((a, b) => {
+                    const aDate = parseMedicalDate(a?.date)?.getTime() || 0;
+                    const bDate = parseMedicalDate(b?.date)?.getTime() || 0;
+                    return bDate - aDate;
+                });
+                setItems(sortedRows);
+            } catch {
+                setError("Не удалось загрузить историю приёмов");
+                setItems([]);
+            } finally {
+                setLoading(false);
+            }
         }
-        return Array.from(map.entries()); // [ [month, items], ... ]
+
+        loadHistory();
     }, []);
 
-    function repeat(item) {
-        
+    const grouped = useMemo(() => {
+        const map = new Map();
+
+        for (const item of items) {
+            const key = monthKey(item?.date);
+            if (!map.has(key)) {
+                map.set(key, []);
+            }
+            map.get(key).push(item);
+        }
+
+        return Array.from(map.entries());
+    }, [items]);
+
+    async function repeat(item) {
+        if (!item?.specializationId || !item?.doctorId) {
+            return;
+        }
+
+        if (item?.specializationType !== "online") {
+            const cityPhone = await getCatalogsCities()
+                .then((cities) => cities.find((city) => city.id === me?.city_id)?.appointment_phone || "")
+                .catch(() => "");
+
+            setOfflineSpec({
+                id: item.specializationId,
+                title: item.specializationTitle || "Без названия",
+                appointmentType: item.specializationType === "phone_and_chat" ? "phone_and_chat" : "phone",
+                appointmentPhone: item.appointmentPhone || cityPhone || "",
+            });
+            setSpecSheetOpen(true);
+            return;
+        }
+
         const params = new URLSearchParams();
-        params.set("doctor", item.doctor);
-        params.set("spec", item.spec);
-        
+        params.set("specializationId", item.specializationId);
+        params.set("doctorId", item.doctorId);
+        if (item?.branchId) {
+            params.set("branchId", item.branchId);
+        }
+
         nav(`/book?${params.toString()}`);
+    }
+
+    function openPhone(phoneRaw) {
+        const digits = String(phoneRaw || "").replace(/[^\d+]/g, "");
+        if (!digits) return;
+        window.location.href = `tel:${digits}`;
+    }
+
+    function openChat() {
+        const chatUrl = import.meta.env.VITE_MAX_CHAT_URL || "";
+        if (!chatUrl) return;
+        window.location.href = chatUrl;
     }
 
     return (
         <PageLayout
             showBottom={true}
             bottomButtonText="Вернуться на главную"
-            onBottomButtonClick={() => { nav("/") }}
+            onBottomButtonClick={() => { nav("/"); }}
         >
             <Flex direction="column" gap={12}>
                 <Typography.Title level={2}>История приемов</Typography.Title>
 
-                {grouped.map(([month, items]) => (
+                {loading ? <Typography.Label>Загружаем историю...</Typography.Label> : null}
+                {!loading && error ? <Typography.Label className="authErrorLabel">{error}</Typography.Label> : null}
+                {!loading && !error && !items.length ? (
+                    <Typography.Label>История приемов пока пуста</Typography.Label>
+                ) : null}
+
+                {grouped.map(([month, monthItems]) => (
                     <div key={month} className="historyGroup">
                         <div className="historyGroupHeader">
                             <span className="historyGroupBar" />
@@ -180,14 +234,34 @@ export default function History() {
                         </div>
 
                         <Flex direction="column" gap={10}>
-                            {items.map((it) => (
-                                <HistoryCard key={it.id} item={it} onRepeat={repeat} />
+                            {monthItems.map((it, index) => (
+                                <HistoryCard
+                                    key={`${it?.doctorId || "doctor"}-${it?.date || "date"}-${index}`}
+                                    item={it}
+                                    onRepeat={repeat}
+                                />
                             ))}
                         </Flex>
                     </div>
                 ))}
-
             </Flex>
+
+            <AppointmentOptionsSheet
+                open={specSheetOpen}
+                onlineCount={0}
+                offlineSpecs={offlineSpec ? [offlineSpec] : []}
+                loading={false}
+                error={""}
+                onClose={() => {
+                    setSpecSheetOpen(false);
+                    setOfflineSpec(null);
+                }}
+                onOnlineBook={() => {
+                    setSpecSheetOpen(false);
+                }}
+                onPhoneCall={openPhone}
+                onOpenChat={openChat}
+            />
         </PageLayout>
     );
 }
