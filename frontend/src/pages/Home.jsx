@@ -1,13 +1,20 @@
 import { useNavigate } from "react-router-dom";
 import { Container, Flex, Avatar, Typography, CellList, CellSimple, EllipsisText, Counter, Button } from "@maxhub/max-ui";
-import { Calendar, LibraryBig, Gift, LogOut, ClipboardList } from "lucide-react";
+import { Calendar, LibraryBig, Gift, LogOut, ClipboardList, ChevronRight, MessageCircle, Phone } from "lucide-react";
 import PageLayout from "../components/PageLayout";
 import "../App.css";
 import { useAuth } from "../context/AuthContext.jsx";
 import AuthScreen from "../components/AuthScreen.jsx";
 import { HomeLoadingCard } from "../components/loadingCard.jsx";
 import { useState } from "react";
-import { clearTokens, authLogout, getStoredRefreshtoken } from "../api.js";
+import {
+    clearTokens,
+    authLogout,
+    getStoredRefreshtoken,
+    getStoredAccessToken,
+    getCatalogSpecializationsBySchedule,
+    getCatalogsCities,
+} from "../api.js";
 
 import { getFallbackGradientByInitials } from "../modules/avatarGradient.js";
 import { getSurveys } from "../modules/surveyStore.js";
@@ -45,6 +52,11 @@ export default function Home() {
     const { me, loading, isAuthorized, setMe } = useAuth();
 
     const [busy, setBusy] = useState(false);
+    const [specSheetOpen, setSpecSheetOpen] = useState(false);
+    const [specSheetLoading, setSpecSheetLoading] = useState(false);
+    const [specSheetError, setSpecSheetError] = useState("");
+    const [onlineCount, setOnlineCount] = useState(0);
+    const [offlineSpecs, setOfflineSpecs] = useState([]);
     const username = me?.fullName || "Иван Иванов";
     const phone = formatPhoneToInternational(me?.phone || "79123456789");
     const parts = username.trim().split(/\s+/, 2);
@@ -65,6 +77,64 @@ export default function Home() {
         }
     }
 
+    function openPhone(phoneRaw) {
+        const digits = String(phoneRaw || "").replace(/[^\d+]/g, "");
+        if (!digits) return;
+        window.location.href = `tel:${digits}`;
+    }
+
+    function openChat() {
+        const chatUrl = import.meta.env.VITE_MAX_CHAT_URL || "";
+        if (!chatUrl) return;
+        window.location.href = chatUrl;
+    }
+
+    async function handleBookClick() {
+        const accessToken = getStoredAccessToken();
+        if (!accessToken) {
+            nav("/book");
+            return;
+        }
+
+        setSpecSheetLoading(true);
+        setSpecSheetError("");
+
+        try {
+            const [specsResponse, cities] = await Promise.all([
+                getCatalogSpecializationsBySchedule(accessToken),
+                getCatalogsCities().catch(() => []),
+            ]);
+
+            const items = Array.isArray(specsResponse?.items) ? specsResponse.items : [];
+            const online = items.filter((item) => item?.appointment_type === "online");
+            const cityPhone = cities.find((city) => city.id === me?.city_id)?.appointment_phone || "";
+            const offline = items
+                .filter((item) => item?.appointment_type === "phone" || item?.appointment_type === "phone_and_chat")
+                .sort((a, b) => String(a?.title || "").localeCompare(String(b?.title || "")))
+                .map((item) => ({
+                    id: item.id,
+                    title: item.title || "Без названия",
+                    appointmentType: item.appointment_type,
+                    appointmentPhone: item.appointement_phone || item.appointment_phone || cityPhone || "",
+                }));
+
+            if (!offline.length) {
+                nav("/book");
+                return;
+            }
+
+            setOnlineCount(online.length);
+            setOfflineSpecs(offline);
+            setSpecSheetOpen(true);
+        } catch (error) {
+            console.error(error);
+            setSpecSheetError("Не удалось загрузить варианты записи. Открываем онлайн-запись.");
+            nav("/book");
+        } finally {
+            setSpecSheetLoading(false);
+        }
+    }
+
     if (loading) {
         return (
             <PageLayout showBottomButton={false}>
@@ -80,7 +150,7 @@ export default function Home() {
     return (
         <PageLayout
             bottomButtonText="Записаться на прием"
-            onBottomButtonClick={() => nav("/book")}
+            onBottomButtonClick={handleBookClick}
         >
             <Flex direction="column" gap={10}>
                 {/* Карточка пациента */}
@@ -165,6 +235,63 @@ export default function Home() {
                     </CellList>
                 </Container>
             </Flex>
+            {specSheetOpen && (
+                <div className="appointmentSheetBackdrop" onClick={() => setSpecSheetOpen(false)}>
+                    <div className="appointmentSheet" onClick={(event) => event.stopPropagation()}>
+                        <div className="appointmentSheetHandle" />
+                        {onlineCount > 0 && (
+                            <button
+                                type="button"
+                                className="appointmentRow appointmentRow--chevron"
+                                onClick={() => {
+                                    setSpecSheetOpen(false);
+                                    nav("/book");
+                                }}
+                            >
+                                <div>
+                                    <Typography.Title level={2}>Запись на прием врача</Typography.Title>
+                                    <Typography.Label className="roleLine">Онлайн-запись на удобное время</Typography.Label>
+                                </div>
+                                <ChevronRight size={24} />
+                            </button>
+                        )}
+
+                        {offlineSpecs.map((spec) => (
+                            <div key={spec.id} className="appointmentRow">
+                                <div>
+                                    <Typography.Title level={2}>{spec.title}</Typography.Title>
+                                    <Typography.Label className="roleLine">
+                                        {spec.appointmentType === "phone_and_chat" ? "Запись по телефону или в чате" : "Запись по телефону"}
+                                    </Typography.Label>
+                                </div>
+                                <div className="appointmentRowActions">
+                                    <button
+                                        type="button"
+                                        className="appointmentIconButton"
+                                        onClick={() => openPhone(spec.appointmentPhone)}
+                                        aria-label={`Позвонить по специальности ${spec.title}`}
+                                        disabled={!spec.appointmentPhone}
+                                    >
+                                        <Phone size={22} />
+                                    </button>
+                                    {spec.appointmentType === "phone_and_chat" && (
+                                        <button
+                                            type="button"
+                                            className="appointmentIconButton"
+                                            onClick={openChat}
+                                            aria-label={`Открыть чат для специальности ${spec.title}`}
+                                        >
+                                            <MessageCircle size={22} />
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                        {specSheetLoading && <Typography.Label className="roleLine">Загрузка...</Typography.Label>}
+                        {specSheetError && <Typography.Label className="authErrorLabel">{specSheetError}</Typography.Label>}
+                    </div>
+                </div>
+            )}
         </PageLayout >
     );
 }
