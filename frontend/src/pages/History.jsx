@@ -100,7 +100,7 @@ function HistoryCard({ item, onRepeat }) {
 
                 {services.length > 0 ? (
                     <Typography.Label style={{ marginTop: 2 }}>
-                        Услуги: {services.join(", ")}
+                        Услуги: {services.map((item) => { return item.serviceTitle }).join(", ")}
                     </Typography.Label>
                 ) : null}
 
@@ -181,7 +181,7 @@ export default function History() {
                 id: item.specializationId,
                 title: item.specializationTitle || "Без названия",
                 appointmentType: item.specializationType === "phone_and_chat" ? "phone_and_chat" : "phone",
-                appointmentPhone: item.appointmentPhone || cityPhone || "",
+                appointmentPhone: item.specializationPhone || cityPhone || "",
             });
             setSpecSheetOpen(true);
             return;

@@ -278,7 +278,7 @@ export async function getMedicalDocuments({ cityId, patient_id }) {
         patient_id,
     });
 
-    const data = await onecFetch(oneCConfig.url.concat(`/documents/medical?${params}`), {
+    const data = await onecFetch(oneCConfig.url.concat(`/documents/medical?search_type=ByPatient&${params}`), {
         method: "GET",
         headers: {
             Authorization: `Basic ${oneCConfig.basicAuth}`,
