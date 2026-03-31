@@ -323,19 +323,24 @@ export default function SurveyDetails() {
               })}
             </Flex>
           ) : (
-            <select
-              className="surveyControl surveySelect"
-              value={state.number || ""}
-              disabled={isDisabled}
-              onChange={(event) => patchAnswer(question.id, { number: event.target.value })}
-            >
-              <option value="">Выберите вариант</option>
-              {question.answerItems.map((answerOption, index) => (
-                <option key={answerOption.answerId || index} value={index + 1}>
-                  {answerOption.answerTitle || `Вариант ${index + 1}`}
-                </option>
-              ))}
-            </select>
+            <Flex direction="column" gap={8}>
+              {question.answerItems.map((answerOption, index) => {
+                const answerNumber = index + 1;
+                return (
+                  <label key={answerOption.answerId || answerNumber} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <input
+                      type="radio"
+                      name={`survey-${question.id}`}
+                      value={answerNumber}
+                      checked={selectedNumber === answerNumber}
+                      disabled={isDisabled}
+                      onChange={(event) => patchAnswer(question.id, { number: Number(event.target.value) })}
+                    />
+                    <span>{answerOption.answerTitle || `Вариант ${answerNumber}`}</span>
+                  </label>
+                );
+              })}
+            </Flex>
           )}
 
           {question.requiresComment ? (
