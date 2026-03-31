@@ -28,7 +28,7 @@ export function HomeLoadingCard() {
 
 export function BonusesLoadingCard() {
   return (
-    <div className="bonusesLoading" aria-label="Загрузка истории операций">
+    <div className="bonusesLoading" aria-label="Загрузка истории операций" style={ { width: "100%" } }>
       <div className="skeleton skeleton--title skeleton--w40" />
       <div className="skeleton skeleton--tx" />
       <div className="skeleton skeleton--tx" />

@@ -2,7 +2,7 @@ import { Container } from "@maxhub/max-ui";
 
 export default function BonusesSkeleton() {
     return (
-        <div className="bonusesSkeleton" aria-label="Загрузка страницы бонусов">
+        <div className="bonusesSkeleton" aria-label="Загрузка страницы бонусов" style={{ width: "100%" }}>
             <Container className="card loadingCard bonusesSkeletonBalanceCard">
                 <div className="skeleton bonusesSkeletonBalance" />
                 <div className="skeleton bonusesSkeletonLabel" />
