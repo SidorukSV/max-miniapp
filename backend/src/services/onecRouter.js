@@ -272,6 +272,27 @@ export async function getAppointmentsDocuments({ cityId, patient_id }) {
     return data;
 }
 
+export async function getSurveysDocuments({ cityId, patient_id }) {
+    const oneCConfig = getOneCConfig(cityId);
+    const params = new URLSearchParams({
+        search_type: "ByPatient",
+        patient_id,
+    });
+
+    const data = await onecFetch(oneCConfig.url.concat(`/documents/surveys?${params}`), {
+        method: "GET",
+        headers: {
+            Authorization: `Basic ${oneCConfig.basicAuth}`,
+        },
+    });
+
+    if (!Array.isArray(data)) {
+        return [];
+    }
+
+    return data;
+}
+
 export async function getMedicalDocuments({ cityId, patient_id }) {
     const oneCConfig = getOneCConfig(cityId);
     const params = new URLSearchParams({
