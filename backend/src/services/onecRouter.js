@@ -370,6 +370,22 @@ export async function getCatalogEmployeesBySpec({ cityId, specializationId }) {
     return data;
 }
 
+export async function getCatalogSurveyTemplates({ cityId }) {
+    const oneCConfig = getOneCConfig(cityId);
+    const data = await onecFetch(oneCConfig.url.concat("/catalogs/surveyTemplates"), {
+        method: "GET",
+        headers: {
+            Authorization: `Basic ${oneCConfig.basicAuth}`,
+        },
+    });
+
+    if (!Array.isArray(data)) {
+        return [];
+    }
+
+    return data;
+}
+
 export async function getDoctorSchedule({ cityId, doctorId, branchId, date, format }) {
     const oneCConfig = getOneCConfig(cityId);
     const params = new URLSearchParams({

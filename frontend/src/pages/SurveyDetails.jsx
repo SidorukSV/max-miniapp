@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { CellHeader, Container, Flex, Typography } from "@maxhub/max-ui";
 import PageLayout from "../components/PageLayout";
-import { getStoredAccessToken, getSurveys } from "../api";
+import { getCatalogSurveyTemplates, getStoredAccessToken, getSurveys } from "../api";
 
 function toRuDateTime(value) {
   const parsed = new Date(value || "");
@@ -19,13 +19,32 @@ function toRuDateTime(value) {
   });
 }
 
-function resolveAnswerLabel(item) {
+function resolveTemplateAnswerTitle(questionTemplate, numberAnswer) {
+  const answerItems = Array.isArray(questionTemplate?.questionOptions?.answerItems)
+    ? questionTemplate.questionOptions.answerItems
+    : [];
+
+  if (!answerItems.length || numberAnswer === null || numberAnswer === undefined || numberAnswer === "") {
+    return "";
+  }
+
+  const asNumber = Number(numberAnswer);
+  if (Number.isFinite(asNumber) && asNumber > 0 && answerItems[asNumber - 1]) {
+    return answerItems[asNumber - 1].answerTitle || "";
+  }
+
+  return "";
+}
+
+function resolveAnswerLabel(item, questionTemplate) {
   if (item?.openAnswer) {
     return item.openAnswer;
   }
 
   const numberAnswer = item?.numberAnswer;
-  const answerTitle = item?.answerTitle;
+  const fallbackTemplateAnswer = resolveTemplateAnswerTitle(questionTemplate, numberAnswer);
+  const answerTitle = item?.answerTitle || fallbackTemplateAnswer;
+
   if (answerTitle && numberAnswer !== null && numberAnswer !== undefined && numberAnswer !== "") {
     return `${numberAnswer}. ${answerTitle}`;
   }
@@ -33,21 +52,46 @@ function resolveAnswerLabel(item) {
   return answerTitle || "Ответ не заполнен";
 }
 
-function normalizeSurvey(item) {
+function normalizeSurvey(item, templates) {
+  const template = templates.find((row) => row?.surveyTemplateId === item?.surveyTemplateId) || null;
+  const templateQuestions = Array.isArray(template?.questionItems) ? template.questionItems : [];
+
+  const questionById = new Map();
+  const sectionById = new Map();
+  for (const templateItem of templateQuestions) {
+    if (templateItem?.isSection) {
+      sectionById.set(templateItem?.questionId, templateItem?.questionWording || templateItem?.questionTitle || "Раздел");
+      continue;
+    }
+
+    questionById.set(templateItem?.questionId, templateItem);
+  }
+
   return {
     id: item?.surveyId || "",
     status: item?.isDone ? "Завершена" : "Новая",
-    title: item?.surveyTemplateTitle || "Анкета",
+    title: item?.surveyTemplateTitle || template?.surveyTemplateTitle || "Анкета",
     date: toRuDateTime(item?.surveyDate),
     questions: Array.isArray(item?.surveyItems)
       ? [...item.surveyItems]
         .sort((a, b) => Number(a?.numberQuestion || 0) - Number(b?.numberQuestion || 0))
-        .map((question, index) => ({
-          id: question?.questionId || `${index}`,
-          number: question?.numberQuestion || index + 1,
-          title: question?.questionTitle || "Вопрос без текста",
-          answer: resolveAnswerLabel(question),
-        }))
+        .map((question, index) => {
+          const questionTemplate = questionById.get(question?.questionId);
+          const sectionTitle = sectionById.get(questionTemplate?.questionParent) || "";
+
+          return {
+            id: question?.questionId || `${index}`,
+            number: question?.numberQuestion || index + 1,
+            title: questionTemplate?.questionWording || question?.questionTitle || questionTemplate?.questionTitle || "Вопрос без текста",
+            answer: resolveAnswerLabel(question, questionTemplate),
+            help: questionTemplate?.questionHelpDescription || "",
+            isRequired: Boolean(questionTemplate?.isRequired),
+            answerType: questionTemplate?.questionOptions?.answerType || "",
+            requiresComment: Boolean(questionTemplate?.questionOptions?.requiresComment),
+            commentDescription: questionTemplate?.questionOptions?.commentDescription || "",
+            sectionTitle,
+          };
+        })
       : [],
   };
 }
@@ -70,10 +114,17 @@ export default function SurveyDetails() {
       try {
         setLoading(true);
         setError("");
-        const response = await getSurveys(accessToken);
-        const items = Array.isArray(response?.items) ? response.items : [];
-        const found = items.find((item) => item?.surveyId === id);
-        setSurvey(found ? normalizeSurvey(found) : null);
+
+        const [surveyResponse, templatesResponse] = await Promise.all([
+          getSurveys(accessToken),
+          getCatalogSurveyTemplates(accessToken),
+        ]);
+
+        const surveys = Array.isArray(surveyResponse?.items) ? surveyResponse.items : [];
+        const templates = Array.isArray(templatesResponse?.items) ? templatesResponse.items : [];
+
+        const found = surveys.find((item) => item?.surveyId === id);
+        setSurvey(found ? normalizeSurvey(found, templates) : null);
       } catch {
         setError("Не удалось загрузить анкету");
       } finally {
@@ -97,6 +148,8 @@ export default function SurveyDetails() {
     );
   }
 
+  let previousSection = "";
+
   return (
     <PageLayout showBottom bottomButtonText="К списку анкет" onBottomButtonClick={() => nav("/surveys")}>
       <Flex direction="column" gap={10}>
@@ -116,16 +169,46 @@ export default function SurveyDetails() {
 
           {!loading && !error && hasQuestions ? (
             <Flex direction="column" gap={14}>
-              {survey.questions.map((question) => (
-                <div key={question.id} style={{ width: "100%" }}>
-                  <Typography.Label style={{ display: "block", marginBottom: 8 }}>
-                    {question.number}. {question.title}
-                  </Typography.Label>
-                  <Typography.Label style={{ color: "var(--tg-theme-hint-color, #7d7d7d)" }}>
-                    {question.answer}
-                  </Typography.Label>
-                </div>
-              ))}
+              {survey.questions.map((question) => {
+                const shouldShowSection = question.sectionTitle && question.sectionTitle !== previousSection;
+                if (shouldShowSection) {
+                  previousSection = question.sectionTitle;
+                }
+
+                return (
+                  <div key={question.id} style={{ width: "100%" }}>
+                    {shouldShowSection ? (
+                      <Typography.Title level={3} style={{ marginBottom: 8 }}>{question.sectionTitle}</Typography.Title>
+                    ) : null}
+
+                    <Typography.Label style={{ display: "block", marginBottom: 8 }}>
+                      {question.number}. {question.title}{question.isRequired ? " *" : ""}
+                    </Typography.Label>
+
+                    <Typography.Label style={{ color: "var(--tg-theme-hint-color, #7d7d7d)" }}>
+                      {question.answer}
+                    </Typography.Label>
+
+                    {question.answerType ? (
+                      <Typography.Label style={{ display: "block", marginTop: 4, color: "var(--tg-theme-hint-color, #7d7d7d)" }}>
+                        Тип ответа: {question.answerType}
+                      </Typography.Label>
+                    ) : null}
+
+                    {question.help ? (
+                      <Typography.Label style={{ display: "block", marginTop: 4, color: "var(--tg-theme-hint-color, #7d7d7d)" }}>
+                        Подсказка: {question.help}
+                      </Typography.Label>
+                    ) : null}
+
+                    {question.requiresComment ? (
+                      <Typography.Label style={{ display: "block", marginTop: 4, color: "var(--tg-theme-hint-color, #7d7d7d)" }}>
+                        Требуется комментарий: {question.commentDescription || "уточните ответ"}
+                      </Typography.Label>
+                    ) : null}
+                  </div>
+                );
+              })}
             </Flex>
           ) : null}
 

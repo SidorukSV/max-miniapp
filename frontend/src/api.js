@@ -176,6 +176,14 @@ export async function getCatalogEmployeesBySpec(access_token, specializationId) 
     });
 }
 
+export async function getCatalogSurveyTemplates(access_token) {
+    return apiFetch("/catalogs/surveyTemplates", {
+        headers: {
+            Authorization: `Bearer ${access_token}`,
+        },
+    });
+}
+
 export async function getDoctorSchedule(access_token, { doctorId, branchId, date, format }) {
     const params = new URLSearchParams({
         doctorId,
