@@ -5,6 +5,7 @@ import {
     getAppointmentsDocuments,
     getMedicalDocuments,
     getAppointmentsSchedule,
+    getSurveysDocuments,
     updateAppointmentDocument,
 } from "../services/onecRouter.js";
 
@@ -46,6 +47,17 @@ export async function documentsRoutes(app) {
         async (req) => {
             const { patient_id, city_id } = req.user;
             const items = await getMedicalDocuments({ cityId: city_id, patient_id });
+
+            return {
+                items,
+            };
+        });
+
+    app.get("/api/v1/documents/surveys",
+        { preHandler: [authMiddleware] },
+        async (req) => {
+            const { patient_id, city_id } = req.user;
+            const items = await getSurveysDocuments({ cityId: city_id, patient_id });
 
             return {
                 items,
