@@ -272,6 +272,27 @@ export async function getAppointmentsDocuments({ cityId, patient_id }) {
     return data;
 }
 
+export async function getSurveysDocuments({ cityId, patient_id }) {
+    const oneCConfig = getOneCConfig(cityId);
+    const params = new URLSearchParams({
+        search_type: "ByPatient",
+        patient_id,
+    });
+
+    const data = await onecFetch(oneCConfig.url.concat(`/documents/surveys?${params}`), {
+        method: "GET",
+        headers: {
+            Authorization: `Basic ${oneCConfig.basicAuth}`,
+        },
+    });
+
+    if (!Array.isArray(data)) {
+        return [];
+    }
+
+    return data;
+}
+
 export async function getMedicalDocuments({ cityId, patient_id }) {
     const oneCConfig = getOneCConfig(cityId);
     const params = new URLSearchParams({
@@ -336,6 +357,22 @@ export async function getCatalogEmployeesBySpec({ cityId, specializationId }) {
         specializationId,
     });
     const data = await onecFetch(oneCConfig.url.concat(`/catalogs/employees?${params}`), {
+        method: "GET",
+        headers: {
+            Authorization: `Basic ${oneCConfig.basicAuth}`,
+        },
+    });
+
+    if (!Array.isArray(data)) {
+        return [];
+    }
+
+    return data;
+}
+
+export async function getCatalogSurveyTemplates({ cityId }) {
+    const oneCConfig = getOneCConfig(cityId);
+    const data = await onecFetch(oneCConfig.url.concat("/catalogs/surveyTemplates"), {
         method: "GET",
         headers: {
             Authorization: `Basic ${oneCConfig.basicAuth}`,
