@@ -20,6 +20,17 @@ function toRuDateTime(value) {
   });
 }
 
+function getOptionTitle(option) {
+  return String(option?.answerTitle ?? option?.answerTItle ?? option?.answertitle ?? "").trim();
+}
+
+function normalizeAnswerType(rawType) {
+  const type = String(rawType || "").trim();
+  if (type === "valueInInfoBase") return "valueInInfobase";
+  if (type === "severalValuesFrom") return "severalValueFrom";
+  return type || "string";
+}
+
 function normalizeSurvey(item, templates) {
   const template = templates.find((row) => row?.surveyTemplateId === item?.surveyTemplateId) || null;
   const templateQuestions = Array.isArray(template?.questionItems) ? template.questionItems : [];
@@ -53,8 +64,17 @@ function normalizeSurvey(item, templates) {
       ? templateQuestion.questionOptions.answerItems
       : [];
 
+    const optionNumberByTitle = new Map(
+      answerItems.map((option, index) => [getOptionTitle(option), index + 1]).filter(([title]) => Boolean(title)),
+    );
+
     const selectedNumbers = answerList
-      .map((entry) => Number(entry?.numberAnswer))
+      .map((entry) => {
+        const direct = Number(entry?.numberAnswer);
+        if (Number.isFinite(direct) && direct > 0) return direct;
+        const byTitle = optionNumberByTitle.get(String(entry?.answerTitle ?? "").trim());
+        return Number.isFinite(byTitle) ? byTitle : null;
+      })
       .filter((value) => Number.isFinite(value) && value > 0);
 
     const openAnswersByNumber = {};
@@ -65,6 +85,17 @@ function normalizeSurvey(item, templates) {
       }
     }
 
+    const initialFromAnswer = firstAnswer?.openAnswer ?? firstAnswer?.answerTitle ?? "";
+    const firstNumberAnswer = Number(firstAnswer?.numberAnswer);
+    const mappedNumberByTitle = optionNumberByTitle.get(String(firstAnswer?.answerTitle ?? "").trim());
+    const initialNumberValue = Number.isFinite(firstNumberAnswer) && firstNumberAnswer > 0
+      ? firstNumberAnswer
+      : (Number.isFinite(mappedNumberByTitle) ? mappedNumberByTitle : "");
+    const initialBooleanValue = typeof firstAnswer?.answerTitle === "boolean"
+      ? firstAnswer.answerTitle
+      : String(initialFromAnswer).toLowerCase() === "true";
+    const numericAnswerFromText = Number(initialFromAnswer);
+
     questions.push({
       id: templateQuestion?.questionId || `question-${fallbackNumber}`,
       number: firstAnswer?.numberQuestion || fallbackNumber,
@@ -72,16 +103,18 @@ function normalizeSurvey(item, templates) {
       sectionTitle: sectionById.get(templateQuestion?.questionParent) || "",
       isRequired: Boolean(templateQuestion?.isRequired),
       help: templateQuestion?.questionHelpDescription || "",
-      answerType: templateQuestion?.questionOptions?.answerType || "string",
+      answerType: normalizeAnswerType(templateQuestion?.questionOptions?.answerType),
       selectorType: templateQuestion?.questionOptions?.selector_type || "selector",
       flagType: templateQuestion?.questionOptions?.flag_type || "input",
       requiresComment: Boolean(templateQuestion?.questionOptions?.requiresComment),
       commentDescription: templateQuestion?.questionOptions?.commentDescription || "Введите комментарий",
       constraints: templateQuestion?.questionOptions?.constraints || {},
       answerItems,
-      initialText: firstAnswer?.openAnswer || firstAnswer?.answerTitle || "",
-      initialNumber: firstAnswer?.numberAnswer || "",
-      initialBoolean: String(firstAnswer?.openAnswer || firstAnswer?.answerTitle || "").toLowerCase() === "true",
+      initialText: String(initialFromAnswer || ""),
+      initialNumber: Number.isFinite(numericAnswerFromText) && String(initialFromAnswer).trim() !== ""
+        ? String(numericAnswerFromText)
+        : (initialNumberValue === "" ? "" : String(initialNumberValue)),
+      initialBoolean: Boolean(initialBooleanValue),
       initialComment: "",
       initialSelectedNumbers: selectedNumbers,
       initialOpenAnswersByNumber: openAnswersByNumber,
@@ -96,7 +129,7 @@ function normalizeSurvey(item, templates) {
     status: item?.isDone ? "Завершена" : "Новая",
     title: item?.surveyTemplateTitle || template?.surveyTemplateTitle || "Анкета",
     date: toRuDateTime(item?.surveyDate),
-    questions,
+    questions: questions.sort((a, b) => a.number - b.number),
   };
 }
 
@@ -211,11 +244,12 @@ export default function SurveyDetails() {
     }
 
     if (question.answerType === "string") {
+      const maxLength = constraints.length ?? constraints.lenght ?? undefined;
       return (
         <Input
           mode="secondary"
           value={state.text || ""}
-          maxLength={constraints.length || undefined}
+          maxLength={maxLength}
           disabled={isDisabled}
           onChange={(event) => patchAnswer(question.id, { text: event.target.value })}
           placeholder="Введите ответ"
@@ -317,7 +351,7 @@ export default function SurveyDetails() {
                     disabled={isDisabled}
                     onClick={() => patchAnswer(question.id, { number: answerNumber })}
                   >
-                    {answerOption.answerTitle || `Вариант ${answerNumber}`}
+                    {getOptionTitle(answerOption) || `Вариант ${answerNumber}`}
                   </Pill>
                 );
               })}
@@ -336,7 +370,7 @@ export default function SurveyDetails() {
                       disabled={isDisabled}
                       onChange={(event) => patchAnswer(question.id, { number: Number(event.target.value) })}
                     />
-                    <span>{answerOption.answerTitle || `Вариант ${answerNumber}`}</span>
+                    <span>{getOptionTitle(answerOption) || `Вариант ${answerNumber}`}</span>
                   </label>
                 );
               })}
@@ -375,7 +409,7 @@ export default function SurveyDetails() {
                     disabled={isDisabled}
                     onChange={(event) => toggleSeveral(question.id, answerNumber, event.target.checked)}
                   />
-                  <span>{answerOption.answerTitle || `Вариант ${answerNumber}`}</span>
+                  <span>{getOptionTitle(answerOption) || `Вариант ${answerNumber}`}</span>
                 </label>
 
                 {answerOption.requiresOpenAnswer ? (
