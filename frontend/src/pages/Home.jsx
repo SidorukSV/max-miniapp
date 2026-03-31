@@ -6,7 +6,7 @@ import "../App.css";
 import { useAuth } from "../context/AuthContext.jsx";
 import AuthScreen from "../components/AuthScreen.jsx";
 import { HomeLoadingCard } from "../components/loadingCard.jsx";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AppointmentOptionsSheet from "../components/AppointmentOptionsSheet.jsx";
 import {
     clearTokens,
@@ -15,11 +15,10 @@ import {
     getStoredAccessToken,
     getCatalogSpecializationsBySchedule,
     getCatalogsCities,
+    getSurveys,
 } from "../api.js";
 
 import { getFallbackGradientByInitials } from "../modules/avatarGradient.js";
-import { getSurveys } from "../modules/surveyStore.js";
-import { SURVEY_STATUSES } from "../data/mockSurveys.js";
 
 function formatPhoneToInternational(phone) {
     if (!phone) return "";
@@ -58,12 +57,33 @@ export default function Home() {
     const [specSheetError, setSpecSheetError] = useState("");
     const [onlineCount, setOnlineCount] = useState(0);
     const [offlineSpecs, setOfflineSpecs] = useState([]);
+    const [newSurveysCount, setNewSurveysCount] = useState(0);
     const username = me?.fullName || "Иван Иванов";
     const phone = formatPhoneToInternational(me?.phone || "79123456789");
     const parts = username.trim().split(/\s+/, 2);
     const initials = parts.map(p => p[0]?.toUpperCase()).join("");
     const bonus = me?.bonus || 0;
-    const newSurveysCount = getSurveys().filter((survey) => survey.status === SURVEY_STATUSES.NEW).length;
+
+    useEffect(() => {
+        async function loadSurveyCounters() {
+            const accessToken = getStoredAccessToken();
+            if (!accessToken) {
+                setNewSurveysCount(0);
+                return;
+            }
+
+            try {
+                const response = await getSurveys(accessToken);
+                const items = Array.isArray(response?.items) ? response.items : [];
+                const newCount = items.filter((item) => !item?.isDone).length;
+                setNewSurveysCount(newCount);
+            } catch {
+                setNewSurveysCount(0);
+            }
+        }
+
+        loadSurveyCounters();
+    }, [me?.patient_id]);
 
     async function handleLogout() {
         setBusy(true);

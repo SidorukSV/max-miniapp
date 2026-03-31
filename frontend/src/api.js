@@ -111,6 +111,14 @@ export async function getMedicalHistory(access_token) {
     });
 }
 
+export async function getSurveys(access_token) {
+    return apiFetch("/documents/surveys", {
+        headers: {
+            Authorization: `Bearer ${access_token}`,
+        },
+    });
+}
+
 export async function updateAppointment(access_token, payload) {
     return apiFetch("/documents/appointments", {
         method: "PUT",

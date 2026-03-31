@@ -1,7 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useMax } from "../context/MaxContext";
-import { getSurveyById } from "../modules/surveyStore";
 
 function extractSurveyId(payload) {
   if (!payload || typeof payload !== "string") {
@@ -56,7 +55,7 @@ export default function PayloadSurveyRedirect() {
 
     for (const payload of payloads) {
       const surveyId = extractSurveyId(payload);
-      if (surveyId && getSurveyById(surveyId)) {
+      if (surveyId) {
         handledRef.current = true;
         nav(`/surveys/${surveyId}`, { replace: true });
         return;
