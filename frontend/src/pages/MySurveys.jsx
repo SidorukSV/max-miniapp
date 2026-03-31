@@ -1,10 +1,27 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CellHeader, CellList, CellSimple, Container, Flex, Typography } from "@maxhub/max-ui";
 import { ClipboardList } from "lucide-react";
 import PageLayout from "../components/PageLayout";
-import { getSurveyTitle } from "../data/mockSurveys";
-import { getSurveys } from "../modules/surveyStore";
+import { getStoredAccessToken, getSurveys } from "../api";
+
+function toRuDate(value) {
+  const parsed = new Date(value || "");
+  if (Number.isNaN(parsed.getTime())) {
+    return "без даты";
+  }
+
+  return parsed.toLocaleDateString("ru-RU");
+}
+
+function normalizeSurvey(item, index) {
+  return {
+    id: item?.surveyId || `survey-${index}`,
+    status: item?.isDone ? "Завершена" : "Новая",
+    title: item?.surveyTemplateTitle || "Анкета",
+    dateLabel: toRuDate(item?.surveyDate),
+  };
+}
 
 function SurveyStatus({ value }) {
   const isNew = value === "Новая";
@@ -18,8 +35,34 @@ function SurveyStatus({ value }) {
 
 export default function MySurveys() {
   const nav = useNavigate();
-  const [surveys] = useState(() => getSurveys());
+  const [surveys, setSurveys] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const hasSurveys = useMemo(() => surveys.length > 0, [surveys.length]);
+
+  useEffect(() => {
+    async function loadSurveys() {
+      const accessToken = getStoredAccessToken();
+      if (!accessToken) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError("");
+        const response = await getSurveys(accessToken);
+        const items = Array.isArray(response?.items) ? response.items : [];
+        setSurveys(items.map(normalizeSurvey));
+      } catch {
+        setError("Не удалось загрузить анкеты");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadSurveys();
+  }, []);
 
   return (
     <PageLayout
@@ -30,11 +73,19 @@ export default function MySurveys() {
       <Flex direction="column" gap={10}>
         <CellHeader titleStyle="caps">Мои анкеты</CellHeader>
 
-        {!hasSurveys ? (
+        {!loading && error ? (
+          <Container className="card">
+            <Typography.Label>{error}</Typography.Label>
+          </Container>
+        ) : null}
+
+        {!loading && !error && !hasSurveys ? (
           <Container className="card">
             <Typography.Label>У вас пока нет доступных анкет.</Typography.Label>
           </Container>
-        ) : (
+        ) : null}
+
+        {!loading && !error && hasSurveys ? (
           <Container className="card menuCard">
             <CellList>
               {surveys.map((survey) => (
@@ -45,12 +96,12 @@ export default function MySurveys() {
                   onClick={() => nav(`/surveys/${survey.id}`)}
                   after={<SurveyStatus value={survey.status} />}
                 >
-                  {getSurveyTitle(survey)}
+                  {survey.title} от {survey.dateLabel}
                 </CellSimple>
               ))}
             </CellList>
           </Container>
-        )}
+        ) : null}
       </Flex>
     </PageLayout>
   );
