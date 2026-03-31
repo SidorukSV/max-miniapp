@@ -111,6 +111,14 @@ export async function getMedicalHistory(access_token) {
     });
 }
 
+export async function getSurveys(access_token) {
+    return apiFetch("/documents/surveys", {
+        headers: {
+            Authorization: `Bearer ${access_token}`,
+        },
+    });
+}
+
 export async function updateAppointment(access_token, payload) {
     return apiFetch("/documents/appointments", {
         method: "PUT",
@@ -162,6 +170,14 @@ export async function getCatalogEmployeesBySpec(access_token, specializationId) 
     });
 
     return apiFetch(`/catalogs/employees?${params}`, {
+        headers: {
+            Authorization: `Bearer ${access_token}`,
+        },
+    });
+}
+
+export async function getCatalogSurveyTemplates(access_token) {
+    return apiFetch("/catalogs/surveyTemplates", {
         headers: {
             Authorization: `Bearer ${access_token}`,
         },
