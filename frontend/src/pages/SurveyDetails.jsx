@@ -92,6 +92,7 @@ function normalizeSurvey(item, templates) {
 
   return {
     id: item?.surveyId || "",
+    isDone: Boolean(item?.isDone),
     status: item?.isDone ? "Завершена" : "Новая",
     title: item?.surveyTemplateTitle || template?.surveyTemplateTitle || "Анкета",
     date: toRuDateTime(item?.surveyDate),
@@ -183,12 +184,14 @@ export default function SurveyDetails() {
   function renderAnswerControl(question) {
     const state = answersState[question.id] || {};
     const constraints = question.constraints || {};
+    const isDisabled = Boolean(survey?.isDone);
 
     if (question.answerType === "boolean") {
       if (question.flagType === "switch") {
         return (
           <Switch
             checked={Boolean(state.bool)}
+            disabled={isDisabled}
             onChange={(event) => patchAnswer(question.id, { bool: event.target.checked })}
           />
         );
@@ -196,7 +199,9 @@ export default function SurveyDetails() {
 
       return (
         <select
+          className="surveyControl surveySelect"
           value={state.bool ? "true" : "false"}
+          disabled={isDisabled}
           onChange={(event) => patchAnswer(question.id, { bool: event.target.value === "true" })}
         >
           <option value="true">Да</option>
@@ -211,6 +216,7 @@ export default function SurveyDetails() {
           mode="secondary"
           value={state.text || ""}
           maxLength={constraints.length || undefined}
+          disabled={isDisabled}
           onChange={(event) => patchAnswer(question.id, { text: event.target.value })}
           placeholder="Введите ответ"
         />
@@ -222,6 +228,7 @@ export default function SurveyDetails() {
         <Textarea
           mode="secondary"
           value={state.text || ""}
+          disabled={isDisabled}
           onChange={(event) => patchAnswer(question.id, { text: event.target.value })}
           placeholder="Введите ответ"
         />
@@ -230,21 +237,65 @@ export default function SurveyDetails() {
 
     if (question.answerType === "number") {
       const step = constraints.decimal ? 1 / (10 ** Number(constraints.decimal)) : 1;
+      const min = constraints.minValue ?? undefined;
+      const max = constraints.maxValue ?? undefined;
+      const currentNumber = Number(state.number);
+      const canMinus = Number.isFinite(currentNumber) ? (min === undefined || currentNumber > min) : false;
+      const canPlus = Number.isFinite(currentNumber) ? (max === undefined || currentNumber < max) : true;
+
+      function clamp(value) {
+        if (!Number.isFinite(value)) return value;
+        if (min !== undefined && value < min) return min;
+        if (max !== undefined && value > max) return max;
+        return value;
+      }
+
+      function applyDelta(delta) {
+        const baseValue = Number.isFinite(currentNumber) ? currentNumber : (min ?? 0);
+        const next = clamp(baseValue + delta);
+        patchAnswer(question.id, { number: String(next) });
+      }
+
       return (
-        <input
-          type="number"
-          value={state.number || ""}
-          min={constraints.minValue ?? undefined}
-          max={constraints.maxValue ?? undefined}
-          step={step}
-          onChange={(event) => patchAnswer(question.id, { number: event.target.value })}
-        />
+        <div className="surveyNumberControl">
+          <button
+            type="button"
+            className="surveyNumberButton"
+            onClick={() => applyDelta(-step)}
+            disabled={isDisabled || !canMinus}
+          >
+            −
+          </button>
+          <input
+            type="number"
+            className="surveyControl surveyNumberInput"
+            value={state.number || ""}
+            min={min}
+            max={max}
+            step={step}
+            disabled={isDisabled}
+            onChange={(event) => patchAnswer(question.id, { number: event.target.value })}
+          />
+          <button
+            type="button"
+            className="surveyNumberButton"
+            onClick={() => applyDelta(step)}
+            disabled={isDisabled || !canPlus}
+          >
+            +
+          </button>
+        </div>
       );
     }
 
     if (question.answerType === "valueInInfobase") {
       return (
-        <select value={state.number || ""} onChange={(event) => patchAnswer(question.id, { number: event.target.value })}>
+        <select
+          className="surveyControl surveySelect"
+          value={state.number || ""}
+          disabled={isDisabled}
+          onChange={(event) => patchAnswer(question.id, { number: event.target.value })}
+        >
           <option value="">Значения будут загружены позже</option>
         </select>
       );
@@ -263,18 +314,26 @@ export default function SurveyDetails() {
                   <Pill
                     key={answerOption.answerId || answerNumber}
                     active={selectedNumber === answerNumber}
+                    disabled={isDisabled}
                     onClick={() => patchAnswer(question.id, { number: answerNumber })}
                   >
-                    {answerOption.answerTitle}
+                    {answerOption.answerTitle || `Вариант ${answerNumber}`}
                   </Pill>
                 );
               })}
             </Flex>
           ) : (
-            <select value={state.number || ""} onChange={(event) => patchAnswer(question.id, { number: event.target.value })}>
+            <select
+              className="surveyControl surveySelect"
+              value={state.number || ""}
+              disabled={isDisabled}
+              onChange={(event) => patchAnswer(question.id, { number: event.target.value })}
+            >
               <option value="">Выберите вариант</option>
               {question.answerItems.map((answerOption, index) => (
-                <option key={answerOption.answerId || index} value={index + 1}>{answerOption.answerTitle}</option>
+                <option key={answerOption.answerId || index} value={index + 1}>
+                  {answerOption.answerTitle || `Вариант ${index + 1}`}
+                </option>
               ))}
             </select>
           )}
@@ -283,6 +342,7 @@ export default function SurveyDetails() {
             <Textarea
               mode="secondary"
               value={state.comment || ""}
+              disabled={isDisabled}
               placeholder={question.commentDescription}
               onChange={(event) => patchAnswer(question.id, { comment: event.target.value })}
             />
@@ -307,15 +367,17 @@ export default function SurveyDetails() {
                   <input
                     type="checkbox"
                     checked={checked}
+                    disabled={isDisabled}
                     onChange={(event) => toggleSeveral(question.id, answerNumber, event.target.checked)}
                   />
-                  <span>{answerOption.answerTitle}</span>
+                  <span>{answerOption.answerTitle || `Вариант ${answerNumber}`}</span>
                 </label>
 
                 {answerOption.requiresOpenAnswer ? (
                   <Input
                     mode="secondary"
                     value={openAnswersByNumber[answerNumber] || ""}
+                    disabled={isDisabled}
                     placeholder="Введите свой вариант"
                     onChange={(event) => {
                       patchAnswer(question.id, {
@@ -338,6 +400,7 @@ export default function SurveyDetails() {
       <Input
         mode="secondary"
         value={state.text || ""}
+        disabled={isDisabled}
         onChange={(event) => patchAnswer(question.id, { text: event.target.value })}
         placeholder="Введите ответ"
       />
