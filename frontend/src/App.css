@@ -671,6 +671,81 @@ body {
   opacity: 0.6;
 }
 
+.surveyChoiceCard {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 52px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--input-border, rgba(0, 16, 61, 0.12));
+  background: var(--tg-theme-secondary-bg-color, #f6f8ff);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.surveyChoiceCard--selected {
+  border-color: var(--accent, #2d6bff);
+  background: rgba(45, 107, 255, 0.08);
+  box-shadow: 0 0 0 2px rgba(45, 107, 255, 0.16);
+}
+
+.surveyChoiceInput {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.surveyChoiceMark {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  border: 2px solid #96a3c2;
+  background: #ffffff;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.surveyChoiceInput[type="checkbox"] + .surveyChoiceMark {
+  border-radius: 8px;
+}
+
+.surveyChoiceInput:checked + .surveyChoiceMark {
+  border-color: var(--accent, #2d6bff);
+  background: var(--accent, #2d6bff);
+}
+
+.surveyChoiceInput:checked + .surveyChoiceMark::after {
+  content: "";
+  position: absolute;
+  inset: 50% auto auto 50%;
+  transform: translate(-50%, -50%);
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #ffffff;
+}
+
+.surveyChoiceInput[type="checkbox"]:checked + .surveyChoiceMark::after {
+  width: 12px;
+  height: 8px;
+  border-radius: 0;
+  background: transparent;
+  border-left: 3px solid #ffffff;
+  border-bottom: 3px solid #ffffff;
+  transform: translate(-45%, -60%) rotate(-45deg);
+}
+
+.surveyChoiceTitle {
+  font-size: 15px;
+  line-height: 20px;
+}
+
+.surveyChoiceInput:disabled + .surveyChoiceMark,
+.surveyChoiceInput:disabled ~ .surveyChoiceTitle {
+  opacity: 0.7;
+}
+
 .dangerBtn {
   color: var(--danger-plain);
 }
