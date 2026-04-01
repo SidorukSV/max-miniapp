@@ -233,15 +233,17 @@ export default function SurveyDetails() {
       }
 
       return (
-        <select
-          className="surveyControl surveySelect"
-          value={state.bool ? "true" : "false"}
-          disabled={isDisabled}
-          onChange={(event) => patchAnswer(question.id, { bool: event.target.value === "true" })}
-        >
-          <option value="true">Да</option>
-          <option value="false">Нет</option>
-        </select>
+        <div className="surveySelectWrap">
+          <select
+            className="surveyControl surveySelect"
+            value={state.bool ? "true" : "false"}
+            disabled={isDisabled}
+            onChange={(event) => patchAnswer(question.id, { bool: event.target.value === "true" })}
+          >
+            <option value="true">Да</option>
+            <option value="false">Нет</option>
+          </select>
+        </div>
       );
     }
 
@@ -326,19 +328,21 @@ export default function SurveyDetails() {
 
     if (question.answerType === "valueInInfobase") {
       return (
-        <select
-          className="surveyControl surveySelect"
-          value={state.number || ""}
-          disabled={isDisabled}
-          onChange={(event) => patchAnswer(question.id, { number: event.target.value })}
-        >
-          <option value="">Выберите значение</option>
-          {question.answerItems.map((item, index) => (
-            <option key={item.answerId || index + 1} value={String(item.answerId || index + 1)}>
-              {getOptionTitle(item) || String(item.answerId || `Вариант ${index + 1}`)}
-            </option>
-          ))}
-        </select>
+        <div className="surveySelectWrap">
+          <select
+            className="surveyControl surveySelect"
+            value={state.number || ""}
+            disabled={isDisabled}
+            onChange={(event) => patchAnswer(question.id, { number: event.target.value })}
+          >
+            <option value="">Выберите значение</option>
+            {question.answerItems.map((item, index) => (
+              <option key={item.answerId || index + 1} value={String(item.answerId || index + 1)}>
+                {getOptionTitle(item) || String(item.answerId || `Вариант ${index + 1}`)}
+              </option>
+            ))}
+          </select>
+        </div>
       );
     }
 
@@ -368,8 +372,12 @@ export default function SurveyDetails() {
               {question.answerItems.map((answerOption, index) => {
                 const answerNumber = index + 1;
                 return (
-                  <label key={answerOption.answerId || answerNumber} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <label
+                    key={answerOption.answerId || answerNumber}
+                    className={`surveyChoiceCard ${selectedNumber === answerNumber ? "surveyChoiceCard--selected" : ""}`}
+                  >
                     <input
+                      className="surveyChoiceInput"
                       type="radio"
                       name={`survey-${question.id}`}
                       value={answerNumber}
@@ -377,7 +385,8 @@ export default function SurveyDetails() {
                       disabled={isDisabled}
                       onChange={(event) => patchAnswer(question.id, { number: Number(event.target.value) })}
                     />
-                    <span>{getOptionTitle(answerOption) || `Вариант ${answerNumber}`}</span>
+                    <span className="surveyChoiceMark" aria-hidden />
+                    <span className="surveyChoiceTitle">{getOptionTitle(answerOption) || `Вариант ${answerNumber}`}</span>
                   </label>
                 );
               })}
@@ -409,14 +418,16 @@ export default function SurveyDetails() {
 
             return (
               <div key={answerOption.answerId || answerNumber}>
-                <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <label className={`surveyChoiceCard ${checked ? "surveyChoiceCard--selected" : ""}`}>
                   <input
+                    className="surveyChoiceInput"
                     type="checkbox"
                     checked={checked}
                     disabled={isDisabled}
                     onChange={(event) => toggleSeveral(question.id, answerNumber, event.target.checked)}
                   />
-                  <span>{getOptionTitle(answerOption) || `Вариант ${answerNumber}`}</span>
+                  <span className="surveyChoiceMark" aria-hidden />
+                  <span className="surveyChoiceTitle">{getOptionTitle(answerOption) || `Вариант ${answerNumber}`}</span>
                 </label>
 
                 {answerOption.requiresOpenAnswer ? (
