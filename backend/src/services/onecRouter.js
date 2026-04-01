@@ -293,6 +293,21 @@ export async function getSurveysDocuments({ cityId, patient_id }) {
     return data;
 }
 
+export async function getSurveyDocumentById({ cityId, surveyId }) {
+    const oneCConfig = getOneCConfig(cityId);
+    const params = new URLSearchParams({
+        search_type: "ByID",
+        surveyId,
+    });
+
+    return onecFetch(oneCConfig.url.concat(`/documents/survey/?${params}`), {
+        method: "GET",
+        headers: {
+            Authorization: `Basic ${oneCConfig.basicAuth}`,
+        },
+    });
+}
+
 export async function getMedicalDocuments({ cityId, patient_id }) {
     const oneCConfig = getOneCConfig(cityId);
     const params = new URLSearchParams({
@@ -383,7 +398,108 @@ export async function getCatalogSurveyTemplates({ cityId }) {
         return [];
     }
 
-    return data;
+    return Promise.all(data.map((template) => enrichSurveyTemplateAnswerItems({ oneCConfig, template })));
+}
+
+export async function getCatalogSurveyTemplateById({ cityId, surveyTemplateId }) {
+    const oneCConfig = getOneCConfig(cityId);
+    const params = new URLSearchParams({
+        search_type: "ByID",
+        surveyTemplateId,
+    });
+    const template = await onecFetch(oneCConfig.url.concat(`/catalogs/surveyTemplates/?${params}`), {
+        method: "GET",
+        headers: {
+            Authorization: `Basic ${oneCConfig.basicAuth}`,
+        },
+    });
+
+    if (!template || typeof template !== "object") {
+        return null;
+    }
+
+    return enrichSurveyTemplateAnswerItems({ oneCConfig, template });
+}
+
+async function enrichSurveyTemplateAnswerItems({ oneCConfig, template }) {
+    const questionItems = Array.isArray(template?.questionItems) ? template.questionItems : [];
+    const enrichedQuestions = await Promise.all(
+        questionItems.map(async (questionItem) => {
+            const questionOptions = questionItem?.questionOptions || {};
+            const answerType = String(questionOptions?.answerType || "").trim().toLowerCase();
+            const answerEndpoint = questionOptions?.answerEndpoint;
+
+            if (answerType !== "valueininfobase" || !answerEndpoint) {
+                return questionItem;
+            }
+
+            const dynamicAnswerItems = await loadAnswerItemsByEndpoint({
+                oneCConfig,
+                answerEndpoint,
+                idOptionKey: questionOptions?.answerEndpoint_IdOption,
+                titleOptionKey: questionOptions?.answerEndpoint_TitleOption,
+            });
+
+            return {
+                ...questionItem,
+                questionOptions: {
+                    ...questionOptions,
+                    answerItems: dynamicAnswerItems,
+                },
+            };
+        }),
+    );
+
+    return {
+        ...template,
+        questionItems: enrichedQuestions,
+    };
+}
+
+async function loadAnswerItemsByEndpoint({ oneCConfig, answerEndpoint, idOptionKey, titleOptionKey }) {
+    if (Array.isArray(answerEndpoint)) {
+        return answerEndpoint.map((value, index) => ({
+            answerId: String(index + 1),
+            answerTitle: String(value ?? ""),
+        }));
+    }
+
+    if (typeof answerEndpoint !== "string" || !answerEndpoint.trim()) {
+        return [];
+    }
+
+    const endpointPath = answerEndpoint.startsWith("/")
+        ? answerEndpoint
+        : `/${answerEndpoint}`;
+    const data = await onecFetch(oneCConfig.url.concat(endpointPath), {
+        method: "GET",
+        headers: {
+            Authorization: `Basic ${oneCConfig.basicAuth}`,
+        },
+    }).catch(() => []);
+
+    if (!Array.isArray(data)) {
+        return [];
+    }
+
+    const idKey = String(idOptionKey || "id");
+    const titleKey = String(titleOptionKey || "title");
+
+    return data.map((item, index) => {
+        if (item && typeof item === "object") {
+            const answerId = item[idKey] ?? item.id ?? index + 1;
+            const answerTitle = item[titleKey] ?? item.title ?? answerId;
+            return {
+                answerId: String(answerId),
+                answerTitle: String(answerTitle ?? ""),
+            };
+        }
+
+        return {
+            answerId: String(index + 1),
+            answerTitle: String(item ?? ""),
+        };
+    });
 }
 
 export async function getDoctorSchedule({ cityId, doctorId, branchId, date, format }) {

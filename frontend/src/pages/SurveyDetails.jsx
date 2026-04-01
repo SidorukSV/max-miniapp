@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { CellHeader, Container, Flex, Input, Switch, Textarea, Typography } from "@maxhub/max-ui";
 import PageLayout from "../components/PageLayout";
-import { getCatalogSurveyTemplates, getStoredAccessToken, getSurveys } from "../api";
+import { getCatalogSurveyTemplateById, getStoredAccessToken, getSurveyById } from "../api";
 import Pill from "../components/book-visit/Pill";
 
 function toRuDateTime(value) {
@@ -31,8 +31,7 @@ function normalizeAnswerType(rawType) {
   return type || "string";
 }
 
-function normalizeSurvey(item, templates) {
-  const template = templates.find((row) => row?.surveyTemplateId === item?.surveyTemplateId) || null;
+function normalizeSurvey(item, template) {
   const templateQuestions = Array.isArray(template?.questionItems) ? template.questionItems : [];
   const surveyItems = Array.isArray(item?.surveyItems) ? item.surveyItems : [];
 
@@ -86,6 +85,7 @@ function normalizeSurvey(item, templates) {
     }
 
     const initialFromAnswer = firstAnswer?.openAnswer ?? firstAnswer?.answerTitle ?? "";
+    const firstAnswerId = firstAnswer?.answerId;
     const firstNumberAnswer = Number(firstAnswer?.numberAnswer);
     const mappedNumberByTitle = optionNumberByTitle.get(String(firstAnswer?.answerTitle ?? "").trim());
     const initialNumberValue = Number.isFinite(firstNumberAnswer) && firstNumberAnswer > 0
@@ -113,7 +113,7 @@ function normalizeSurvey(item, templates) {
       initialText: String(initialFromAnswer || ""),
       initialNumber: Number.isFinite(numericAnswerFromText) && String(initialFromAnswer).trim() !== ""
         ? String(numericAnswerFromText)
-        : (initialNumberValue === "" ? "" : String(initialNumberValue)),
+        : (firstAnswerId ? String(firstAnswerId) : (initialNumberValue === "" ? "" : String(initialNumberValue))),
       initialBoolean: Boolean(initialBooleanValue),
       initialComment: "",
       initialSelectedNumbers: selectedNumbers,
@@ -170,16 +170,18 @@ export default function SurveyDetails() {
         setLoading(true);
         setError("");
 
-        const [surveyResponse, templatesResponse] = await Promise.all([
-          getSurveys(accessToken),
-          getCatalogSurveyTemplates(accessToken),
-        ]);
+        const surveyResponse = await getSurveyById(accessToken, id);
+        const found = surveyResponse?.item || null;
 
-        const surveys = Array.isArray(surveyResponse?.items) ? surveyResponse.items : [];
-        const templates = Array.isArray(templatesResponse?.items) ? templatesResponse.items : [];
+        if (!found?.surveyTemplateId) {
+          setSurvey(null);
+          setAnswersState({});
+          return;
+        }
 
-        const found = surveys.find((item) => item?.surveyId === id);
-        const normalized = found ? normalizeSurvey(found, templates) : null;
+        const templateResponse = await getCatalogSurveyTemplateById(accessToken, found.surveyTemplateId);
+        const template = templateResponse?.item || null;
+        const normalized = normalizeSurvey(found, template);
 
         setSurvey(normalized);
         setAnswersState(normalized ? buildInitialState(normalized.questions) : {});
@@ -330,7 +332,12 @@ export default function SurveyDetails() {
           disabled={isDisabled}
           onChange={(event) => patchAnswer(question.id, { number: event.target.value })}
         >
-          <option value="">Значения будут загружены позже</option>
+          <option value="">Выберите значение</option>
+          {question.answerItems.map((item, index) => (
+            <option key={item.answerId || index + 1} value={String(item.answerId || index + 1)}>
+              {getOptionTitle(item) || String(item.answerId || `Вариант ${index + 1}`)}
+            </option>
+          ))}
         </select>
       );
     }

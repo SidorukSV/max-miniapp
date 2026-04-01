@@ -2,6 +2,7 @@ import { authMiddleware } from "../middleware/auth.js";
 import {
     getCatalogEmployeesBySpec,
     getCatalogSpecializationsBySchedule,
+    getCatalogSurveyTemplateById,
     getCatalogSurveyTemplates,
 } from "../services/onecRouter.js";
 
@@ -40,6 +41,13 @@ export async function catalogsRoutes(app) {
         { preHandler: [authMiddleware] },
         async (req) => {
             const { city_id } = req.user;
+            const { surveyTemplateId } = req.query || {};
+
+            if (surveyTemplateId) {
+                const item = await getCatalogSurveyTemplateById({ cityId: city_id, surveyTemplateId });
+                return { item };
+            }
+
             const items = await getCatalogSurveyTemplates({ cityId: city_id });
             return { items };
         });

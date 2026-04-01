@@ -119,6 +119,19 @@ export async function getSurveys(access_token) {
     });
 }
 
+export async function getSurveyById(access_token, surveyId) {
+    const params = new URLSearchParams({
+        search_type: "ByID",
+        surveyId,
+    });
+
+    return apiFetch(`/documents/survey?${params}`, {
+        headers: {
+            Authorization: `Bearer ${access_token}`,
+        },
+    });
+}
+
 export async function updateAppointment(access_token, payload) {
     return apiFetch("/documents/appointments", {
         method: "PUT",
@@ -178,6 +191,19 @@ export async function getCatalogEmployeesBySpec(access_token, specializationId) 
 
 export async function getCatalogSurveyTemplates(access_token) {
     return apiFetch("/catalogs/surveyTemplates", {
+        headers: {
+            Authorization: `Bearer ${access_token}`,
+        },
+    });
+}
+
+export async function getCatalogSurveyTemplateById(access_token, surveyTemplateId) {
+    const params = new URLSearchParams({
+        search_type: "ByID",
+        surveyTemplateId,
+    });
+
+    return apiFetch(`/catalogs/surveyTemplates?${params}`, {
         headers: {
             Authorization: `Bearer ${access_token}`,
         },
