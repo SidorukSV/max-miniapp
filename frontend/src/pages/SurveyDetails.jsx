@@ -233,26 +233,17 @@ export default function SurveyDetails() {
       }
 
       return (
-        <CellList className="surveyOptionsList" mode="island" filled>
-          <CellSimple
-            title="Да"
-            selected={Boolean(state.bool)}
-            onClick={() => {
-              if (!isDisabled) patchAnswer(question.id, { bool: true });
-            }}
-            showChevron={false}
-            after={<span className={`surveyOptionDot ${state.bool ? "surveyOptionDot--active" : ""}`} />}
-          />
-          <CellSimple
-            title="Нет"
-            selected={!Boolean(state.bool)}
-            onClick={() => {
-              if (!isDisabled) patchAnswer(question.id, { bool: false });
-            }}
-            showChevron={false}
-            after={<span className={`surveyOptionDot ${!state.bool ? "surveyOptionDot--active" : ""}`} />}
-          />
-        </CellList>
+        <div className="surveySelectWrap">
+          <select
+            className="surveyControl surveySelect"
+            value={state.bool ? "true" : "false"}
+            disabled={isDisabled}
+            onChange={(event) => patchAnswer(question.id, { bool: event.target.value === "true" })}
+          >
+            <option value="true">Да</option>
+            <option value="false">Нет</option>
+          </select>
+        </div>
       );
     }
 
@@ -337,24 +328,21 @@ export default function SurveyDetails() {
 
     if (question.answerType === "valueInInfobase") {
       return (
-        <CellList className="surveyOptionsList" mode="island" filled>
-          {question.answerItems.map((item, index) => {
-            const optionValue = String(item.answerId || index + 1);
-            const selected = String(state.number || "") === optionValue;
-            return (
-              <CellSimple
-                key={optionValue}
-                title={getOptionTitle(item) || String(item.answerId || `Вариант ${index + 1}`)}
-                selected={selected}
-                onClick={() => {
-                  if (!isDisabled) patchAnswer(question.id, { number: optionValue });
-                }}
-                showChevron={false}
-                after={<span className={`surveyOptionDot ${selected ? "surveyOptionDot--active" : ""}`} />}
-              />
-            );
-          })}
-        </CellList>
+        <div className="surveySelectWrap">
+          <select
+            className="surveyControl surveySelect"
+            value={state.number || ""}
+            disabled={isDisabled}
+            onChange={(event) => patchAnswer(question.id, { number: event.target.value })}
+          >
+            <option value="">Выберите значение</option>
+            {question.answerItems.map((item, index) => (
+              <option key={item.answerId || index + 1} value={String(item.answerId || index + 1)}>
+                {getOptionTitle(item) || String(item.answerId || `Вариант ${index + 1}`)}
+              </option>
+            ))}
+          </select>
+        </div>
       );
     }
 
@@ -380,29 +368,24 @@ export default function SurveyDetails() {
               })}
             </Flex>
           ) : (
-            <Flex direction="column" gap={8}>
+            <CellList className="surveyOptionsList" mode="island" filled>
               {question.answerItems.map((answerOption, index) => {
                 const answerNumber = index + 1;
+                const isSelected = selectedNumber === answerNumber;
                 return (
-                  <label
+                  <CellSimple
                     key={answerOption.answerId || answerNumber}
-                    className={`surveyChoiceCard ${selectedNumber === answerNumber ? "surveyChoiceCard--selected" : ""}`}
-                  >
-                    <input
-                      className="surveyChoiceInput"
-                      type="radio"
-                      name={`survey-${question.id}`}
-                      value={answerNumber}
-                      checked={selectedNumber === answerNumber}
-                      disabled={isDisabled}
-                      onChange={(event) => patchAnswer(question.id, { number: Number(event.target.value) })}
-                    />
-                    <span className="surveyChoiceMark" aria-hidden />
-                    <span className="surveyChoiceTitle">{getOptionTitle(answerOption) || `Вариант ${answerNumber}`}</span>
-                  </label>
+                    title={getOptionTitle(answerOption) || `Вариант ${answerNumber}`}
+                    selected={isSelected}
+                    onClick={() => {
+                      if (!isDisabled) patchAnswer(question.id, { number: answerNumber });
+                    }}
+                    showChevron={false}
+                    after={<span className={`surveyOptionDot ${isSelected ? "surveyOptionDot--active" : ""}`} />}
+                  />
                 );
               })}
-            </Flex>
+            </CellList>
           )}
 
           {question.requiresComment ? (
@@ -423,24 +406,22 @@ export default function SurveyDetails() {
       const openAnswersByNumber = state.openAnswersByNumber || {};
 
       return (
-        <Flex direction="column" gap={8}>
+        <CellList className="surveyOptionsList" mode="island" filled>
           {question.answerItems.map((answerOption, index) => {
             const answerNumber = index + 1;
             const checked = selectedNumbers.includes(answerNumber);
 
             return (
               <div key={answerOption.answerId || answerNumber}>
-                <label className={`surveyChoiceCard ${checked ? "surveyChoiceCard--selected" : ""}`}>
-                  <input
-                    className="surveyChoiceInput"
-                    type="checkbox"
-                    checked={checked}
-                    disabled={isDisabled}
-                    onChange={(event) => toggleSeveral(question.id, answerNumber, event.target.checked)}
-                  />
-                  <span className="surveyChoiceMark" aria-hidden />
-                  <span className="surveyChoiceTitle">{getOptionTitle(answerOption) || `Вариант ${answerNumber}`}</span>
-                </label>
+                <CellSimple
+                  title={getOptionTitle(answerOption) || `Вариант ${answerNumber}`}
+                  selected={checked}
+                  onClick={() => {
+                    if (!isDisabled) toggleSeveral(question.id, answerNumber, !checked);
+                  }}
+                  showChevron={false}
+                  after={<span className={`surveyOptionDot ${checked ? "surveyOptionDot--active" : ""}`} />}
+                />
 
                 {answerOption.requiresOpenAnswer ? (
                   <Input
@@ -461,7 +442,7 @@ export default function SurveyDetails() {
               </div>
             );
           })}
-        </Flex>
+        </CellList>
       );
     }
 
