@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { CellHeader, Container, Flex, Input, Switch, Textarea, Typography } from "@maxhub/max-ui";
+import { CellHeader, CellList, CellSimple, Container, Flex, Input, SearchInput, Switch, Textarea, Typography } from "@maxhub/max-ui";
 import PageLayout from "../components/PageLayout";
 import { getCatalogSurveyTemplateById, getStoredAccessToken, getSurveyById } from "../api";
 import Pill from "../components/book-visit/Pill";
@@ -157,6 +157,8 @@ export default function SurveyDetails() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [answersState, setAnswersState] = useState({});
+  const [openSelects, setOpenSelects] = useState({});
+  const [selectSearch, setSelectSearch] = useState({});
 
   useEffect(() => {
     async function loadSurvey() {
@@ -216,6 +218,13 @@ export default function SurveyDetails() {
     patchAnswer(questionId, { selectedNumbers: next });
   }
 
+  function toggleSelect(questionId) {
+    setOpenSelects((prev) => ({
+      ...prev,
+      [questionId]: !prev[questionId],
+    }));
+  }
+
   function renderAnswerControl(question) {
     const state = answersState[question.id] || {};
     const constraints = question.constraints || {};
@@ -232,16 +241,47 @@ export default function SurveyDetails() {
         );
       }
 
+      const isOpen = Boolean(openSelects[question.id]);
+      const selectedTitle = state.bool ? "Да" : "Нет";
+
       return (
-        <select
-          className="surveyControl surveySelect"
-          value={state.bool ? "true" : "false"}
-          disabled={isDisabled}
-          onChange={(event) => patchAnswer(question.id, { bool: event.target.value === "true" })}
-        >
-          <option value="true">Да</option>
-          <option value="false">Нет</option>
-        </select>
+        <div className="surveySelectAccordion">
+          <CellSimple
+            title={selectedTitle}
+            showChevron
+            disabled={isDisabled}
+            className="surveySelectTrigger"
+            onClick={() => {
+              if (!isDisabled) toggleSelect(question.id);
+            }}
+          />
+          {isOpen ? (
+            <CellList className="surveyOptionsList" mode="island" filled>
+              <CellSimple
+                title="Да"
+                selected={Boolean(state.bool)}
+                onClick={() => {
+                  if (isDisabled) return;
+                  patchAnswer(question.id, { bool: true });
+                  setOpenSelects((prev) => ({ ...prev, [question.id]: false }));
+                }}
+                showChevron={false}
+                after={<span className={`surveyOptionDot ${state.bool ? "surveyOptionDot--active" : ""}`} />}
+              />
+              <CellSimple
+                title="Нет"
+                selected={!Boolean(state.bool)}
+                onClick={() => {
+                  if (isDisabled) return;
+                  patchAnswer(question.id, { bool: false });
+                  setOpenSelects((prev) => ({ ...prev, [question.id]: false }));
+                }}
+                showChevron={false}
+                after={<span className={`surveyOptionDot ${!state.bool ? "surveyOptionDot--active" : ""}`} />}
+              />
+            </CellList>
+          ) : null}
+        </div>
       );
     }
 
@@ -325,20 +365,68 @@ export default function SurveyDetails() {
     }
 
     if (question.answerType === "valueInInfobase") {
+      const isOpen = Boolean(openSelects[question.id]);
+      const searchValue = selectSearch[question.id] || "";
+      const selectedEntry = question.answerItems.find((item, index) => String(item.answerId || index + 1) === String(state.number || ""));
+      const selectedTitle = selectedEntry ? getOptionTitle(selectedEntry) : "";
+      const filteredItems = question.answerItems
+        .map((item, index) => ({ item, index }))
+        .filter(({ item }) => {
+        if (!searchValue.trim()) return true;
+        const title = getOptionTitle(item).toLowerCase();
+        return title.includes(searchValue.trim().toLowerCase());
+        });
+
       return (
-        <select
-          className="surveyControl surveySelect"
-          value={state.number || ""}
-          disabled={isDisabled}
-          onChange={(event) => patchAnswer(question.id, { number: event.target.value })}
-        >
-          <option value="">Выберите значение</option>
-          {question.answerItems.map((item, index) => (
-            <option key={item.answerId || index + 1} value={String(item.answerId || index + 1)}>
-              {getOptionTitle(item) || String(item.answerId || `Вариант ${index + 1}`)}
-            </option>
-          ))}
-        </select>
+        <div className="surveySelectAccordion">
+          <CellSimple
+            title={selectedTitle || "Выберите значение"}
+            showChevron
+            disabled={isDisabled}
+            className="surveySelectTrigger"
+            onClick={() => {
+              if (!isDisabled) toggleSelect(question.id);
+            }}
+          />
+
+          {isOpen ? (
+            <div className="surveySelectDropdown">
+              {question.answerItems.length > 10 ? (
+                <SearchInput
+                  value={searchValue}
+                  onChange={(event) => {
+                    setSelectSearch((prev) => ({
+                      ...prev,
+                      [question.id]: event.target.value,
+                    }));
+                  }}
+                  placeholder="Поиск варианта"
+                />
+              ) : null}
+
+              <CellList className="surveyOptionsList" mode="island" filled>
+                {filteredItems.map(({ item, index }) => {
+                  const optionValue = String(item.answerId || index + 1);
+                  const selected = String(state.number || "") === optionValue;
+                  return (
+                    <CellSimple
+                      key={optionValue}
+                      title={getOptionTitle(item) || String(item.answerId || `Вариант ${index + 1}`)}
+                      selected={selected}
+                      onClick={() => {
+                        if (isDisabled) return;
+                        patchAnswer(question.id, { number: optionValue });
+                        setOpenSelects((prev) => ({ ...prev, [question.id]: false }));
+                      }}
+                      showChevron={false}
+                      after={<span className={`surveyOptionDot ${selected ? "surveyOptionDot--active" : ""}`} />}
+                    />
+                  );
+                })}
+              </CellList>
+            </div>
+          ) : null}
+        </div>
       );
     }
 
@@ -364,24 +452,24 @@ export default function SurveyDetails() {
               })}
             </Flex>
           ) : (
-            <Flex direction="column" gap={8}>
+            <CellList className="surveyOptionsList" mode="island" filled>
               {question.answerItems.map((answerOption, index) => {
                 const answerNumber = index + 1;
+                const isSelected = selectedNumber === answerNumber;
                 return (
-                  <label key={answerOption.answerId || answerNumber} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <input
-                      type="radio"
-                      name={`survey-${question.id}`}
-                      value={answerNumber}
-                      checked={selectedNumber === answerNumber}
-                      disabled={isDisabled}
-                      onChange={(event) => patchAnswer(question.id, { number: Number(event.target.value) })}
-                    />
-                    <span>{getOptionTitle(answerOption) || `Вариант ${answerNumber}`}</span>
-                  </label>
+                  <CellSimple
+                    key={answerOption.answerId || answerNumber}
+                    title={getOptionTitle(answerOption) || `Вариант ${answerNumber}`}
+                    selected={isSelected}
+                    onClick={() => {
+                      if (!isDisabled) patchAnswer(question.id, { number: answerNumber });
+                    }}
+                    showChevron={false}
+                    after={<span className={`surveyOptionDot ${isSelected ? "surveyOptionDot--active" : ""}`} />}
+                  />
                 );
               })}
-            </Flex>
+            </CellList>
           )}
 
           {question.requiresComment ? (
@@ -402,22 +490,22 @@ export default function SurveyDetails() {
       const openAnswersByNumber = state.openAnswersByNumber || {};
 
       return (
-        <Flex direction="column" gap={8}>
+        <CellList className="surveyOptionsList" mode="island" filled>
           {question.answerItems.map((answerOption, index) => {
             const answerNumber = index + 1;
             const checked = selectedNumbers.includes(answerNumber);
 
             return (
               <div key={answerOption.answerId || answerNumber}>
-                <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <input
-                    type="checkbox"
-                    checked={checked}
-                    disabled={isDisabled}
-                    onChange={(event) => toggleSeveral(question.id, answerNumber, event.target.checked)}
-                  />
-                  <span>{getOptionTitle(answerOption) || `Вариант ${answerNumber}`}</span>
-                </label>
+                <CellSimple
+                  title={getOptionTitle(answerOption) || `Вариант ${answerNumber}`}
+                  selected={checked}
+                  onClick={() => {
+                    if (!isDisabled) toggleSeveral(question.id, answerNumber, !checked);
+                  }}
+                  showChevron={false}
+                  after={<span className={`surveyOptionCheck ${checked ? "surveyOptionCheck--active" : ""}`} />}
+                />
 
                 {answerOption.requiresOpenAnswer ? (
                   <Input
@@ -438,7 +526,7 @@ export default function SurveyDetails() {
               </div>
             );
           })}
-        </Flex>
+        </CellList>
       );
     }
 
