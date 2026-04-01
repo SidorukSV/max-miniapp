@@ -94,7 +94,7 @@ function normalizeSurvey(item, template) {
     const initialBooleanValue = typeof firstAnswer?.answerTitle === "boolean"
       ? firstAnswer.answerTitle
       : String(initialFromAnswer).toLowerCase() === "true";
-    const numericAnswerFromText = Number(initialFromAnswer);
+    const numericAnswerFromText = Number(firstAnswer?.answerTitle);
 
     questions.push({
       id: templateQuestion?.questionId || `question-${fallbackNumber}`,
@@ -111,7 +111,7 @@ function normalizeSurvey(item, template) {
       constraints: templateQuestion?.questionOptions?.constraints || {},
       answerItems,
       initialText: String(initialFromAnswer || ""),
-      initialNumber: Number.isFinite(numericAnswerFromText) && String(initialFromAnswer).trim() !== ""
+      initialNumber: Number.isFinite(numericAnswerFromText) && String(firstAnswer?.answerTitle).trim() !== ""
         ? String(numericAnswerFromText)
         : (firstAnswerId ? String(firstAnswerId) : (initialNumberValue === "" ? "" : String(initialNumberValue))),
       initialBoolean: Boolean(initialBooleanValue),

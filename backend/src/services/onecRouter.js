@@ -300,7 +300,7 @@ export async function getSurveyDocumentById({ cityId, surveyId }) {
         surveyId,
     });
 
-    return onecFetch(oneCConfig.url.concat(`/documents/survey/?${params}`), {
+    return onecFetch(oneCConfig.url.concat(`/documents/surveys/?${params}`), {
         method: "GET",
         headers: {
             Authorization: `Basic ${oneCConfig.basicAuth}`,
