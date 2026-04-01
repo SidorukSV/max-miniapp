@@ -600,6 +600,41 @@ body {
   position: relative;
 }
 
+.surveyOptionsList {
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.surveyOptionDot {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  border: 2px solid #96a3c2;
+  background: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.surveyOptionDot::after {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: transparent;
+  transition: background-color 0.15s ease;
+}
+
+.surveyOptionDot--active {
+  border-color: var(--accent, #2d6bff);
+  background: var(--accent, #2d6bff);
+}
+
+.surveyOptionDot--active::after {
+  background: #ffffff;
+}
+
 .surveyNumberControl {
   display: flex;
   gap: 8px;
