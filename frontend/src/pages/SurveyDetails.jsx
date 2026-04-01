@@ -24,6 +24,10 @@ function getOptionTitle(option) {
   return String(option?.answerTitle ?? option?.answerTItle ?? option?.answertitle ?? "").trim();
 }
 
+function getOptionId(option, index) {
+  return String(option?.answerId || index + 1);
+}
+
 function normalizeAnswerType(rawType) {
   const type = String(rawType || "").trim();
   if (type === "valueInInfoBase") return "valueInInfobase";
@@ -62,35 +66,73 @@ function normalizeSurvey(item, template) {
     const answerItems = Array.isArray(templateQuestion?.questionOptions?.answerItems)
       ? templateQuestion.questionOptions.answerItems
       : [];
+    const answerType = normalizeAnswerType(templateQuestion?.questionOptions?.answerType);
 
     const optionNumberByTitle = new Map(
       answerItems.map((option, index) => [getOptionTitle(option), index + 1]).filter(([title]) => Boolean(title)),
     );
+    const optionIdByTitle = new Map(
+      answerItems.map((option, index) => [getOptionTitle(option), getOptionId(option, index)]).filter(([title]) => Boolean(title)),
+    );
+    const optionIdByNumber = new Map(answerItems.map((option, index) => [index + 1, getOptionId(option, index)]));
+    const validOptionIds = new Set(answerItems.map((option, index) => getOptionId(option, index)));
+
+    function resolveOptionId(entry) {
+      const directAnswerId = String(entry?.answerId || "").trim();
+      if (directAnswerId && validOptionIds.has(directAnswerId)) {
+        return directAnswerId;
+      }
+
+      const numberAnswer = Number(entry?.numberAnswer);
+      if (Number.isFinite(numberAnswer) && numberAnswer > 0) {
+        const byNumber = optionIdByNumber.get(numberAnswer);
+        if (byNumber) return byNumber;
+      }
+
+      const byTitle = optionIdByTitle.get(String(entry?.answerTitle ?? "").trim());
+      return byTitle || null;
+    }
 
     const selectedNumbers = answerList
       .map((entry) => {
+        if (answerType === "oneValueFrom" || answerType === "severalValueFrom" || answerType === "valueInInfobase") {
+          return resolveOptionId(entry);
+        }
+
         const direct = Number(entry?.numberAnswer);
         if (Number.isFinite(direct) && direct > 0) return direct;
         const byTitle = optionNumberByTitle.get(String(entry?.answerTitle ?? "").trim());
         return Number.isFinite(byTitle) ? byTitle : null;
       })
-      .filter((value) => Number.isFinite(value) && value > 0);
+      .filter((value) => (answerType === "oneValueFrom" || answerType === "severalValueFrom" || answerType === "valueInInfobase"
+        ? Boolean(String(value || "").trim())
+        : Number.isFinite(value) && value > 0));
 
     const openAnswersByNumber = {};
     for (const answer of answerList) {
+      const openAnswerValue = String(answer?.openAnswer || "");
+      if (!openAnswerValue) continue;
+
+      const optionId = resolveOptionId(answer);
+      if (optionId) {
+        openAnswersByNumber[optionId] = openAnswerValue;
+        continue;
+      }
+
       const answerNumber = Number(answer?.numberAnswer);
-      if (Number.isFinite(answerNumber) && answer?.openAnswer) {
-        openAnswersByNumber[answerNumber] = String(answer.openAnswer);
+      if (Number.isFinite(answerNumber)) {
+        openAnswersByNumber[String(answerNumber)] = openAnswerValue;
       }
     }
 
     const initialFromAnswer = firstAnswer?.openAnswer ?? firstAnswer?.answerTitle ?? "";
-    const firstAnswerId = firstAnswer?.answerId;
+    const firstOptionId = resolveOptionId(firstAnswer);
     const firstNumberAnswer = Number(firstAnswer?.numberAnswer);
     const mappedNumberByTitle = optionNumberByTitle.get(String(firstAnswer?.answerTitle ?? "").trim());
     const initialNumberValue = Number.isFinite(firstNumberAnswer) && firstNumberAnswer > 0
       ? firstNumberAnswer
       : (Number.isFinite(mappedNumberByTitle) ? mappedNumberByTitle : "");
+    const initialSelectedOptionId = selectedNumbers[0] ?? firstOptionId ?? "";
     const initialBooleanValue = typeof firstAnswer?.answerTitle === "boolean"
       ? firstAnswer.answerTitle
       : String(initialFromAnswer).toLowerCase() === "true";
@@ -103,7 +145,7 @@ function normalizeSurvey(item, template) {
       sectionTitle: sectionById.get(templateQuestion?.questionParent) || "",
       isRequired: Boolean(templateQuestion?.isRequired),
       help: templateQuestion?.questionHelpDescription || "",
-      answerType: normalizeAnswerType(templateQuestion?.questionOptions?.answerType),
+      answerType,
       selectorType: templateQuestion?.questionOptions?.selector_type || "selector",
       flagType: templateQuestion?.questionOptions?.flag_type || "input",
       requiresComment: Boolean(templateQuestion?.questionOptions?.requiresComment),
@@ -113,7 +155,9 @@ function normalizeSurvey(item, template) {
       initialText: String(initialFromAnswer || ""),
       initialNumber: Number.isFinite(numericAnswerFromText) && String(firstAnswer?.answerTitle).trim() !== ""
         ? String(numericAnswerFromText)
-        : (firstAnswerId ? String(firstAnswerId) : (initialNumberValue === "" ? "" : String(initialNumberValue))),
+        : (answerType === "oneValueFrom" || answerType === "severalValueFrom" || answerType === "valueInInfobase"
+          ? String(initialSelectedOptionId)
+          : (initialNumberValue === "" ? "" : String(initialNumberValue))),
       initialBoolean: Boolean(initialBooleanValue),
       initialComment: "",
       initialSelectedNumbers: selectedNumbers,
@@ -270,7 +314,7 @@ export default function SurveyDetails() {
               />
               <CellSimple
                 title="Нет"
-                selected={!Boolean(state.bool)}
+                selected={!state.bool}
                 onClick={() => {
                   if (isDisabled) return;
                   patchAnswer(question.id, { bool: false });
@@ -431,22 +475,22 @@ export default function SurveyDetails() {
     }
 
     if (question.answerType === "oneValueFrom") {
-      const selectedNumber = Number(state.number || 0);
+      const selectedAnswerId = String(state.number || "");
 
       return (
         <Flex direction="column" gap={8}>
           {question.selectorType === "toggle" ? (
             <Flex wrap="wrap" gap={8}>
               {question.answerItems.map((answerOption, index) => {
-                const answerNumber = index + 1;
+                const answerId = getOptionId(answerOption, index);
                 return (
                   <Pill
-                    key={answerOption.answerId || answerNumber}
-                    active={selectedNumber === answerNumber}
+                    key={answerId}
+                    active={selectedAnswerId === answerId}
                     disabled={isDisabled}
-                    onClick={() => patchAnswer(question.id, { number: answerNumber })}
+                    onClick={() => patchAnswer(question.id, { number: answerId })}
                   >
-                    {getOptionTitle(answerOption) || `Вариант ${answerNumber}`}
+                    {getOptionTitle(answerOption) || `Вариант ${index + 1}`}
                   </Pill>
                 );
               })}
@@ -454,15 +498,15 @@ export default function SurveyDetails() {
           ) : (
             <CellList className="surveyOptionsList" mode="island" filled>
               {question.answerItems.map((answerOption, index) => {
-                const answerNumber = index + 1;
-                const isSelected = selectedNumber === answerNumber;
+                const answerId = getOptionId(answerOption, index);
+                const isSelected = selectedAnswerId === answerId;
                 return (
                   <CellSimple
-                    key={answerOption.answerId || answerNumber}
-                    title={getOptionTitle(answerOption) || `Вариант ${answerNumber}`}
+                    key={answerId}
+                    title={getOptionTitle(answerOption) || `Вариант ${index + 1}`}
                     selected={isSelected}
                     onClick={() => {
-                      if (!isDisabled) patchAnswer(question.id, { number: answerNumber });
+                      if (!isDisabled) patchAnswer(question.id, { number: answerId });
                     }}
                     showChevron={false}
                     after={<span className={`surveyOptionDot ${isSelected ? "surveyOptionDot--active" : ""}`} />}
@@ -492,16 +536,16 @@ export default function SurveyDetails() {
       return (
         <CellList className="surveyOptionsList" mode="island" filled>
           {question.answerItems.map((answerOption, index) => {
-            const answerNumber = index + 1;
-            const checked = selectedNumbers.includes(answerNumber);
+            const answerId = getOptionId(answerOption, index);
+            const checked = selectedNumbers.includes(answerId);
 
             return (
-              <div key={answerOption.answerId || answerNumber}>
+              <div key={answerId}>
                 <CellSimple
-                  title={getOptionTitle(answerOption) || `Вариант ${answerNumber}`}
+                  title={getOptionTitle(answerOption) || `Вариант ${index + 1}`}
                   selected={checked}
                   onClick={() => {
-                    if (!isDisabled) toggleSeveral(question.id, answerNumber, !checked);
+                    if (!isDisabled) toggleSeveral(question.id, answerId, !checked);
                   }}
                   showChevron={false}
                   after={<span className={`surveyOptionCheck ${checked ? "surveyOptionCheck--active" : ""}`} />}
@@ -510,14 +554,14 @@ export default function SurveyDetails() {
                 {answerOption.requiresOpenAnswer ? (
                   <Input
                     mode="secondary"
-                    value={openAnswersByNumber[answerNumber] || ""}
+                    value={openAnswersByNumber[answerId] || ""}
                     disabled={isDisabled}
                     placeholder="Введите свой вариант"
                     onChange={(event) => {
                       patchAnswer(question.id, {
                         openAnswersByNumber: {
                           ...openAnswersByNumber,
-                          [answerNumber]: event.target.value,
+                          [answerId]: event.target.value,
                         },
                       });
                     }}
