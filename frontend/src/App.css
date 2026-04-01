@@ -600,6 +600,23 @@ body {
   position: relative;
 }
 
+.surveySelectAccordion {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.surveySelectTrigger {
+  border: 1px solid var(--input-border, rgba(0, 16, 61, 0.12));
+  border-radius: 14px;
+}
+
+.surveySelectDropdown {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .surveyOptionsList {
   border-radius: 14px;
   overflow: hidden;
@@ -633,6 +650,36 @@ body {
 
 .surveyOptionDot--active::after {
   background: #ffffff;
+}
+
+.surveyOptionCheck {
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  border: 2px solid #96a3c2;
+  background: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.surveyOptionCheck::after {
+  content: "";
+  width: 10px;
+  height: 6px;
+  border-left: 3px solid transparent;
+  border-bottom: 3px solid transparent;
+  transform: translateY(-1px) rotate(-45deg);
+}
+
+.surveyOptionCheck--active {
+  border-color: var(--accent, #2d6bff);
+  background: var(--accent, #2d6bff);
+}
+
+.surveyOptionCheck--active::after {
+  border-left-color: #ffffff;
+  border-bottom-color: #ffffff;
 }
 
 .surveyNumberControl {
