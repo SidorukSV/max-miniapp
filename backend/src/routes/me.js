@@ -1,6 +1,6 @@
-import { config } from "../config.js";
 import { authMiddleware } from "../middleware/auth.js";
 import { getBonusTransactions, getPatientById } from "../services/onecRouter.js";
+import { sendApiError } from "../utils/apiErrors.js";
 
 export async function meRoutes(app) {
     app.get("/api/v1/me",
@@ -22,7 +22,7 @@ export async function meRoutes(app) {
                     operation: "getPatientById",
                     err: error,
                 }, "Failed to load profile");
-                return reply.code(502).send({ error: "profile_unavailable" });
+                return sendApiError(reply, 502, "profile_unavailable");
             }
         });
 
@@ -42,7 +42,7 @@ export async function meRoutes(app) {
                     operation: "getBonusTransactions",
                     err: error,
                 }, "Failed to load bonus transactions");
-                return reply.code(502).send({ error: "bonus_transactions_unavailable" });
+                return sendApiError(reply, 502, "bonus_transactions_unavailable");
             }
         });
 

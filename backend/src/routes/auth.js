@@ -12,6 +12,7 @@ import {
     revokeUserDeviceRefreshTokens,
 } from "../store/refreshTokens.js";
 import { verifyMaxInitData } from "../auth/maxInitData.js";
+import { sendApiError } from "../utils/apiErrors.js";
 
 
 function hashUserAgent(userAgent) {
@@ -70,7 +71,7 @@ export async function authRoutes(app) {
             const { city_id } = req.body || {};
 
             if (!city_id) {
-                return reply.code(400).send({ error: "city_id_required" });
+                return sendApiError(reply, 400, "city_id_required");
             }
 
             req.session = await updateSession(req.session.id, { city_id });
@@ -107,7 +108,7 @@ export async function authRoutes(app) {
                         operation: "verifyMaxInitData",
                         err,
                     }, "MAX init data verification failed");
-                    return reply.code(401).send({ error: err?.message || "init_data_invalid" });
+                    return sendApiError(reply, 401, "init_data_invalid");
                 }
             }
             req.session = await updateSession(session.id, {
@@ -140,19 +141,19 @@ export async function authRoutes(app) {
             const { patient_id } = req.body || {};
             const session = req.session;
             if (!patient_id) {
-                return reply.code(400).send({ error: "patient_id_required" });
+                return sendApiError(reply, 400, "patient_id_required");
             }
 
             const patients = session.patients;
 
             if (!patients.length) {
-                return reply.code(400).send({ error: "patients_not_loaded" });
+                return sendApiError(reply, 400, "patients_not_loaded");
             }
 
             const patient = patients.find((patient) => patient.id === patient_id);
 
             if (!patient) {
-                return reply.code(400).send({ error: "patient_not_found" });
+                return sendApiError(reply, 400, "patient_not_found");
             }
 
             const cityId = session.city_id;
@@ -209,24 +210,24 @@ export async function authRoutes(app) {
         const { refresh_token } = req.body || {};
 
         if (!refresh_token) {
-            return reply.code(400).send({ error: "refresh_token_required" });
+            return sendApiError(reply, 400, "refresh_token_required");
         }
 
         let decoded;
         try {
             decoded = verifyToken(refresh_token);
         } catch {
-            return reply.code(401).send({ error: "invalid_refresh_token" });
+            return sendApiError(reply, 401, "invalid_refresh_token");
         }
 
         if (decoded.token_type !== "refresh") {
-           return reply.code(401).send({ error: "invalid_token_type" }); 
+           return sendApiError(reply, 401, "invalid_token_type");
         }
 
         const stored = await getRefreshToken(decoded.jti);
 
         if (!stored) {
-            return reply.code(401).send({ error: "refresh_token_revoked" }); 
+            return sendApiError(reply, 401, "refresh_token_revoked");
         }
 
         const currentContext = buildRefreshTokenContext(req, stored.channel);
@@ -252,7 +253,7 @@ export async function authRoutes(app) {
                 },
             }, "Refresh token rejected due to context mismatch");
 
-            return reply.code(401).send({ error: "refresh_context_mismatch" });
+            return sendApiError(reply, 401, "refresh_context_mismatch");
         }
 
         await deleteRefreshToken(decoded.jti);
@@ -298,7 +299,7 @@ export async function authRoutes(app) {
         const { refresh_token, revoke_scope } = req.body || {};
 
         if (!refresh_token) {
-            return reply.code(400).send({ error: "refresh_token_required" });
+            return sendApiError(reply, 400, "refresh_token_required");
         }
 
         let revokedCount = 0;
