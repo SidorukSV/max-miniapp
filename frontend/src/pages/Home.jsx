@@ -11,7 +11,6 @@ import AppointmentOptionsSheet from "../components/AppointmentOptionsSheet.jsx";
 import {
     clearTokens,
     authLogout,
-    getStoredRefreshtoken,
     getStoredAccessToken,
     getCatalogSpecializationsBySchedule,
     getCatalogsCities,
@@ -88,7 +87,7 @@ export default function Home() {
     async function handleLogout() {
         setBusy(true);
         try {
-            await authLogout(getStoredRefreshtoken());
+            await authLogout();
         } catch (err) {
             console.log(err);
         } finally {
