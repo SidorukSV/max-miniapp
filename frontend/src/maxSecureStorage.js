@@ -61,8 +61,10 @@ export async function loadRefreshToken() {
     }
 
     const secureValue = await callSecureStorage("getItem", REFRESH_TOKEN_KEY);
-    if (typeof secureValue === "string" && secureValue.trim()) {
-        return secureValue;
+    const refreshToken = secureValue?.value || secureValue || null;
+
+    if (typeof refreshToken === "string" && refreshToken.trim()) {
+        return refreshToken;
     }
 
     try {
