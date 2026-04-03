@@ -6,6 +6,8 @@ const JWT_SECRET = "VeryStrongJwtSecret!2026-AlphaBeta";
 async function createTestApp() {
     process.env.JWT_SECRET = JWT_SECRET;
     process.env.NODE_ENV = "test";
+    process.env.REFRESH_COOKIE_SECURE = "true";
+    process.env.REFRESH_COOKIE_SAMESITE = "none";
 
     const { buildApp } = await import("../src/app.js");
     const app = await buildApp();

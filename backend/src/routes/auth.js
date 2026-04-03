@@ -56,15 +56,20 @@ function isRefreshContextMatch(stored, current) {
 
 function getRefreshCookieOptions() {
     const rawSameSite = String(config.refreshCookieSameSite || "none").trim().toLowerCase();
-    const sameSite = rawSameSite === "strict"
+    let sameSite = rawSameSite === "strict"
         ? "Strict"
         : rawSameSite === "lax"
             ? "Lax"
             : "None";
+    const secure = Boolean(config.refreshCookieSecure);
+
+    if (!secure && sameSite === "None") {
+        sameSite = "Lax";
+    }
 
     return {
         httpOnly: true,
-        secure: true,
+        secure,
         sameSite,
         path: "/",
     };
@@ -86,7 +91,10 @@ function parseCookies(req) {
 
 function buildCookieHeaderValue(name, value, maxAgeSeconds = null) {
     const options = getRefreshCookieOptions();
-    const parts = [`${name}=${encodeURIComponent(value)}`, `Path=${options.path}`, "HttpOnly", "Secure", `SameSite=${options.sameSite}`];
+    const parts = [`${name}=${encodeURIComponent(value)}`, `Path=${options.path}`, "HttpOnly", `SameSite=${options.sameSite}`];
+    if (options.secure) {
+        parts.push("Secure");
+    }
     if (typeof maxAgeSeconds === "number") {
         parts.push(`Max-Age=${maxAgeSeconds}`);
         parts.push(`Expires=${new Date(Date.now() + (maxAgeSeconds * 1000)).toUTCString()}`);

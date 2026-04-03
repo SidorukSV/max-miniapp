@@ -197,4 +197,7 @@ export const config = {
     logsRateLimitPerMinute: parsePositiveInteger(process.env.LOGS_RATE_LIMIT_PER_MINUTE, 30),
     refreshCookieName: process.env.REFRESH_COOKIE_NAME || "refresh_token",
     refreshCookieSameSite: process.env.REFRESH_COOKIE_SAMESITE || "none",
+    refreshCookieSecure: process.env.REFRESH_COOKIE_SECURE
+        ? process.env.REFRESH_COOKIE_SECURE === "true"
+        : (process.env.NODE_ENV === "production"),
 };

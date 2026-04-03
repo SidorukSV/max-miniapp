@@ -89,6 +89,14 @@ LOGS_RATE_LIMIT_PER_MINUTE=30
 # В production указывайте только реальные домены фронта.
 # В development localhost добавляется автоматически в коде.
 CORS_ALLOWED_ORIGINS=https://app.example.com,https://admin.example.com
+
+# Refresh-cookie (cookie-based auth refresh flow)
+# Имя cookie для refresh-токена
+REFRESH_COOKIE_NAME=refresh_token
+# SameSite: none|lax|strict (по умолчанию none)
+REFRESH_COOKIE_SAMESITE=none
+# Secure-атрибут cookie (по умолчанию true в production, иначе false)
+REFRESH_COOKIE_SECURE=false
 ```
 
 Запуск:
@@ -99,6 +107,14 @@ npm run dev
 ```
 
 > Не коммитьте `.env` в репозиторий. Для команды храните production-секреты в менеджере секретов (например, 1Password Secrets Automation, HashiCorp Vault, AWS Secrets Manager, GCP Secret Manager, Doppler).
+
+### Переменные refresh-cookie
+
+- `REFRESH_COOKIE_NAME` — имя cookie, в которой backend хранит refresh-токен.
+- `REFRESH_COOKIE_SAMESITE` — политика `SameSite` (`none`, `lax`, `strict`).
+- `REFRESH_COOKIE_SECURE` — включает атрибут `Secure` для refresh-cookie.
+  - если не задано, backend использует `true` при `NODE_ENV=production`, иначе `false`;
+  - в production рекомендуется всегда использовать `Secure=true` и HTTPS.
 
 ### Где и как генерировать `JWT_SECRET`
 
