@@ -1,5 +1,6 @@
 import { config } from "../config.js";
 import { authMiddleware } from "../middleware/auth.js";
+import { sendApiError } from "../utils/apiErrors.js";
 
 const REDACTED = "[REDACTED]";
 const REDACTED_PHONE = "[REDACTED_PHONE]";
@@ -119,7 +120,7 @@ async function logsRateLimitMiddleware(req, reply) {
     }
 
     if (state.count >= maxRequests) {
-        return reply.code(429).send({ error: "rate_limit_exceeded" });
+        return sendApiError(reply, 429, "rate_limit_exceeded");
     }
 
     state.count += 1;
