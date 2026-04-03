@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { authStart, authSetCity, authPhone, authSelectPatient, storeTokens, getMe, sendLogs, getCatalogsCities } from "../api";
+import { authStart, authSetCity, authPhone, authSelectPatient, storeTokens, getMe, getCatalogsCities } from "../api";
 import { Flex, Container, Typography, CellList, CellSimple, CellHeader, Input } from "@maxhub/max-ui";
 import "../App.css";
 import { useMaxWebApp } from "../hooks/useMaxWebApp";
@@ -90,11 +90,9 @@ export default function AuthScreen() {
                 init_data: initData,
             });
 
-            await sendLogs(JSON.stringify(phoneResult));
             setPatients(phoneResult.patients || []);
         } catch (err) {
             console.error(err);
-            await sendLogs(JSON.stringify(err));
 
             switch (err.message) {
                 case "manual_phone_required":
