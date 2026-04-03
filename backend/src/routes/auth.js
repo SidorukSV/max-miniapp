@@ -1,10 +1,57 @@
+import crypto from "crypto";
 import { createSession, updateSession } from "../store/authSessions.js";
 import { config } from "../config.js";
 import { getPatientsByPhone } from "../services/onecRouter.js";
 import { normalizePhoneMiddleware, requireCityMiddleware, sessionMiddleware } from "../middleware/session.js";
 import { signAccessToken, signRefreshToken, verifyToken, ACCESS_TOKEN_EXPIRES_SECONDS, REFRESH_TOKEN_EXPIRES_SECONDS } from "../auth/jwt.js";
-import { saveRefreshToken, getRefreshToken, deleteRefreshToken } from "../store/refreshTokens.js";
+import {
+    saveRefreshToken,
+    getRefreshToken,
+    deleteRefreshToken,
+    revokeUserRefreshTokens,
+    revokeUserDeviceRefreshTokens,
+} from "../store/refreshTokens.js";
 import { verifyMaxInitData } from "../auth/maxInitData.js";
+
+
+function hashUserAgent(userAgent) {
+    const normalizedUserAgent = (userAgent || "unknown").trim().toLowerCase();
+    return crypto.createHash("sha256").update(normalizedUserAgent).digest("hex");
+}
+
+function getDeviceId(req) {
+    const fromBody = req.body?.device_id || req.body?.deviceId || null;
+    const fromHeader = req.headers["x-device-id"] || null;
+
+    const candidate = typeof fromBody === "string" && fromBody.trim() ? fromBody : fromHeader;
+
+    if (typeof candidate !== "string") {
+        return null;
+    }
+
+    const value = candidate.trim();
+    return value || null;
+}
+
+function buildRefreshTokenContext(req, channelFallback = "unknown") {
+    const channel = req.body?.channel || channelFallback || "unknown";
+
+    return {
+        user_agent_hash: hashUserAgent(req.headers["user-agent"]),
+        device_id: getDeviceId(req),
+        channel,
+        last_used_at: new Date().toISOString(),
+    };
+}
+
+function isRefreshContextMatch(stored, current) {
+    const storedChannel = stored?.channel || "unknown";
+    const currentChannel = current?.channel || "unknown";
+
+    return stored?.user_agent_hash === current?.user_agent_hash
+        && (stored?.device_id || null) === (current?.device_id || null)
+        && storedChannel === currentChannel;
+}
 
 export async function authRoutes(app) {
 
@@ -122,10 +169,22 @@ export async function authRoutes(app) {
 
             const decodeRefresh = verifyToken(refresh_token);
 
+            const refreshContext = buildRefreshTokenContext(req, tokenPayload.channel);
+
             await saveRefreshToken(decodeRefresh.jti, {
                 ...tokenPayload,
+                ...refreshContext,
                 expiresAt: decodeRefresh.exp * 1000,
             });
+
+            req.log.info({
+                event: "auth_refresh_issued",
+                endpoint: "/api/v1/auth/select-patient",
+                patientId: patient.id,
+                cityId,
+                channel: refreshContext.channel,
+                hasDeviceId: Boolean(refreshContext.device_id),
+            }, "Refresh token issued");
 
             req.session = await updateSession(session.id, {
                 selected_patient_id: patient.id,
@@ -170,6 +229,32 @@ export async function authRoutes(app) {
             return reply.code(401).send({ error: "refresh_token_revoked" }); 
         }
 
+        const currentContext = buildRefreshTokenContext(req, stored.channel);
+
+        if (!isRefreshContextMatch(stored, currentContext)) {
+            await deleteRefreshToken(decoded.jti);
+
+            req.log.warn({
+                event: "auth_refresh_rejected_context_mismatch",
+                endpoint: "/api/v1/auth/refresh",
+                patientId: stored.patient_id,
+                cityId: stored.city_id,
+                tokenJti: decoded.jti,
+                storedContext: {
+                    userAgentHash: stored.user_agent_hash,
+                    deviceId: stored.device_id || null,
+                    channel: stored.channel || "unknown",
+                },
+                currentContext: {
+                    userAgentHash: currentContext.user_agent_hash,
+                    deviceId: currentContext.device_id || null,
+                    channel: currentContext.channel,
+                },
+            }, "Refresh token rejected due to context mismatch");
+
+            return reply.code(401).send({ error: "refresh_context_mismatch" });
+        }
+
         await deleteRefreshToken(decoded.jti);
 
         const tokenPayload = {
@@ -181,13 +266,25 @@ export async function authRoutes(app) {
 
         const access_token = signAccessToken(tokenPayload);
         const new_refresh_token = signRefreshToken(tokenPayload);
-        
+
         const newDecodedRefresh = verifyToken(new_refresh_token);
 
         await saveRefreshToken(newDecodedRefresh.jti, {
             ...tokenPayload,
+            ...currentContext,
             expiresAt: newDecodedRefresh.exp * 1000,
         });
+
+        req.log.info({
+            event: "auth_refresh_success",
+            endpoint: "/api/v1/auth/refresh",
+            patientId: stored.patient_id,
+            cityId: stored.city_id,
+            oldTokenJti: decoded.jti,
+            newTokenJti: newDecodedRefresh.jti,
+            channel: currentContext.channel,
+            hasDeviceId: Boolean(currentContext.device_id),
+        }, "Refresh token rotated");
 
         return {
             access_token,
@@ -198,22 +295,51 @@ export async function authRoutes(app) {
     });
 
     app.post("/api/v1/auth/logout", async (req, reply) => {
-        const { refresh_token } = req.body || {};
+        const { refresh_token, revoke_scope } = req.body || {};
 
         if (!refresh_token) {
             return reply.code(400).send({ error: "refresh_token_required" });
         }
 
+        let revokedCount = 0;
+
         try {
             const decoded = verifyToken(refresh_token);
 
             if (decoded.token_type === "refresh") {
-                await deleteRefreshToken(decoded.jti);
+                const stored = await getRefreshToken(decoded.jti);
+
+                if (stored?.patient_id) {
+                    const scope = revoke_scope || (stored.device_id ? "device" : "token");
+
+                    if (scope === "user") {
+                        revokedCount = await revokeUserRefreshTokens(stored.patient_id);
+                    } else if (scope === "device" && stored.device_id) {
+                        revokedCount = await revokeUserDeviceRefreshTokens(stored.patient_id, stored.device_id);
+                    } else {
+                        await deleteRefreshToken(decoded.jti);
+                        revokedCount = 1;
+                    }
+
+                    req.log.info({
+                        event: "auth_logout",
+                        endpoint: "/api/v1/auth/logout",
+                        patientId: stored.patient_id,
+                        cityId: stored.city_id,
+                        revokeScope: scope,
+                        revokedCount,
+                        channel: stored.channel || "unknown",
+                        hasDeviceId: Boolean(stored.device_id),
+                    }, "Logout completed with refresh revocation");
+                } else {
+                    await deleteRefreshToken(decoded.jti);
+                    revokedCount = 1;
+                }
             }
         } catch {
             // no-action: always logout
         }
 
-        return { ok: true };
+        return { ok: true, revoked_count: revokedCount };
     })
 }
