@@ -156,8 +156,24 @@ function loadOneCConfigs() {
     return [];
 }
 
+function parseCorsAllowedOrigins(rawValue) {
+    if (typeof rawValue !== "string" || !rawValue.trim()) {
+        return [];
+    }
+
+    return Array.from(
+        new Set(
+            rawValue
+                .split(",")
+                .map((origin) => origin.trim())
+                .filter(Boolean)
+        )
+    );
+}
+
 export const config = {
     port: Number(process.env.PORT || 3000),
+    nodeEnv: process.env.NODE_ENV || "development",
     jwtSecret: validateJwtSecret(process.env.JWT_SECRET),
     citySelectionEnabled: process.env.CITY_SELECTION_ENABLED === "true",
     defaultCityId: process.env.DEFAULT_CITY_ID || null,
@@ -166,4 +182,5 @@ export const config = {
     redisUrl: process.env.REDIS_URL || "redis://127.0.0.1:6379",
     redisConnectTimeoutMs: Number(process.env.REDIS_CONNECT_TIMEOUT_MS || 5000),
     oneCConfigs: loadOneCConfigs(),
+    corsAllowedOrigins: parseCorsAllowedOrigins(process.env.CORS_ALLOWED_ORIGINS),
 };
