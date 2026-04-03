@@ -25,9 +25,9 @@ function callSecureStorage(method, key, value) {
     try {
         const result = value === undefined ? fn.call(api, key) : fn.call(api, key, value);
         if (typeof result?.then === "function") {
-            return result;
+            return Promise.resolve(result).catch(() => null);
         }
-        return Promise.resolve(result ?? null);
+        return Promise.resolve(result ?? null).catch(() => null);
     } catch {
         return Promise.resolve(null);
     }
