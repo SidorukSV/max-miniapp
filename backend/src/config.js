@@ -195,4 +195,6 @@ export const config = {
     corsAllowedOrigins: parseCorsAllowedOrigins(process.env.CORS_ALLOWED_ORIGINS),
     logsInternalApiKey: process.env.LOGS_INTERNAL_API_KEY || "",
     logsRateLimitPerMinute: parsePositiveInteger(process.env.LOGS_RATE_LIMIT_PER_MINUTE, 30),
+    refreshCookieName: process.env.REFRESH_COOKIE_NAME || "refresh_token",
+    refreshCookieSameSite: process.env.REFRESH_COOKIE_SAMESITE || "strict",
 };
