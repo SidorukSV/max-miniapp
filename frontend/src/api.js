@@ -1,9 +1,11 @@
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3000/api/v1";
+let inMemoryAccessToken = null;
 
 export async function apiFetch(path, options = {}) {
     const hasBody = options.body !== undefined;
 
     const res = await fetch(`${API_BASE}${path}`, {
+        credentials: "include",
         headers: {
             ...(hasBody ? { "Content-Type": "application/json" } : {}),
             ...(options.headers || {}),
@@ -21,21 +23,15 @@ export async function apiFetch(path, options = {}) {
 }
 
 export function getStoredAccessToken() {
-    return localStorage.getItem("access_token");
+    return inMemoryAccessToken;
 }
 
-export function getStoredRefreshtoken(){
-    return localStorage.getItem("refresh_token");
-}
-
-export function storeTokens({ access_token, refresh_token }) {
-    if (access_token) localStorage.setItem("access_token", access_token);
-    if (refresh_token) localStorage.setItem("refresh_token", refresh_token);
+export function storeTokens({ access_token }) {
+    inMemoryAccessToken = access_token || null;
 }
 
 export function clearTokens() {
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("refresh_token");
+    inMemoryAccessToken = null;
 }
 
 export async function authStart() {
@@ -65,17 +61,16 @@ export async function authSelectPatient({ auth_session_id, patient_id }) {
     });
 }
 
-export async function authRefresh(refresh_token) {
+export async function authRefresh() {
     return apiFetch("/auth/refresh", {
         method: "POST",
-        body: JSON.stringify({ refresh_token }),
     });
 }
 
-export async function authLogout(refresh_token) {
+export async function authLogout() {
     return apiFetch("/auth/logout", {
         method: "POST",
-        body: JSON.stringify({ refresh_token }),
+        body: JSON.stringify({}),
     });
 }
 
