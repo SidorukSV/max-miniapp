@@ -54,6 +54,62 @@ function isRefreshContextMatch(stored, current) {
         && storedChannel === currentChannel;
 }
 
+function getRefreshCookieOptions() {
+    const rawSameSite = String(config.refreshCookieSameSite || "none").trim().toLowerCase();
+    let sameSite = rawSameSite === "strict"
+        ? "Strict"
+        : rawSameSite === "lax"
+            ? "Lax"
+            : "None";
+    const secure = Boolean(config.refreshCookieSecure);
+
+    if (!secure && sameSite === "None") {
+        sameSite = "Lax";
+    }
+
+    return {
+        httpOnly: true,
+        secure,
+        sameSite,
+        path: "/",
+    };
+}
+
+function parseCookies(req) {
+    const cookieHeader = req.headers?.cookie;
+    if (!cookieHeader || typeof cookieHeader !== "string") {
+        return {};
+    }
+
+    return cookieHeader.split(";").reduce((acc, segment) => {
+        const [rawName, ...rest] = segment.trim().split("=");
+        if (!rawName) return acc;
+        acc[rawName] = decodeURIComponent(rest.join("=") || "");
+        return acc;
+    }, {});
+}
+
+function buildCookieHeaderValue(name, value, maxAgeSeconds = null) {
+    const options = getRefreshCookieOptions();
+    const parts = [`${name}=${encodeURIComponent(value)}`, `Path=${options.path}`, "HttpOnly", `SameSite=${options.sameSite}`];
+    if (options.secure) {
+        parts.push("Secure");
+    }
+    if (typeof maxAgeSeconds === "number") {
+        parts.push(`Max-Age=${maxAgeSeconds}`);
+        parts.push(`Expires=${new Date(Date.now() + (maxAgeSeconds * 1000)).toUTCString()}`);
+    }
+    return parts.join("; ");
+}
+
+function setRefreshCookie(reply, refreshToken, maxAgeSeconds) {
+    reply.header("Set-Cookie", buildCookieHeaderValue(config.refreshCookieName, refreshToken, maxAgeSeconds));
+}
+
+function clearRefreshCookie(reply) {
+    reply.header("Set-Cookie", buildCookieHeaderValue(config.refreshCookieName, "", 0));
+}
+
 export async function authRoutes(app) {
 
     app.post("/api/v1/auth/start", async () => {
@@ -196,18 +252,18 @@ export async function authRoutes(app) {
                 operation: "selectPatient",
             }, "Patient selected for auth session");
 
+            setRefreshCookie(reply, refresh_token, REFRESH_TOKEN_EXPIRES_SECONDS);
+
             return {
-                access_token: access_token,
-                refresh_token: refresh_token,
+                access_token,
                 expires_in: ACCESS_TOKEN_EXPIRES_SECONDS,
-                refresh_expires_in: REFRESH_TOKEN_EXPIRES_SECONDS,
                 patient,
-            }
+            };
 
         });
 
     app.post("/api/v1/auth/refresh", async (req, reply) => {
-        const { refresh_token } = req.body || {};
+        const refresh_token = parseCookies(req)?.[config.refreshCookieName] || null;
 
         if (!refresh_token) {
             return sendApiError(reply, 400, "refresh_token_required");
@@ -287,18 +343,20 @@ export async function authRoutes(app) {
             hasDeviceId: Boolean(currentContext.device_id),
         }, "Refresh token rotated");
 
+        setRefreshCookie(reply, new_refresh_token, REFRESH_TOKEN_EXPIRES_SECONDS);
+
         return {
             access_token,
-            refresh_token: new_refresh_token,
             expires_in: ACCESS_TOKEN_EXPIRES_SECONDS,
-            refresh_expires_in: REFRESH_TOKEN_EXPIRES_SECONDS,
         };
     });
 
     app.post("/api/v1/auth/logout", async (req, reply) => {
-        const { refresh_token, revoke_scope } = req.body || {};
+        const { revoke_scope } = req.body || {};
+        const refresh_token = parseCookies(req)?.[config.refreshCookieName] || null;
 
         if (!refresh_token) {
+            clearRefreshCookie(reply);
             return sendApiError(reply, 400, "refresh_token_required");
         }
 
@@ -341,6 +399,7 @@ export async function authRoutes(app) {
             // no-action: always logout
         }
 
+        clearRefreshCookie(reply);
         return { ok: true, revoked_count: revokedCount };
     })
 }

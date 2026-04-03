@@ -62,7 +62,13 @@ export async function buildApp() {
 
             cb(null, true);
         },
-        methods: ["GET", "POST", "PUT"]
+        methods: ["GET", "POST", "PUT"],
+        credentials: true,
+    });
+    app.addHook("onRequest", async (_req, reply) => {
+        reply.header("Content-Security-Policy", "default-src 'self'; img-src 'self' data: https:; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' https:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'");
+        reply.header("X-Content-Type-Options", "nosniff");
+        reply.header("Referrer-Policy", "strict-origin-when-cross-origin");
     });
 
     app.register(authRoutes);

@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { authRefresh, getMe, getStoredAccessToken, getStoredRefreshtoken, storeTokens, clearTokens } from "../api";
+import { authRefresh, getMe, getStoredAccessToken, storeTokens, clearTokens } from "../api";
 
 const AuthContext = createContext(null);
 
@@ -8,14 +8,8 @@ export function AuthProvider({ children }) {
     const [loading, setLoading] = useState(true);
 
     async function refreshAndLoadMe() {
-        const refresh = getStoredRefreshtoken();
-
-        if (!refresh) {
-            return false;
-        }
-
         try {
-            const refreshed = await authRefresh(refresh);
+            const refreshed = await authRefresh();
             storeTokens(refreshed);
 
             const meData = await getMe(refreshed.access_token);
