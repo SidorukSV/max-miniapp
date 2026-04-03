@@ -46,13 +46,21 @@ redis-cli ping
 ```bash
 cd backend
 npm install
+export JWT_SECRET='YourStrongRandomSecretAtLeast32Chars!2026'
 npm run dev
 ```
+
+`JWT_SECRET` обязателен. Backend завершит запуск с ошибкой, если:
+- переменная отсутствует или пустая;
+- длина меньше `32` символов;
+- секрет не содержит минимум 3 из 4 классов символов: `A-Z`, `a-z`, `0-9`, спецсимволы.
+
+Рекомендуется генерировать `JWT_SECRET` как случайную строку высокой энтропии (например, через password manager или `openssl rand`).
 
 Если Redis не локальный, укажите URL перед запуском:
 
 ```bash
-REDIS_URL=redis://<host>:6379 npm run dev
+JWT_SECRET='YourStrongRandomSecretAtLeast32Chars!2026' REDIS_URL=redis://<host>:6379 npm run dev
 ```
 
 ## Конфиг oneC в отдельном `.yml`

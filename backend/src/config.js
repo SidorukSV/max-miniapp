@@ -4,6 +4,34 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
+const MIN_JWT_SECRET_LENGTH = 32;
+
+function validateJwtSecret(rawSecret) {
+    const jwtSecret = typeof rawSecret === "string" ? rawSecret.trim() : "";
+
+    if (!jwtSecret) {
+        throw new Error(
+            "JWT_SECRET is required. Set a non-empty secret in environment variables before starting the backend."
+        );
+    }
+
+    if (jwtSecret.length < MIN_JWT_SECRET_LENGTH) {
+        throw new Error(`JWT_SECRET must be at least ${MIN_JWT_SECRET_LENGTH} characters long.`);
+    }
+
+    const hasUppercase = /[A-Z]/.test(jwtSecret);
+    const hasLowercase = /[a-z]/.test(jwtSecret);
+    const hasDigit = /[0-9]/.test(jwtSecret);
+    const hasSpecial = /[^A-Za-z0-9]/.test(jwtSecret);
+    const classesMatched = [hasUppercase, hasLowercase, hasDigit, hasSpecial].filter(Boolean).length;
+
+    if (classesMatched < 3) {
+        throw new Error("JWT_SECRET must include at least 3 of 4 character classes: uppercase, lowercase, digits, special symbols.");
+    }
+
+    return jwtSecret;
+}
+
 function normalizeOneCConfigs(parsed, sourceLabel) {
     if (!Array.isArray(parsed)) {
         throw new Error(`${sourceLabel} must contain an array`);
@@ -130,7 +158,7 @@ function loadOneCConfigs() {
 
 export const config = {
     port: Number(process.env.PORT || 3000),
-    jwtSecret: process.env.JWT_SECRET || "dev-super-secret-jwt-key",
+    jwtSecret: validateJwtSecret(process.env.JWT_SECRET),
     citySelectionEnabled: process.env.CITY_SELECTION_ENABLED === "true",
     defaultCityId: process.env.DEFAULT_CITY_ID || null,
     maxBotToken: process.env.MAX_BOT_TOKEN || "",
