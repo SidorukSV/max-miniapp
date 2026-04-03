@@ -130,6 +130,49 @@ function parseCookies(req) {
     }, {});
 }
 
+function getRefreshTokenFromRequest(req) {
+    const normalizeRefreshToken = (token) => {
+        if (typeof token !== "string") {
+            return null;
+        }
+
+        const normalized = token.trim();
+        if (!normalized) {
+            return null;
+        }
+
+        if (!/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(normalized)) {
+            return null;
+        }
+
+        return normalized;
+    };
+
+    const fromCookie = parseCookies(req)?.[config.refreshCookieName];
+    const normalizedCookie = normalizeRefreshToken(fromCookie);
+    if (normalizedCookie) {
+        return normalizedCookie;
+    }
+
+    const fromHeader = req.headers?.["x-refresh-token"];
+    const normalizedHeader = normalizeRefreshToken(fromHeader);
+    if (normalizedHeader) {
+        return normalizedHeader;
+    }
+
+    const fromBody = req.body?.refresh_token || req.body?.refreshToken;
+    const normalizedBody = normalizeRefreshToken(fromBody);
+    if (normalizedBody) {
+        return normalizedBody;
+    }
+
+    return null;
+}
+
+function shouldExposeRefreshToken(channel) {
+    return channel === "max";
+}
+
 function buildCookieHeaderValue(req, name, value, maxAgeSeconds = null) {
     const options = getRefreshCookieOptions(req);
     const parts = [`${name}=${encodeURIComponent(value)}`, `Path=${options.path}`, "HttpOnly", `SameSite=${options.sameSite}`];
@@ -298,13 +341,14 @@ export async function authRoutes(app) {
             return {
                 access_token,
                 expires_in: ACCESS_TOKEN_EXPIRES_SECONDS,
+                ...(shouldExposeRefreshToken(tokenPayload.channel) ? { refresh_token } : {}),
                 patient,
             };
 
         });
 
     app.post("/api/v1/auth/refresh", async (req, reply) => {
-        const refresh_token = parseCookies(req)?.[config.refreshCookieName] || null;
+        const refresh_token = getRefreshTokenFromRequest(req);
 
         if (!refresh_token) {
             return sendApiError(reply, 400, "refresh_token_required");
@@ -389,12 +433,13 @@ export async function authRoutes(app) {
         return {
             access_token,
             expires_in: ACCESS_TOKEN_EXPIRES_SECONDS,
+            ...(shouldExposeRefreshToken(tokenPayload.channel) ? { refresh_token: new_refresh_token } : {}),
         };
     });
 
     app.post("/api/v1/auth/logout", async (req, reply) => {
         const { revoke_scope } = req.body || {};
-        const refresh_token = parseCookies(req)?.[config.refreshCookieName] || null;
+        const refresh_token = getRefreshTokenFromRequest(req);
 
         if (!refresh_token) {
             clearRefreshCookie(req, reply);
