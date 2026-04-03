@@ -55,11 +55,18 @@ function isRefreshContextMatch(stored, current) {
 }
 
 function getRefreshCookieOptions() {
+    const rawSameSite = String(config.refreshCookieSameSite || "none").trim().toLowerCase();
+    const sameSite = rawSameSite === "strict"
+        ? "Strict"
+        : rawSameSite === "lax"
+            ? "Lax"
+            : "None";
+
     return {
         httpOnly: true,
         secure: true,
-        sameSite: String(config.refreshCookieSameSite || "Strict"),
-        path: "/api/v1/auth",
+        sameSite,
+        path: "/",
     };
 }
 
@@ -82,6 +89,7 @@ function buildCookieHeaderValue(name, value, maxAgeSeconds = null) {
     const parts = [`${name}=${encodeURIComponent(value)}`, `Path=${options.path}`, "HttpOnly", "Secure", `SameSite=${options.sameSite}`];
     if (typeof maxAgeSeconds === "number") {
         parts.push(`Max-Age=${maxAgeSeconds}`);
+        parts.push(`Expires=${new Date(Date.now() + (maxAgeSeconds * 1000)).toUTCString()}`);
     }
     return parts.join("; ");
 }

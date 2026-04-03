@@ -47,3 +47,23 @@ test("auth refresh errors do not reflect script payloads (xss regression)", asyn
     assert.equal(response.json().error, "refresh_token_required");
     assert.doesNotMatch(response.body, /<script>/i);
 });
+
+test("logout clears refresh cookie with secure attributes", async (t) => {
+    const app = await createTestApp();
+    t.after(async () => {
+        await app.close();
+    });
+
+    const response = await app.inject({
+        method: "POST",
+        url: "/api/v1/auth/logout",
+        payload: {},
+    });
+
+    assert.equal(response.statusCode, 400);
+    const setCookie = response.headers["set-cookie"] || "";
+    assert.match(setCookie, /HttpOnly/i);
+    assert.match(setCookie, /Secure/i);
+    assert.match(setCookie, /SameSite=None/i);
+    assert.match(setCookie, /Max-Age=0/i);
+});

@@ -196,5 +196,5 @@ export const config = {
     logsInternalApiKey: process.env.LOGS_INTERNAL_API_KEY || "",
     logsRateLimitPerMinute: parsePositiveInteger(process.env.LOGS_RATE_LIMIT_PER_MINUTE, 30),
     refreshCookieName: process.env.REFRESH_COOKIE_NAME || "refresh_token",
-    refreshCookieSameSite: process.env.REFRESH_COOKIE_SAMESITE || "strict",
+    refreshCookieSameSite: process.env.REFRESH_COOKIE_SAMESITE || "none",
 };
