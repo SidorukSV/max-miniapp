@@ -79,6 +79,12 @@ REDIS_URL=redis://127.0.0.1:6379
 REDIS_CONNECT_TIMEOUT_MS=5000
 MAX_INIT_DATA_MAX_AGE_SECONDS=300
 
+# Приём клиентских логов
+# Альтернативная авторизация для /api/v1/send-log (если нужен сервисный доступ без JWT)
+LOGS_INTERNAL_API_KEY=
+# Ограничение запросов на /api/v1/send-log в минуту на IP
+LOGS_RATE_LIMIT_PER_MINUTE=30
+
 # CORS allowlist (через запятую)
 # В production указывайте только реальные домены фронта.
 # В development localhost добавляется автоматически в коде.

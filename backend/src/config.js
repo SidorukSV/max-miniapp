@@ -156,6 +156,16 @@ function loadOneCConfigs() {
     return [];
 }
 
+function parsePositiveInteger(rawValue, fallback) {
+    const parsed = Number(rawValue);
+
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+        return fallback;
+    }
+
+    return Math.floor(parsed);
+}
+
 function parseCorsAllowedOrigins(rawValue) {
     if (typeof rawValue !== "string" || !rawValue.trim()) {
         return [];
@@ -183,4 +193,6 @@ export const config = {
     redisConnectTimeoutMs: Number(process.env.REDIS_CONNECT_TIMEOUT_MS || 5000),
     oneCConfigs: loadOneCConfigs(),
     corsAllowedOrigins: parseCorsAllowedOrigins(process.env.CORS_ALLOWED_ORIGINS),
+    logsInternalApiKey: process.env.LOGS_INTERNAL_API_KEY || "",
+    logsRateLimitPerMinute: parsePositiveInteger(process.env.LOGS_RATE_LIMIT_PER_MINUTE, 30),
 };
