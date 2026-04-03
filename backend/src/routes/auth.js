@@ -54,14 +54,24 @@ function isRefreshContextMatch(stored, current) {
         && storedChannel === currentChannel;
 }
 
-function getRefreshCookieOptions() {
+function isSecureRequest(req) {
+    const forwardedProto = req.headers?.["x-forwarded-proto"];
+
+    if (typeof forwardedProto === "string" && forwardedProto.toLowerCase().includes("https")) {
+        return true;
+    }
+
+    return req.protocol === "https";
+}
+
+function getRefreshCookieOptions(req) {
     const rawSameSite = String(config.refreshCookieSameSite || "none").trim().toLowerCase();
     let sameSite = rawSameSite === "strict"
         ? "Strict"
         : rawSameSite === "lax"
             ? "Lax"
             : "None";
-    const secure = Boolean(config.refreshCookieSecure);
+    const secure = Boolean(config.refreshCookieSecure) || isSecureRequest(req);
 
     if (!secure && sameSite === "None") {
         sameSite = "Lax";
@@ -75,8 +85,39 @@ function getRefreshCookieOptions() {
     };
 }
 
+function getCookieHeader(req) {
+    const cookieCandidates = [
+        req.headers?.cookie,
+        req.headers?.Cookie,
+        req.raw?.headers?.cookie,
+        req.raw?.headers?.Cookie,
+    ];
+
+    const directMatch = cookieCandidates.find((candidate) => typeof candidate === "string" && candidate.trim());
+
+    if (directMatch) {
+        return directMatch;
+    }
+
+    const rawHeaders = req.raw?.rawHeaders;
+    if (!Array.isArray(rawHeaders)) {
+        return null;
+    }
+
+    for (let i = 0; i < rawHeaders.length; i += 2) {
+        const name = rawHeaders[i];
+        const value = rawHeaders[i + 1];
+
+        if (typeof name === "string" && name.toLowerCase() === "cookie" && typeof value === "string" && value.trim()) {
+            return value;
+        }
+    }
+
+    return null;
+}
+
 function parseCookies(req) {
-    const cookieHeader = req.headers?.cookie;
+    const cookieHeader = getCookieHeader(req);
     if (!cookieHeader || typeof cookieHeader !== "string") {
         return {};
     }
@@ -89,8 +130,51 @@ function parseCookies(req) {
     }, {});
 }
 
-function buildCookieHeaderValue(name, value, maxAgeSeconds = null) {
-    const options = getRefreshCookieOptions();
+function getRefreshTokenFromRequest(req) {
+    const normalizeRefreshToken = (token) => {
+        if (typeof token !== "string") {
+            return null;
+        }
+
+        const normalized = token.trim();
+        if (!normalized) {
+            return null;
+        }
+
+        if (!/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(normalized)) {
+            return null;
+        }
+
+        return normalized;
+    };
+
+    const fromCookie = parseCookies(req)?.[config.refreshCookieName];
+    const normalizedCookie = normalizeRefreshToken(fromCookie);
+    if (normalizedCookie) {
+        return normalizedCookie;
+    }
+
+    const fromHeader = req.headers?.["x-refresh-token"];
+    const normalizedHeader = normalizeRefreshToken(fromHeader);
+    if (normalizedHeader) {
+        return normalizedHeader;
+    }
+
+    const fromBody = req.body?.refresh_token || req.body?.refreshToken;
+    const normalizedBody = normalizeRefreshToken(fromBody);
+    if (normalizedBody) {
+        return normalizedBody;
+    }
+
+    return null;
+}
+
+function shouldExposeRefreshToken(channel) {
+    return channel === "max";
+}
+
+function buildCookieHeaderValue(req, name, value, maxAgeSeconds = null) {
+    const options = getRefreshCookieOptions(req);
     const parts = [`${name}=${encodeURIComponent(value)}`, `Path=${options.path}`, "HttpOnly", `SameSite=${options.sameSite}`];
     if (options.secure) {
         parts.push("Secure");
@@ -102,12 +186,12 @@ function buildCookieHeaderValue(name, value, maxAgeSeconds = null) {
     return parts.join("; ");
 }
 
-function setRefreshCookie(reply, refreshToken, maxAgeSeconds) {
-    reply.header("Set-Cookie", buildCookieHeaderValue(config.refreshCookieName, refreshToken, maxAgeSeconds));
+function setRefreshCookie(req, reply, refreshToken, maxAgeSeconds) {
+    reply.header("Set-Cookie", buildCookieHeaderValue(req, config.refreshCookieName, refreshToken, maxAgeSeconds));
 }
 
-function clearRefreshCookie(reply) {
-    reply.header("Set-Cookie", buildCookieHeaderValue(config.refreshCookieName, "", 0));
+function clearRefreshCookie(req, reply) {
+    reply.header("Set-Cookie", buildCookieHeaderValue(req, config.refreshCookieName, "", 0));
 }
 
 export async function authRoutes(app) {
@@ -252,18 +336,19 @@ export async function authRoutes(app) {
                 operation: "selectPatient",
             }, "Patient selected for auth session");
 
-            setRefreshCookie(reply, refresh_token, REFRESH_TOKEN_EXPIRES_SECONDS);
+            setRefreshCookie(req, reply, refresh_token, REFRESH_TOKEN_EXPIRES_SECONDS);
 
             return {
                 access_token,
                 expires_in: ACCESS_TOKEN_EXPIRES_SECONDS,
+                ...(shouldExposeRefreshToken(tokenPayload.channel) ? { refresh_token } : {}),
                 patient,
             };
 
         });
 
     app.post("/api/v1/auth/refresh", async (req, reply) => {
-        const refresh_token = parseCookies(req)?.[config.refreshCookieName] || null;
+        const refresh_token = getRefreshTokenFromRequest(req);
 
         if (!refresh_token) {
             return sendApiError(reply, 400, "refresh_token_required");
@@ -343,20 +428,21 @@ export async function authRoutes(app) {
             hasDeviceId: Boolean(currentContext.device_id),
         }, "Refresh token rotated");
 
-        setRefreshCookie(reply, new_refresh_token, REFRESH_TOKEN_EXPIRES_SECONDS);
+        setRefreshCookie(req, reply, new_refresh_token, REFRESH_TOKEN_EXPIRES_SECONDS);
 
         return {
             access_token,
             expires_in: ACCESS_TOKEN_EXPIRES_SECONDS,
+            ...(shouldExposeRefreshToken(tokenPayload.channel) ? { refresh_token: new_refresh_token } : {}),
         };
     });
 
     app.post("/api/v1/auth/logout", async (req, reply) => {
         const { revoke_scope } = req.body || {};
-        const refresh_token = parseCookies(req)?.[config.refreshCookieName] || null;
+        const refresh_token = getRefreshTokenFromRequest(req);
 
         if (!refresh_token) {
-            clearRefreshCookie(reply);
+            clearRefreshCookie(req, reply);
             return sendApiError(reply, 400, "refresh_token_required");
         }
 
@@ -399,7 +485,7 @@ export async function authRoutes(app) {
             // no-action: always logout
         }
 
-        clearRefreshCookie(reply);
+        clearRefreshCookie(req, reply);
         return { ok: true, revoked_count: revokedCount };
     })
 }
