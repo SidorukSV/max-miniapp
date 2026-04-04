@@ -18,6 +18,7 @@ import {
 } from "../api.js";
 
 import { getFallbackGradientByInitials } from "../modules/avatarGradient.js";
+import { openExternalLink } from "../utils/safeUrl.js";
 
 function formatPhoneToInternational(phone) {
     if (!phone) return "";
@@ -105,8 +106,7 @@ export default function Home() {
 
     function openChat() {
         const chatUrl = import.meta.env.VITE_MAX_CHAT_URL || "";
-        if (!chatUrl) return;
-        window.location.href = chatUrl;
+        openExternalLink(chatUrl);
     }
 
     async function handleBookClick() {

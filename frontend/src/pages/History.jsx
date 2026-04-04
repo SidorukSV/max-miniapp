@@ -11,6 +11,7 @@ import {
 } from "../api.js";
 import "../App.css";
 import HistorySkeleton from "../components/history/HistorySkeleton.jsx";
+import { openExternalLink } from "../utils/safeUrl.js";
 
 function parseMedicalDate(value) {
     if (!value) return null;
@@ -206,8 +207,7 @@ export default function History() {
 
     function openChat() {
         const chatUrl = import.meta.env.VITE_MAX_CHAT_URL || "";
-        if (!chatUrl) return;
-        window.location.href = chatUrl;
+        openExternalLink(chatUrl);
     }
 
     return (
