@@ -175,3 +175,60 @@ ONEC_CONFIGS_FILE=./onec-configs.example.yml npm run dev
 4. На `localhost` при авторизации введите телефон и текущий 6-значный код из приложения.
 
 > В production TOTP-проверка для web-канала отключена этим механизмом (проверка выполняется только в non-production).
+
+## Production Docker + HTTPS (для демо бета-версии)
+
+Добавлена готовая production-схема развёртывания:
+- `backend` (Node.js/Fastify);
+- `redis`;
+- `gateway` (Nginx):
+  - терминирует TLS (`https://`),
+  - проксирует backend как `https://<домен>/api/...`,
+  - раздаёт production-сборку frontend.
+
+### 1) Подготовка переменных backend
+
+```bash
+cp backend/.env.production.example backend/.env.production
+```
+
+Обязательно задайте сильный `JWT_SECRET` и корректный `CORS_ALLOWED_ORIGINS` (ваш HTTPS-домен).
+
+### 2) Подготовка TLS-сертификатов
+
+Nginx ожидает файлы:
+- `deploy/certs/fullchain.pem`
+- `deploy/certs/privkey.pem`
+
+Для локальной демо-проверки можно сгенерировать self-signed сертификат:
+
+```bash
+mkdir -p deploy/certs
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+  -keyout deploy/certs/privkey.pem \
+  -out deploy/certs/fullchain.pem \
+  -subj "/CN=localhost"
+```
+
+> Для публичной демонстрации используйте реальный сертификат (например, Let's Encrypt).
+
+### 3) Сборка и запуск
+
+```bash
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+### 4) Проверка
+
+```bash
+curl -k https://localhost/
+curl -k https://localhost/api/v1/auth/start -X POST
+```
+
+`-k` нужен только для self-signed сертификата.
+
+### Что это даёт
+
+- Frontend работает в production-режиме внутри Docker.
+- Backend доступен только через HTTPS-входную точку Nginx (`/api`).
+- Можно разворачивать на сервере одной командой `docker compose`.
