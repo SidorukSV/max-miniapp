@@ -1,4 +1,9 @@
-import { saveRefreshToken, loadRefreshToken, clearRefreshToken } from "./maxSecureStorage";
+import {
+    saveRefreshToken,
+    loadRefreshToken,
+    clearRefreshToken,
+    isMaxMobilePlatform,
+} from "./maxSecureStorage";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3000/api/v1";
 let inMemoryAccessToken = null;
@@ -68,6 +73,10 @@ export async function authSelectPatient({ auth_session_id, patient_id }) {
 export async function authRefresh() {
     const refreshToken = await loadRefreshToken();
 
+    if (isMaxMobilePlatform() && !refreshToken) {
+        throw new Error("refresh_token_unavailable");
+    }
+
     return apiFetch("/auth/refresh", {
         method: "POST",
         ...(refreshToken ? { body: JSON.stringify({ refresh_token: refreshToken }) } : {}),
@@ -79,7 +88,7 @@ export async function authLogout() {
 
     return apiFetch("/auth/logout", {
         method: "POST",
-        body: JSON.stringify(refreshToken ? { refresh_token: refreshToken } : {}),
+        ...(refreshToken ? { body: JSON.stringify({ refresh_token: refreshToken }) } : {}),
     });
 }
 

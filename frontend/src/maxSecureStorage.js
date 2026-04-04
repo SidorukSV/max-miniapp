@@ -1,4 +1,5 @@
 const REFRESH_TOKEN_KEY = "max_refresh_token";
+let hasReportedSecureStorageUnavailable = false;
 
 function getWebApp() {
     return window.WebApp || null;
@@ -14,21 +15,59 @@ function getSecureStorageApi() {
     return webApp?.SecureStorage || window.SecureStorage || null;
 }
 
-function callSecureStorage(method, key, value) {
+function reportSecureStorageUnavailable() {
+    if (hasReportedSecureStorageUnavailable) {
+        return;
+    }
+
+    hasReportedSecureStorageUnavailable = true;
+
+    const metric = {
+        source: "maxSecureStorage",
+        state: "secure_storage_unavailable",
+        platform: getWebApp()?.platform || "unknown",
+    };
+
+    console.warn("[auth] secure storage unavailable", metric);
+
+    window.dispatchEvent(
+        new CustomEvent("max:secure-storage-unavailable", {
+            detail: metric,
+        }),
+    );
+}
+
+function getSecureStorageMethod(method) {
     const api = getSecureStorageApi();
     const fn = api?.[method];
 
     if (typeof fn !== "function") {
+        reportSecureStorageUnavailable();
+        return null;
+    }
+
+    return { api, fn };
+}
+
+function callSecureStorage(method, key, value) {
+    const secureStorageMethod = getSecureStorageMethod(method);
+    if (!secureStorageMethod) {
         return Promise.resolve(null);
     }
+
+    const { api, fn } = secureStorageMethod;
 
     try {
         const result = value === undefined ? fn.call(api, key) : fn.call(api, key, value);
         if (typeof result?.then === "function") {
-            return Promise.resolve(result).catch(() => null);
+            return Promise.resolve(result).catch(() => {
+                reportSecureStorageUnavailable();
+                return null;
+            });
         }
         return Promise.resolve(result ?? null).catch(() => null);
     } catch {
+        reportSecureStorageUnavailable();
         return Promise.resolve(null);
     }
 }
@@ -43,16 +82,7 @@ export async function saveRefreshToken(token) {
         return;
     }
 
-    const secureSaved = await callSecureStorage("setItem", REFRESH_TOKEN_KEY, token);
-    if (secureSaved !== null) {
-        return;
-    }
-
-    try {
-        window.localStorage.setItem(REFRESH_TOKEN_KEY, token);
-    } catch {
-        // ignore localStorage failures
-    }
+    await callSecureStorage("setItem", REFRESH_TOKEN_KEY, token);
 }
 
 export async function loadRefreshToken() {
@@ -67,12 +97,7 @@ export async function loadRefreshToken() {
         return refreshToken;
     }
 
-    try {
-        const localValue = window.localStorage.getItem(REFRESH_TOKEN_KEY);
-        return localValue || null;
-    } catch {
-        return null;
-    }
+    return null;
 }
 
 export async function clearRefreshToken() {
@@ -81,10 +106,4 @@ export async function clearRefreshToken() {
     }
 
     await callSecureStorage("removeItem", REFRESH_TOKEN_KEY);
-
-    try {
-        window.localStorage.removeItem(REFRESH_TOKEN_KEY);
-    } catch {
-        // ignore localStorage failures
-    }
 }
