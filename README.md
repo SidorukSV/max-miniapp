@@ -97,6 +97,14 @@ REFRESH_COOKIE_NAME=refresh_token
 REFRESH_COOKIE_SAMESITE=none
 # Secure-атрибут cookie (по умолчанию true в production, иначе false)
 REFRESH_COOKIE_SECURE=false
+
+# Dev TOTP proof для localhost/web авторизации
+# Base32-секрет (например, из 1Password/Google Authenticator)
+DEV_TOTP_SECRET=
+# Период TOTP в секундах (по умолчанию 30)
+DEV_TOTP_PERIOD_SECONDS=30
+# Допустимое окно дрейфа по шагам (по умолчанию 1)
+DEV_TOTP_WINDOW=1
 ```
 
 Запуск:
@@ -154,3 +162,16 @@ ONEC_CONFIGS_FILE=./onec-configs.example.yml npm run dev
 ```
 
 > `ONEC_CONFIGS` (JSON в env) оставлен как fallback для обратной совместимости.
+
+
+### Dev TOTP proof для localhost (код из приложения-аутентификатора)
+
+Для `channel=web` в `NODE_ENV!=production` backend теперь требует `proof.totp_code`.
+Код берётся разработчиком из приложения-аутентификатора на устройстве (Google Authenticator, 1Password, Aegis и т.д.).
+
+1. Задайте `DEV_TOTP_SECRET` в `backend/.env` (Base32).
+2. Добавьте этот же секрет в TOTP-приложение на устройстве разработчика.
+3. Перезапустите backend и frontend.
+4. На `localhost` при авторизации введите телефон и текущий 6-значный код из приложения.
+
+> В production TOTP-проверка для web-канала отключена этим механизмом (проверка выполняется только в non-production).
