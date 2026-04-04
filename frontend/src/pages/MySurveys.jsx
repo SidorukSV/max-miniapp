@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CellHeader, CellList, CellSimple, Container, Flex, Typography } from "@maxhub/max-ui";
-import { ClipboardList } from "lucide-react";
+import { ClipboardList, FileSearch } from "lucide-react";
 import PageLayout from "../components/PageLayout";
 import { getStoredAccessToken, getSurveys } from "../api";
+import EmptyStateCard from "../components/EmptyStateCard.jsx";
 
 function toRuDate(value) {
   const parsed = new Date(value || "");
@@ -80,9 +81,15 @@ export default function MySurveys() {
         ) : null}
 
         {!loading && !error && !hasSurveys ? (
-          <Container className="card">
-            <Typography.Label>У вас пока нет доступных анкет.</Typography.Label>
-          </Container>
+          <EmptyStateCard
+            icon={FileSearch}
+            title="Анкет пока нет"
+            description="Новые анкеты появятся автоматически, когда клиника отправит их вам."
+            primaryAction={{
+              label: "На главную",
+              onClick: () => nav("/"),
+            }}
+          />
         ) : null}
 
         {!loading && !error && hasSurveys ? (

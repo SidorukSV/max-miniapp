@@ -1310,3 +1310,63 @@ body {
 .authErrorLabel {
   color: var(--danger-plain);
 }
+
+/* 11) Empty states */
+.emptyStateCard {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  padding: 20px 16px;
+  border-radius: 20px;
+  border: 1px solid var(--border-soft);
+  background:
+    radial-gradient(circle at top right, rgba(45, 107, 255, 0.14), transparent 48%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, var(--surface) 100%);
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.emptyStateGlow {
+  position: absolute;
+  inset: auto -60px -80px auto;
+  width: 180px;
+  height: 180px;
+  background: rgba(45, 107, 255, 0.18);
+  filter: blur(42px);
+  pointer-events: none;
+}
+
+.emptyStateIconWrap {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(45, 107, 255, 0.12);
+  color: var(--accent);
+  border: 1px solid rgba(45, 107, 255, 0.2);
+}
+
+.emptyStateIcon {
+  stroke-width: 1.75;
+}
+
+.emptyStateActions {
+  width: 100%;
+}
+
+@media (prefers-color-scheme: dark) {
+  .emptyStateCard {
+    background:
+      radial-gradient(circle at top right, rgba(59, 130, 246, 0.22), transparent 52%),
+      linear-gradient(180deg, rgba(31, 36, 48, 0.96) 0%, rgba(15, 17, 21, 0.92) 100%);
+  }
+
+  .emptyStateIconWrap {
+    background: rgba(59, 130, 246, 0.2);
+    border-color: rgba(59, 130, 246, 0.28);
+  }
+}

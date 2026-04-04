@@ -9,6 +9,7 @@ import MySurveys from "./pages/MySurveys.jsx";
 import SurveyDetails from "./pages/SurveyDetails.jsx";
 import PrivacyPolicy from "./pages/PrivacyPolicy.jsx";
 import PersonalDataConsent from "./pages/PersonalDataConsent.jsx";
+import NotFound from "./pages/NotFound.jsx";
 import PayloadSurveyRedirect from "./components/PayloadSurveyRedirect.jsx";
 import { useMaxWebApp } from "./hooks/useMaxWebApp.js";
 import { MaxContext } from "./context/MaxContext.jsx";
@@ -34,6 +35,7 @@ export default function App() {
             <Route path="/surveys/:id" element={<SurveyDetails />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/personal-data-consent" element={<PersonalDataConsent />} />
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
       </MaxContext.Provider>
