@@ -13,6 +13,7 @@ import {
 } from "../store/refreshTokens.js";
 import { verifyMaxInitData } from "../auth/maxInitData.js";
 import { sendApiError } from "../utils/apiErrors.js";
+import { verifyDevTotpCode } from "../auth/devTotp.js";
 
 
 function hashUserAgent(userAgent) {
@@ -249,6 +250,41 @@ export async function authRoutes(app) {
                         err,
                     }, "MAX init data verification failed");
                     return sendApiError(reply, 401, "init_data_invalid");
+                }
+            }
+
+            if (config.nodeEnv !== "production" && authChannel === "web") {
+                const devTotpCode = proof?.totp_code || proof?.totpCode || null;
+
+                if (!config.devTotpSecret) {
+                    req.log.warn({
+                        endpoint: "/api/v1/auth/phone",
+                        cityId,
+                        operation: "verifyDevTotpCode",
+                    }, "DEV_TOTP_SECRET is not configured");
+                    return sendApiError(reply, 503, "dev_totp_not_configured");
+                }
+
+                let isValidDevTotp = false;
+                try {
+                    isValidDevTotp = verifyDevTotpCode({
+                        code: devTotpCode,
+                        secret: config.devTotpSecret,
+                        periodSeconds: config.devTotpPeriodSeconds,
+                        window: config.devTotpWindow,
+                    });
+                } catch (err) {
+                    req.log.warn({
+                        endpoint: "/api/v1/auth/phone",
+                        cityId,
+                        operation: "verifyDevTotpCode",
+                        err,
+                    }, "DEV TOTP proof verification failed");
+                    return sendApiError(reply, 401, "dev_totp_invalid");
+                }
+
+                if (!isValidDevTotp) {
+                    return sendApiError(reply, 401, "dev_totp_invalid");
                 }
             }
             req.session = await updateSession(session.id, {

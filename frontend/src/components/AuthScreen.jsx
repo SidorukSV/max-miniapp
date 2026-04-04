@@ -20,6 +20,7 @@ export default function AuthScreen() {
     const [needCity, setNeedCity] = useState(false);
     const [cities, setCities] = useState([]);
     const [manualPhone, setManualPhone] = useState("");
+    const [manualTotpCode, setManualTotpCode] = useState("");
 
     const isBrowserLocalhost = useMemo(() => {
         const host = window.location.hostname;
@@ -32,10 +33,17 @@ export default function AuthScreen() {
                 throw new Error("manual_phone_required");
             }
 
+            const normalizedTotpCode = manualTotpCode.replace(/\s+/g, "");
+            if (!/^\d{6}$/.test(normalizedTotpCode)) {
+                throw new Error("manual_totp_required");
+            }
+
             return {
                 phone: manualPhone,
                 channel: "web",
-                proof: null,
+                proof: {
+                    totp_code: normalizedTotpCode,
+                },
             };
         }
 
@@ -100,6 +108,15 @@ export default function AuthScreen() {
                     break;
                 case "city_required":
                     setError("Выберите город перед продолжением.");
+                    break;
+                case "manual_totp_required":
+                    setError("Введите 6-значный TOTP код из приложения-аутентификатора.");
+                    break;
+                case "dev_totp_invalid":
+                    setError("Неверный TOTP код для dev-авторизации. Проверьте код в приложении.");
+                    break;
+                case "dev_totp_not_configured":
+                    setError("Backend не настроен: задайте DEV_TOTP_SECRET.");
                     break;
                 case "request_contact_unavailable":
                     setError("Запрос контакта недоступен в данном клиенте");
@@ -166,13 +183,22 @@ export default function AuthScreen() {
                         )}
 
                         {isBrowserLocalhost && (
-                            <Input
-                                mode="secondary"
-                                type="tel"
-                                value={manualPhone}
-                                onChange={(event) => setManualPhone(event.target.value)}
-                                placeholder="Введите номер телефона"
-                            />
+                            <>
+                                <Input
+                                    mode="secondary"
+                                    type="tel"
+                                    value={manualPhone}
+                                    onChange={(event) => setManualPhone(event.target.value)}
+                                    placeholder="Введите номер телефона"
+                                />
+                                <Input
+                                    mode="secondary"
+                                    type="text"
+                                    value={manualTotpCode}
+                                    onChange={(event) => setManualTotpCode(event.target.value)}
+                                    placeholder="Введите TOTP код из приложения"
+                                />
+                            </>
                         )}
 
                         {needCity && (

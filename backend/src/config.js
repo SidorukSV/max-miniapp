@@ -156,6 +156,16 @@ function loadOneCConfigs() {
     return [];
 }
 
+function parseNonNegativeInteger(rawValue, fallback) {
+    const parsed = Number(rawValue);
+
+    if (!Number.isFinite(parsed) || parsed < 0) {
+        return fallback;
+    }
+
+    return Math.floor(parsed);
+}
+
 function parsePositiveInteger(rawValue, fallback) {
     const parsed = Number(rawValue);
 
@@ -200,4 +210,7 @@ export const config = {
     refreshCookieSecure: process.env.REFRESH_COOKIE_SECURE
         ? process.env.REFRESH_COOKIE_SECURE === "true"
         : (process.env.NODE_ENV === "production"),
+    devTotpSecret: process.env.DEV_TOTP_SECRET || "",
+    devTotpPeriodSeconds: parsePositiveInteger(process.env.DEV_TOTP_PERIOD_SECONDS, 30),
+    devTotpWindow: parseNonNegativeInteger(process.env.DEV_TOTP_WINDOW, 1),
 };
