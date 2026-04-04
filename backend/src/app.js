@@ -22,6 +22,8 @@ export async function buildApp() {
 
     const app = Fastify({
         logger: true,
+        trustProxy: true,
+        ...(config.https ? { https: config.https } : {}),
     });
 
     await app.register(cors, {

@@ -191,6 +191,29 @@ function parseCorsAllowedOrigins(rawValue) {
     );
 }
 
+function loadHttpsOptions() {
+    const httpsEnabled = process.env.HTTPS_ENABLED === "true";
+
+    if (!httpsEnabled) {
+        return null;
+    }
+
+    const keyPath = process.env.HTTPS_KEY_PATH || "";
+    const certPath = process.env.HTTPS_CERT_PATH || "";
+
+    if (!keyPath || !certPath) {
+        throw new Error("HTTPS_KEY_PATH and HTTPS_CERT_PATH are required when HTTPS_ENABLED=true");
+    }
+
+    const resolvedKeyPath = path.resolve(process.cwd(), keyPath);
+    const resolvedCertPath = path.resolve(process.cwd(), certPath);
+
+    return {
+        key: fs.readFileSync(resolvedKeyPath),
+        cert: fs.readFileSync(resolvedCertPath),
+    };
+}
+
 export const config = {
     port: Number(process.env.PORT || 3000),
     nodeEnv: process.env.NODE_ENV || "development",
@@ -213,4 +236,5 @@ export const config = {
     devTotpSecret: process.env.DEV_TOTP_SECRET || "",
     devTotpPeriodSeconds: parsePositiveInteger(process.env.DEV_TOTP_PERIOD_SECONDS, 30),
     devTotpWindow: parseNonNegativeInteger(process.env.DEV_TOTP_WINDOW, 1),
+    https: loadHttpsOptions(),
 };

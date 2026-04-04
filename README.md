@@ -175,3 +175,61 @@ ONEC_CONFIGS_FILE=./onec-configs.example.yml npm run dev
 4. На `localhost` при авторизации введите телефон и текущий 6-значный код из приложения.
 
 > В production TOTP-проверка для web-канала отключена этим механизмом (проверка выполняется только в non-production).
+
+## Production Docker + HTTPS (для демо бета-версии)
+
+Добавлена production-схема развёртывания для сценария, где frontend публикуется на уже подготовленном Apache:
+- `backend` (Node.js/Fastify) в Docker;
+- `redis` в Docker;
+- backend поднимается сразу по `https://` (TLS на самом backend);
+- frontend собирается Docker-сборкой в папку `frontend-dist` и затем публикуется через ваш Apache.
+
+### 1) Подготовка backend-конфига
+
+```bash
+cp backend/.env.production.example backend/.env.production
+```
+
+Обязательно задайте:
+- сильный `JWT_SECRET`;
+- `CORS_ALLOWED_ORIGINS` на ваш HTTPS-домен Apache;
+- пути к TLS-сертификатам (`HTTPS_KEY_PATH`, `HTTPS_CERT_PATH`).
+
+### 2) Подготовка TLS-сертификатов для backend
+
+Backend ожидает сертификаты в контейнере по путям из env (по умолчанию `./certs/...`).
+С `docker-compose.prod.yml` локальная папка `deploy/certs` монтируется в `/app/certs`.
+
+Минимальный вариант для демо (self-signed):
+
+```bash
+mkdir -p deploy/certs
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+  -keyout deploy/certs/privkey.pem \
+  -out deploy/certs/fullchain.pem \
+  -subj "/CN=api.localhost"
+```
+
+### 3) Запуск backend + redis
+
+```bash
+docker compose -f docker-compose.prod.yml up -d --build backend redis
+```
+
+После запуска backend будет доступен на `https://<host>:3443`.
+
+### 4) Сборка frontend в Docker (для публикации на Apache)
+
+```bash
+mkdir -p frontend-dist
+docker compose -f docker-compose.prod.yml --profile tools run --rm frontend-build
+```
+
+Готовый production-бандл появится в `frontend-dist/` — эту папку публикуйте вашим Apache как DocumentRoot (или копируйте в нужный virtual host).
+
+### 5) Что проксировать в Apache
+
+На Apache оставьте отдачу статики из `frontend-dist` и проксируйте API-запросы `/api/` на backend:
+- `https://<backend-host>:3443/api/...`
+
+Важно: frontend должен обращаться к API через HTTPS-адрес Apache/домена (например, `https://app.example.com/api/v1`), чтобы не было mixed content.
