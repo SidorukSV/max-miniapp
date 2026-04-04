@@ -1,4 +1,4 @@
-const ALLOWED_PROTOCOLS = new Set(["https:", "http:"]);
+const ALLOWED_PROTOCOLS = new Set(["https:", "http:", "max:"]);
 
 export function getSafeExternalUrl(rawUrl) {
     const value = String(rawUrl || "").trim();
@@ -20,7 +20,7 @@ export function openExternalLink(rawUrl) {
     if (!safeUrl) return false;
 
     const webApp = window.WebApp;
-    if (webApp?.openLink) {
+    if (webApp?.version) {
         webApp.openLink(safeUrl);
         return true;
     }
