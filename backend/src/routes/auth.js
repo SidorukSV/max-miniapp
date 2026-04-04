@@ -14,6 +14,12 @@ import {
 import { verifyMaxInitData } from "../auth/maxInitData.js";
 import { sendApiError } from "../utils/apiErrors.js";
 import { verifyDevTotpCode } from "../auth/devTotp.js";
+import {
+    consumeAuthAttemptBudget,
+    recordAuthAttempt,
+    sendAuthRateLimit,
+    sendUnifiedAuthFailure,
+} from "../middleware/authAttemptGuard.js";
 
 
 export function getAllowedAuthChannels(nodeEnv) {
@@ -287,6 +293,18 @@ function clearRefreshCookie(req, reply) {
 }
 
 export async function authRoutes(app) {
+    const phoneAttemptPolicy = {
+        windowMs: 60_000,
+        limit: 6,
+        lockMs: 30_000,
+        lockAfterFailures: 3,
+    };
+    const selectPatientAttemptPolicy = {
+        windowMs: 60_000,
+        limit: 8,
+        lockMs: 30_000,
+        lockAfterFailures: 3,
+    };
 
     app.post("/api/v1/auth/start", async () => {
         const auth_session_id = await createSession();
@@ -324,6 +342,20 @@ export async function authRoutes(app) {
             const cityId = session.city_id;
             const authChannel = channel || "unknown";
             const maxInitData = init_data || proof?.init_data || proof?.initData || null;
+            const phoneAttemptDimensions = {
+                ip: req.ip,
+                phone: req.phone,
+            };
+
+            const phoneRateLimit = consumeAuthAttemptBudget({
+                scope: "auth_phone",
+                dimensions: phoneAttemptDimensions,
+                policy: phoneAttemptPolicy,
+            });
+
+            if (phoneRateLimit.limited) {
+                return sendAuthRateLimit(reply, phoneRateLimit.retryAfterSeconds);
+            }
 
             const proofValidation = validateAuthChannelProof({
                 nodeEnv: config.nodeEnv,
@@ -345,7 +377,13 @@ export async function authRoutes(app) {
                     channel: authChannel,
                     errorCode: proofValidation.errorCode,
                 }, "Auth channel proof validation failed");
-                return sendApiError(reply, proofValidation.statusCode, proofValidation.errorCode);
+                recordAuthAttempt({
+                    scope: "auth_phone",
+                    dimensions: phoneAttemptDimensions,
+                    success: false,
+                    policy: phoneAttemptPolicy,
+                });
+                return sendUnifiedAuthFailure(reply);
             }
 
             const verifiedMaxInitData = proofValidation.verifiedMaxInitData || null;
@@ -367,6 +405,13 @@ export async function authRoutes(app) {
                 patients: patients_sorted,
             });
 
+            recordAuthAttempt({
+                scope: "auth_phone",
+                dimensions: phoneAttemptDimensions,
+                success: true,
+                policy: phoneAttemptPolicy,
+            });
+
             return {
                 need_select_patient: true,
                 patients: patients_sorted,
@@ -378,20 +423,53 @@ export async function authRoutes(app) {
         async (req, reply) => {
             const { patient_id } = req.body || {};
             const session = req.session;
+            const selectAttemptDimensions = {
+                ip: req.ip,
+                session: session.id,
+            };
+
+            const selectRateLimit = consumeAuthAttemptBudget({
+                scope: "auth_select_patient",
+                dimensions: selectAttemptDimensions,
+                policy: selectPatientAttemptPolicy,
+            });
+
+            if (selectRateLimit.limited) {
+                return sendAuthRateLimit(reply, selectRateLimit.retryAfterSeconds);
+            }
+
             if (!patient_id) {
-                return sendApiError(reply, 400, "patient_id_required");
+                recordAuthAttempt({
+                    scope: "auth_select_patient",
+                    dimensions: selectAttemptDimensions,
+                    success: false,
+                    policy: selectPatientAttemptPolicy,
+                });
+                return sendUnifiedAuthFailure(reply);
             }
 
             const patients = session.patients;
 
             if (!patients.length) {
-                return sendApiError(reply, 400, "patients_not_loaded");
+                recordAuthAttempt({
+                    scope: "auth_select_patient",
+                    dimensions: selectAttemptDimensions,
+                    success: false,
+                    policy: selectPatientAttemptPolicy,
+                });
+                return sendUnifiedAuthFailure(reply);
             }
 
             const patient = patients.find((patient) => patient.id === patient_id);
 
             if (!patient) {
-                return sendApiError(reply, 400, "patient_not_found");
+                recordAuthAttempt({
+                    scope: "auth_select_patient",
+                    dimensions: selectAttemptDimensions,
+                    success: false,
+                    policy: selectPatientAttemptPolicy,
+                });
+                return sendUnifiedAuthFailure(reply);
             }
 
             const cityId = session.city_id;
@@ -433,6 +511,13 @@ export async function authRoutes(app) {
                 cityId,
                 operation: "selectPatient",
             }, "Patient selected for auth session");
+
+            recordAuthAttempt({
+                scope: "auth_select_patient",
+                dimensions: selectAttemptDimensions,
+                success: true,
+                policy: selectPatientAttemptPolicy,
+            });
 
             setRefreshCookie(req, reply, refresh_token, REFRESH_TOKEN_EXPIRES_SECONDS);
 
