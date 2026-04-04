@@ -16,6 +16,97 @@ import { sendApiError } from "../utils/apiErrors.js";
 import { verifyDevTotpCode } from "../auth/devTotp.js";
 
 
+export function getAllowedAuthChannels(nodeEnv) {
+    if (nodeEnv === "production") {
+        return new Set(["max"]);
+    }
+
+    return new Set(["max", "web"]);
+}
+
+export function validateAuthChannelProof({
+    nodeEnv,
+    channel,
+    proof,
+    initData,
+    maxBotToken,
+    maxInitDataMaxAgeSeconds,
+    devTotpSecret,
+    devTotpPeriodSeconds,
+    devTotpWindow,
+}) {
+    const allowedChannels = getAllowedAuthChannels(nodeEnv);
+
+    if (!allowedChannels.has(channel)) {
+        return {
+            ok: false,
+            statusCode: 403,
+            errorCode: "auth_channel_not_allowed",
+        };
+    }
+
+    if (channel === "max") {
+        try {
+            const verifiedMaxInitData = verifyMaxInitData(initData, {
+                botToken: maxBotToken,
+                maxAgeSeconds: maxInitDataMaxAgeSeconds,
+            });
+
+            return {
+                ok: true,
+                verifiedMaxInitData,
+            };
+        } catch {
+            return {
+                ok: false,
+                statusCode: 401,
+                errorCode: "init_data_invalid",
+            };
+        }
+    }
+
+    if (channel === "web") {
+        if (!devTotpSecret) {
+            return {
+                ok: false,
+                statusCode: 503,
+                errorCode: "dev_totp_not_configured",
+            };
+        }
+
+        try {
+            const isValidDevTotp = verifyDevTotpCode({
+                code: proof?.totp_code || proof?.totpCode || null,
+                secret: devTotpSecret,
+                periodSeconds: devTotpPeriodSeconds,
+                window: devTotpWindow,
+            });
+
+            if (!isValidDevTotp) {
+                return {
+                    ok: false,
+                    statusCode: 401,
+                    errorCode: "dev_totp_invalid",
+                };
+            }
+        } catch {
+            return {
+                ok: false,
+                statusCode: 401,
+                errorCode: "dev_totp_invalid",
+            };
+        }
+
+        return { ok: true };
+    }
+
+    return {
+        ok: false,
+        statusCode: 403,
+        errorCode: "auth_channel_not_allowed",
+    };
+}
+
 function hashUserAgent(userAgent) {
     const normalizedUserAgent = (userAgent || "unknown").trim().toLowerCase();
     return crypto.createHash("sha256").update(normalizedUserAgent).digest("hex");
@@ -232,61 +323,32 @@ export async function authRoutes(app) {
             const session = req.session;
             const cityId = session.city_id;
             const authChannel = channel || "unknown";
+            const maxInitData = init_data || proof?.init_data || proof?.initData || null;
 
-            let verifiedMaxInitData = null;
-            if (authChannel === "max") {
-                try {
-                    const maxInitData = init_data || proof?.init_data || proof?.initData || null;
+            const proofValidation = validateAuthChannelProof({
+                nodeEnv: config.nodeEnv,
+                channel: authChannel,
+                proof,
+                initData: maxInitData,
+                maxBotToken: config.maxBotToken,
+                maxInitDataMaxAgeSeconds: config.maxInitDataMaxAgeSeconds,
+                devTotpSecret: config.devTotpSecret,
+                devTotpPeriodSeconds: config.devTotpPeriodSeconds,
+                devTotpWindow: config.devTotpWindow,
+            });
 
-                    verifiedMaxInitData = verifyMaxInitData(maxInitData, {
-                        botToken: config.maxBotToken,
-                        maxAgeSeconds: config.maxInitDataMaxAgeSeconds,
-                    });
-                } catch (err) {
-                    req.log.warn({
-                        endpoint: "/api/v1/auth/phone",
-                        cityId,
-                        operation: "verifyMaxInitData",
-                        err,
-                    }, "MAX init data verification failed");
-                    return sendApiError(reply, 401, "init_data_invalid");
-                }
+            if (!proofValidation.ok) {
+                req.log.warn({
+                    endpoint: "/api/v1/auth/phone",
+                    cityId,
+                    operation: "validateAuthChannelProof",
+                    channel: authChannel,
+                    errorCode: proofValidation.errorCode,
+                }, "Auth channel proof validation failed");
+                return sendApiError(reply, proofValidation.statusCode, proofValidation.errorCode);
             }
 
-            if (config.nodeEnv !== "production" && authChannel === "web") {
-                const devTotpCode = proof?.totp_code || proof?.totpCode || null;
-
-                if (!config.devTotpSecret) {
-                    req.log.warn({
-                        endpoint: "/api/v1/auth/phone",
-                        cityId,
-                        operation: "verifyDevTotpCode",
-                    }, "DEV_TOTP_SECRET is not configured");
-                    return sendApiError(reply, 503, "dev_totp_not_configured");
-                }
-
-                let isValidDevTotp = false;
-                try {
-                    isValidDevTotp = verifyDevTotpCode({
-                        code: devTotpCode,
-                        secret: config.devTotpSecret,
-                        periodSeconds: config.devTotpPeriodSeconds,
-                        window: config.devTotpWindow,
-                    });
-                } catch (err) {
-                    req.log.warn({
-                        endpoint: "/api/v1/auth/phone",
-                        cityId,
-                        operation: "verifyDevTotpCode",
-                        err,
-                    }, "DEV TOTP proof verification failed");
-                    return sendApiError(reply, 401, "dev_totp_invalid");
-                }
-
-                if (!isValidDevTotp) {
-                    return sendApiError(reply, 401, "dev_totp_invalid");
-                }
-            }
+            const verifiedMaxInitData = proofValidation.verifiedMaxInitData || null;
             req.session = await updateSession(session.id, {
                 phone: req.phone,
                 channel: authChannel,
