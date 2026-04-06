@@ -41,6 +41,46 @@ brew services start redis
 redis-cli ping
 ```
 
+#### Вариант 4: Windows Server (без Docker и без WSL)
+
+На Windows нет официального актуального Redis от команды Redis, поэтому используйте один из практичных вариантов ниже.
+
+##### 4.1 Бесплатно: Garnet (Redis-совместимый OSS-сервер)
+
+**Garnet** — open-source сервер от Microsoft Research с Redis-совместимым протоколом.
+
+1. Возьмите сборку/релиз Garnet: https://github.com/microsoft/garnet
+2. Запустите сервис/процесс Garnet на нужном порту (обычно `6379`).
+3. Проверьте подключение клиентом Redis:
+
+```powershell
+redis-cli -h 127.0.0.1 -p 6379 ping
+# ожидаемый ответ: PONG
+```
+
+##### 4.2 Коммерческий вариант: Memurai
+
+**Memurai** тоже Redis-совместим и хорошо интегрируется в Windows Service-модель.
+
+1. Скачайте установщик: https://www.memurai.com/get-memurai
+2. Установите как Windows Service.
+3. Проверьте сервис:
+
+```powershell
+Get-Service *memurai*
+```
+
+##### 4.3 Если нельзя ставить Redis-совместимый сервер на Windows-хост
+
+Подключите backend к внешнему Redis (например, отдельный Linux-сервер/managed Redis) через `REDIS_URL`.
+
+```env
+REDIS_URL=redis://<host>:6379
+```
+
+> PostgreSQL не является drop-in заменой Redis в этом проекте: backend использует Redis как in-memory key-value хранилище с TTL для `auth sessions` и `refresh tokens`.
+
+
 ### Запуск backend
 
 ```bash
