@@ -11,6 +11,8 @@ import {
 } from "../api.js";
 import "../App.css";
 import HistorySkeleton from "../components/history/HistorySkeleton.jsx";
+import EmptyStateCard from "../components/EmptyStateCard.jsx";
+import { FileClock } from "lucide-react";
 import { openExternalLink } from "../utils/safeUrl.js";
 
 function parseMedicalDate(value) {
@@ -222,7 +224,15 @@ export default function History() {
                 {loading ? <HistorySkeleton /> : null}
                 {!loading && error ? <Typography.Label className="authErrorLabel">{error}</Typography.Label> : null}
                 {!loading && !error && !items.length ? (
-                    <Typography.Label>История приемов пока пуста</Typography.Label>
+                    <EmptyStateCard
+                        icon={FileClock}
+                        title="История приёмов пуста"
+                        description="Когда вы посетите клинику, все приёмы с датой и услугами появятся в этом разделе."
+                        primaryAction={{
+                            label: "Записаться на приём",
+                            onClick: () => nav("/book"),
+                        }}
+                    />
                 ) : null}
 
                 {grouped.map(([month, monthItems]) => (

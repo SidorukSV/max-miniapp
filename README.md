@@ -41,6 +41,46 @@ brew services start redis
 redis-cli ping
 ```
 
+#### Вариант 4: Windows Server (без Docker и без WSL)
+
+На Windows нет официального актуального Redis от команды Redis, поэтому используйте один из практичных вариантов ниже.
+
+##### 4.1 Бесплатно: Garnet (Redis-совместимый OSS-сервер)
+
+**Garnet** — open-source сервер от Microsoft Research с Redis-совместимым протоколом.
+
+1. Возьмите сборку/релиз Garnet: https://github.com/microsoft/garnet
+2. Запустите сервис/процесс Garnet на нужном порту (обычно `6379`).
+3. Проверьте подключение клиентом Redis:
+
+```powershell
+redis-cli -h 127.0.0.1 -p 6379 ping
+# ожидаемый ответ: PONG
+```
+
+##### 4.2 Коммерческий вариант: Memurai
+
+**Memurai** тоже Redis-совместим и хорошо интегрируется в Windows Service-модель.
+
+1. Скачайте установщик: https://www.memurai.com/get-memurai
+2. Установите как Windows Service.
+3. Проверьте сервис:
+
+```powershell
+Get-Service *memurai*
+```
+
+##### 4.3 Если нельзя ставить Redis-совместимый сервер на Windows-хост
+
+Подключите backend к внешнему Redis (например, отдельный Linux-сервер/managed Redis) через `REDIS_URL`.
+
+```env
+REDIS_URL=redis://<host>:6379
+```
+
+> PostgreSQL не является drop-in заменой Redis в этом проекте: backend использует Redis как in-memory key-value хранилище с TTL для `auth sessions` и `refresh tokens`.
+
+
 ### Запуск backend
 
 ```bash
@@ -175,3 +215,60 @@ ONEC_CONFIGS_FILE=./onec-configs.example.yml npm run dev
 4. На `localhost` при авторизации введите телефон и текущий 6-значный код из приложения.
 
 > В production TOTP-проверка для web-канала отключена этим механизмом (проверка выполняется только в non-production).
+
+## Production Docker + HTTPS (для демо бета-версии)
+
+Добавлена готовая production-схема развёртывания:
+- `backend` (Node.js/Fastify);
+- `redis`;
+- `gateway` (Nginx):
+  - терминирует TLS (`https://`),
+  - проксирует backend как `https://<домен>/api/...`,
+  - раздаёт production-сборку frontend.
+
+### 1) Подготовка переменных backend
+
+```bash
+cp backend/.env.production.example backend/.env.production
+```
+
+Обязательно задайте сильный `JWT_SECRET` и корректный `CORS_ALLOWED_ORIGINS` (ваш HTTPS-домен).
+
+### 2) Подготовка TLS-сертификатов
+
+Nginx ожидает файлы:
+- `deploy/certs/fullchain.pem`
+- `deploy/certs/privkey.pem`
+
+Для локальной демо-проверки можно сгенерировать self-signed сертификат:
+
+```bash
+mkdir -p deploy/certs
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+  -keyout deploy/certs/privkey.pem \
+  -out deploy/certs/fullchain.pem \
+  -subj "/CN=localhost"
+```
+
+> Для публичной демонстрации используйте реальный сертификат (например, Let's Encrypt).
+
+### 3) Сборка и запуск
+
+```bash
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+### 4) Проверка
+
+```bash
+curl -k https://localhost/
+curl -k https://localhost/api/v1/auth/start -X POST
+```
+
+`-k` нужен только для self-signed сертификата.
+
+### Что это даёт
+
+- Frontend работает в production-режиме внутри Docker.
+- Backend доступен только через HTTPS-входную точку Nginx (`/api`).
+- Можно разворачивать на сервере одной командой `docker compose`.

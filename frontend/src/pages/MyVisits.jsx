@@ -6,6 +6,8 @@ import QuestionDialog from "../components/QuestionDialog";
 import { getAppointments, getStoredAccessToken, updateAppointment } from "../api";
 import "../App.css";
 import MyVisitsSkeleton from "../components/my-visits/MyVisitsSkeleton.jsx";
+import EmptyStateCard from "../components/EmptyStateCard.jsx";
+import { CalendarClock } from "lucide-react";
 
 function normalizeAppointment(item, index) {
     const sourceDate = item?.datetimeBegin || item?.appointment_date || "";
@@ -206,12 +208,15 @@ export default function MyVisits() {
                 ) : null}
 
                 {!loading && !error && !hasVisits ? (
-                    <Container className="card">
-                        <Typography.Label>У вас нет предстоящих приёмов</Typography.Label>
-                        <Button style={{ marginTop: 12 }} onClick={() => nav("/book")}>
-                            Записаться на приём
-                        </Button>
-                    </Container>
+                    <EmptyStateCard
+                        icon={CalendarClock}
+                        title="Пока нет записей на приём"
+                        description="Запишитесь на удобное время — запись появится здесь сразу после подтверждения."
+                        primaryAction={{
+                            label: "Записаться на приём",
+                            onClick: () => nav("/book"),
+                        }}
+                    />
                 ) : null}
 
                 {!loading && !error && hasVisits ? (

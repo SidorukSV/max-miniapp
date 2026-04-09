@@ -26,3 +26,4 @@ dist-ssr
 onec-configs.yml
 *.env
 backend/.env
+deploy/nginx/*.pem

@@ -4,10 +4,12 @@ import { Container, Flex, Typography, CellHeader } from "@maxhub/max-ui";
 import { format, isValid, parse, parseISO } from "date-fns";
 import { ru } from "date-fns/locale";
 import PageLayout from "../components/PageLayout";
+import EmptyStateCard from "../components/EmptyStateCard.jsx";
 import { useAuth } from "../context/AuthContext";
 import { getBonusTransactions, getStoredAccessToken } from "../api";
 import "../App.css";
 import BonusesSkeleton from "../components/bonuses/BonusesSkeleton.jsx";
+import { WalletCards } from "lucide-react";
 
 function formatTransactionDate(dateISO) {
   if (!dateISO) {
@@ -69,7 +71,6 @@ export default function Bonuses() {
     const map = new Map();
 
     for (const item of sorted) {
-      console.log(item);
       const key = formatTransactionDate(item?.date);
       if (!map.has(key)) {
         map.set(key, []);
@@ -106,7 +107,11 @@ export default function Bonuses() {
                 {error ? <Typography.Label>{error}</Typography.Label> : null}
 
                 {!error && items.length === 0 ? (
-                  <Typography.Label>Операций пока нет</Typography.Label>
+                  <EmptyStateCard
+                    icon={WalletCards}
+                    title="История операций пуста"
+                    description="Когда начисления или списания появятся, вы увидите их здесь с деталями."
+                  />
                 ) : null}
 
                 {!error && items.length > 0
