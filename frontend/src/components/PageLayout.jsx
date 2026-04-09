@@ -6,7 +6,7 @@ import "../App.css";
 export default function PageLayout({
     children,
     headerTitle = "",
-    logoSrc = `${import.meta.env.BASE_URL}48bda2b4-2af3-46e3-8dd6-f3f99572036d.png`,
+    logoSrc = `${import.meta.env.BASE_URL}${import.meta.env.LOGO_PATH}`,
     showBottom = true,
     bottomButtonText,
     onBottomButtonClick,
