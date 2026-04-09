@@ -360,6 +360,7 @@ export default function useBookVisitFlow() {
             branchId,
             date,
             datetimeBegin: timeISO,
+            cabinetId: selectedSlot?.cabinetId,
         };
 
         try {
