@@ -1,5 +1,5 @@
 import { authMiddleware } from "../middleware/auth.js";
-import { getBonusTransactions, getPatientById } from "../services/onecRouter.js";
+import { getBonusTransactions, getPatientById, getPatientsByPhone } from "../services/onecRouter.js";
 import { sendApiError } from "../utils/apiErrors.js";
 
 export async function meRoutes(app) {
@@ -8,12 +8,22 @@ export async function meRoutes(app) {
         async (req, reply) => {
             const { patient_id, city_id, phone, channel } = req.user;
             try {
-                const patient = await getPatientById({ cityId: city_id, patient_id });
+                const [patient, patientsByPhone] = await Promise.all([
+                    getPatientById({ cityId: city_id, patient_id }),
+                    getPatientsByPhone({ cityId: city_id, phone }).catch(() => []),
+                ]);
+
+                const patientsByPhoneSorted = Array.isArray(patientsByPhone)
+                    ? [...patientsByPhone].sort((a, b) => String(a?.fullName || "").toUpperCase()
+                        .localeCompare(String(b?.fullName || "").toUpperCase()))
+                    : [];
+
                 return {
                     ...patient,
                     city_id: city_id,
                     phone,
                     channel,
+                    patients_by_phone: patientsByPhoneSorted,
                 };
             } catch (error) {
                 req.log.error({

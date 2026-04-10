@@ -70,6 +70,16 @@ export async function authSelectPatient({ auth_session_id, patient_id }) {
     });
 }
 
+export async function authSwitchPatient({ access_token, patient_id }) {
+    return apiFetch("/auth/switch-patient", {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${access_token}`,
+        },
+        body: JSON.stringify({ patient_id }),
+    });
+}
+
 export async function authRefresh() {
     const refreshToken = await loadRefreshToken();
 

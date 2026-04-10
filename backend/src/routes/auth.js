@@ -20,6 +20,7 @@ import {
     sendAuthRateLimit,
     sendUnifiedAuthFailure,
 } from "../middleware/authAttemptGuard.js";
+import { authMiddleware } from "../middleware/auth.js";
 
 
 export function getAllowedAuthChannels(nodeEnv) {
@@ -528,6 +529,64 @@ export async function authRoutes(app) {
                 patient,
             };
 
+        });
+
+    app.post("/api/v1/auth/switch-patient",
+        { preHandler: [authMiddleware] },
+        async (req, reply) => {
+            const { patient_id } = req.body || {};
+            const { city_id, phone, channel } = req.user;
+
+            if (!patient_id) {
+                return sendApiError(reply, 400, "patient_id_required");
+            }
+
+            let patients = [];
+            try {
+                patients = await getPatientsByPhone({
+                    cityId: city_id,
+                    phone,
+                });
+            } catch (error) {
+                req.log.error({
+                    endpoint: "/api/v1/auth/switch-patient",
+                    cityId: city_id,
+                    operation: "getPatientsByPhone",
+                    err: error,
+                }, "Failed to load patients by phone for switching");
+                return sendApiError(reply, 502, "patients_unavailable");
+            }
+
+            const patient = patients.find((candidate) => candidate.id === patient_id);
+
+            if (!patient) {
+                return sendApiError(reply, 404, "patient_not_found");
+            }
+
+            const tokenPayload = {
+                patient_id: patient.id,
+                city_id,
+                phone,
+                channel: channel || "unknown",
+            };
+
+            const access_token = signAccessToken(tokenPayload);
+            const refresh_token = signRefreshToken(tokenPayload);
+            const decodedRefreshToken = verifyToken(refresh_token);
+            const refreshContext = buildRefreshTokenContext(req, tokenPayload.channel);
+            await saveRefreshToken(decodedRefreshToken.jti, {
+                ...tokenPayload,
+                ...refreshContext,
+                expiresAt: decodedRefreshToken.exp * 1000,
+            });
+            setRefreshCookie(req, reply, refresh_token, REFRESH_TOKEN_EXPIRES_SECONDS);
+
+            return {
+                access_token,
+                expires_in: ACCESS_TOKEN_EXPIRES_SECONDS,
+                ...(shouldExposeRefreshToken(tokenPayload.channel) ? { refresh_token } : {}),
+                patient,
+            };
         });
 
     app.post("/api/v1/auth/refresh", async (req, reply) => {

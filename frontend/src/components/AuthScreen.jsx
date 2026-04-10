@@ -98,7 +98,12 @@ export default function AuthScreen() {
                 init_data: initData,
             });
 
-            setPatients(phoneResult.patients || []);
+            const matchedPatients = phoneResult.patients || [];
+            setPatients(matchedPatients);
+
+            if (matchedPatients.length === 1) {
+                await handleSelectPatient(matchedPatients[0].id, start.auth_session_id);
+            }
         } catch (err) {
             console.error(err);
 
@@ -132,15 +137,15 @@ export default function AuthScreen() {
         }
     }
 
-    async function handleSelectPatient(patientId) {
-        if (!authSessionId) return;
+    async function handleSelectPatient(patientId, sessionId = authSessionId) {
+        if (!sessionId) return;
 
         setBusy(true);
         setError("");
 
         try {
             const result = await authSelectPatient({
-                auth_session_id: authSessionId,
+                auth_session_id: sessionId,
                 patient_id: patientId,
             });
 
