@@ -55,7 +55,7 @@ function VisitCard({ v, pendingId, onConfirm, onCancel, onReschedule }) {
                         </span>
                         {isConfirmedByPatient ? (
                             <span className="statusApprovedMark" aria-label="Подтверждено пациентом">
-                                ✔️
+                                <span className="statusApprovedMarkIcon" aria-hidden="true">✓</span>
                             </span>
                         ) : null}
                     </Flex>
