@@ -213,6 +213,17 @@ body {
   /* text-overflow: ellipsis; */
 }
 
+.iconButton {
+  border: none;
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 2px;
+}
+
 .roleLine {
   display: block;
   margin-top: 4px;

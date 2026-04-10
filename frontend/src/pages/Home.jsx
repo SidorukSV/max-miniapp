@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Container, Flex, Avatar, Typography, CellList, CellSimple, EllipsisText, Counter, Button } from "@maxhub/max-ui";
-import { Calendar, LibraryBig, Gift, LogOut, ClipboardList } from "lucide-react";
+import { Calendar, LibraryBig, Gift, LogOut, ClipboardList, ChevronDown, ChevronUp } from "lucide-react";
 import PageLayout from "../components/PageLayout";
 import "../App.css";
 import { useAuth } from "../context/AuthContext.jsx";
@@ -15,10 +15,14 @@ import {
     getCatalogSpecializationsBySchedule,
     getCatalogsCities,
     getSurveys,
+    authSwitchPatient,
+    storeTokens,
+    getMe,
 } from "../api.js";
 
 import { getFallbackGradientByInitials } from "../modules/avatarGradient.js";
 import { openExternalLink } from "../utils/safeUrl.js";
+import { dateISOFormat } from "../modules/DateFormat.js";
 
 function formatPhoneToInternational(phone) {
     if (!phone) return "";
@@ -58,11 +62,15 @@ export default function Home() {
     const [onlineCount, setOnlineCount] = useState(0);
     const [offlineSpecs, setOfflineSpecs] = useState([]);
     const [newSurveysCount, setNewSurveysCount] = useState(0);
+    const [isPatientsMenuOpen, setIsPatientsMenuOpen] = useState(false);
+    const [patientSwitchBusy, setPatientSwitchBusy] = useState(false);
     const username = me?.fullName || "Иван Иванов";
     const phone = formatPhoneToInternational(me?.phone || "79123456789");
     const parts = username.trim().split(/\s+/, 2);
     const initials = parts.map(p => p[0]?.toUpperCase()).join("");
     const bonus = me?.bonus || 0;
+    const patientsByPhone = Array.isArray(me?.patients_by_phone) ? me.patients_by_phone : [];
+    const hasSeveralPatients = patientsByPhone.length > 1;
 
     useEffect(() => {
         async function loadSurveyCounters() {
@@ -155,6 +163,30 @@ export default function Home() {
         }
     }
 
+    async function handleSwitchPatient(patientId) {
+        const accessToken = getStoredAccessToken();
+        if (!accessToken || !patientId || patientId === me?.patient_id) {
+            setIsPatientsMenuOpen(false);
+            return;
+        }
+
+        setPatientSwitchBusy(true);
+        try {
+            const switched = await authSwitchPatient({
+                access_token: accessToken,
+                patient_id: patientId,
+            });
+            storeTokens(switched);
+            const meData = await getMe(switched.access_token);
+            setMe(meData);
+            setIsPatientsMenuOpen(false);
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setPatientSwitchBusy(false);
+        }
+    }
+
     if (loading) {
         return (
             <PageLayout showBottomButton={false}>
@@ -183,11 +215,24 @@ export default function Home() {
                             </Avatar.Container>
 
                             <div className="nameBlock">
-                                <Typography.Title level={3} className="nameLine">
-                                    <EllipsisText maxLines={3}>
-                                        {username}
-                                    </EllipsisText>
-                                </Typography.Title>
+                                <Flex align="center" gap={6}>
+                                    <Typography.Title level={3} className="nameLine">
+                                        <EllipsisText maxLines={3}>
+                                            {username}
+                                        </EllipsisText>
+                                    </Typography.Title>
+                                    {hasSeveralPatients && (
+                                        <button
+                                            type="button"
+                                            className="iconButton"
+                                            aria-label="Выбрать другого пациента"
+                                            onClick={() => setIsPatientsMenuOpen((prev) => !prev)}
+                                            disabled={patientSwitchBusy}
+                                        >
+                                            {isPatientsMenuOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                                        </button>
+                                    )}
+                                </Flex>
 
                                 {/* "Пациент" отдельно под ФИО */}
                                 <Typography.Label className="roleLine">
@@ -217,6 +262,23 @@ export default function Home() {
 
                     </Flex>
                 </Container>
+
+                {hasSeveralPatients && isPatientsMenuOpen && (
+                    <Container className="card card--tight">
+                        <CellList>
+                            {patientsByPhone.map((patient) => (
+                                <CellSimple
+                                    key={patient.id}
+                                    title={patient.fullName}
+                                    subtitle={dateISOFormat(patient.birthDate, "dd.MM.yyyy")}
+                                    showChevron={patient.id !== me?.patient_id}
+                                    selected={patient.id === me?.patient_id}
+                                    onClick={() => handleSwitchPatient(patient.id)}
+                                />
+                            ))}
+                        </CellList>
+                    </Container>
+                )}
 
                 {/* Меню */}
                 <Container className="card menuCard">
