@@ -31,11 +31,14 @@ function normalizeAppointment(item, index) {
         place: item?.cabinetTitle || "Кабинет не указан",
         clinic: item?.branchTitle || "Филиал не указан",
         status: item?.conditionTitle || "Статус не указан",
+        isApproved: item?.isApproved,
     };
 }
 
 function VisitCard({ v, pendingId, onConfirm, onCancel, onReschedule }) {
-    const isConfirmed = v.status === "Подтверждена";
+    const isConfirmedByPatient = v.isApproved === true;
+    const canBeConfirmedByPatient = v.isApproved !== undefined;
+    const shouldShowConfirmButton = canBeConfirmedByPatient && !isConfirmedByPatient;
     const isBusy = pendingId === v.id;
 
     return (
@@ -46,9 +49,16 @@ function VisitCard({ v, pendingId, onConfirm, onCancel, onReschedule }) {
                         {v.date} • {v.time}
                     </Typography.Title>
 
-                    <span className={`statusPill ${isConfirmed ? "status--ok" : ""}`}>
-                        {v.status}
-                    </span>
+                    <Flex align="center" gap={6}>
+                        <span className={`statusPill ${isConfirmedByPatient ? "status--ok" : ""}`}>
+                            {v.status}
+                        </span>
+                        {isConfirmedByPatient ? (
+                            <span className="statusApprovedMark" aria-label="Подтверждено пациентом">
+                                ✔️
+                            </span>
+                        ) : null}
+                    </Flex>
                 </Flex>
 
                 <div className="visitLine">
@@ -66,7 +76,7 @@ function VisitCard({ v, pendingId, onConfirm, onCancel, onReschedule }) {
                 </div>
 
                 <Flex gap={8} className="visitActions">
-                    {!isConfirmed && (
+                    {shouldShowConfirmButton && (
                         <Button onClick={() => onConfirm(v.id)} disabled={isBusy}>
                             Подтвердить
                         </Button>
@@ -143,7 +153,9 @@ export default function MyVisits() {
             });
 
             setVisits((prev) => prev.map((visit) => (
-                visit.id === id ? { ...visit, status: "Подтверждена" } : visit
+                visit.id === id
+                    ? { ...visit, isApproved: true, status: visit.status || "Подтверждена" }
+                    : visit
             )));
         } catch {
             setError("Не удалось подтвердить запись");
