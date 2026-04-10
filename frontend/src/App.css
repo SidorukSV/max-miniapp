@@ -558,6 +558,11 @@ body {
   color: var(--ok-text);
 }
 
+.statusApprovedMark {
+  font-size: 14px;
+  line-height: 1;
+}
+
 .surveyControl {
   width: 100%;
   min-height: 46px;
