@@ -234,7 +234,7 @@ export default function Home() {
                     <Flex align="center" justify="space-between" gap={12}>
                         <Flex align="center" gap={12} style={{ minWidth: 0 }}>
                             <Avatar.Container style={{ minWidth: 60 }} size={60} form="circle">
-                                <Avatar.Image fallback={initials} fallbackGradient={getFallbackGradientByInitials(initials)} />
+                                <Avatar.Image fallback={initials} fallbackGradient={getFallbackGradientByInitials(initials, `${phone}:${me?.patient_id || ""}`)} />
                             </Avatar.Container>
 
                             <div className="nameBlock">
