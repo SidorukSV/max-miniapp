@@ -197,13 +197,32 @@ function parseResp(buffer) {
 
 let redisClient;
 
+function buildRedisUnavailableError(err) {
+    const details = err?.code ? `${err.message} (${err.code})` : err?.message || "unknown error";
+    const redisUrl = config.redisUrl;
+    const timeoutMs = config.redisConnectTimeoutMs;
+
+    return new Error(
+        [
+            `Cannot connect to Redis at ${redisUrl}.`,
+            "Backend requires Redis to store auth sessions and refresh tokens.",
+            `Original error: ${details}.`,
+            `Check that Redis is running and reachable, then restart backend (connect timeout: ${timeoutMs}ms).`
+        ].join(" ")
+    );
+}
+
 export async function getRedisClient() {
     if (!redisClient) {
         redisClient = new RedisClient(config.redisUrl, config.redisConnectTimeoutMs);
     }
 
     if (!redisClient.isOpen) {
-        await redisClient.connect();
+        try {
+            await redisClient.connect();
+        } catch (err) {
+            throw buildRedisUnavailableError(err);
+        }
     }
 
     return redisClient;
