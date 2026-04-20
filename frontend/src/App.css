@@ -1400,3 +1400,25 @@ body {
     border-color: rgba(59, 130, 246, 0.28);
   }
 }
+
+.categoryItemCard {
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  padding: 10px;
+  background: transparent;
+}
+
+.categoryGroupCard {
+  border: 1px solid var(--border-soft);
+  border-radius: 14px;
+  padding: 10px;
+}
+
+.categorySearchInput {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: var(--surface);
+  color: var(--text);
+}

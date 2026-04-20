@@ -1,5 +1,7 @@
 import { authMiddleware } from "../middleware/auth.js";
 import {
+    getCatalogCategoryById,
+    getCatalogCategories,
     getCatalogEmployeesBySpec,
     getCatalogSpecializationsBySchedule,
     getCatalogSurveyTemplateById,
@@ -14,6 +16,22 @@ export async function catalogsRoutes(app) {
                 { id: "RU-CXT", name: "Чита", appointment_phone: "+73022222222" },
                 { id: "RU-KJA", name: "Красноярск", appointment_phone: "+73912222222" },
             ];
+        });
+
+
+    app.get("/api/v1/catalogs/categories",
+        { preHandler: [authMiddleware] },
+        async (req) => {
+            const { city_id } = req.user;
+            const { categoryId } = req.query || {};
+
+            if (categoryId) {
+                const item = await getCatalogCategoryById({ cityId: city_id, categoryId });
+                return { item };
+            }
+
+            const items = await getCatalogCategories({ cityId: city_id });
+            return { items };
         });
 
     app.get("/api/v1/catalogs/specializations",

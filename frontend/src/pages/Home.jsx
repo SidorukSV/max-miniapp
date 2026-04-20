@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
-import { Container, Flex, Avatar, Typography, CellList, CellSimple, EllipsisText, Counter, Button } from "@maxhub/max-ui";
-import { Calendar, LibraryBig, Gift, LogOut, ClipboardList, ChevronDown, ChevronUp } from "lucide-react";
+import { Container, Flex, Avatar, Typography, CellList, CellSimple, EllipsisText, Counter } from "@maxhub/max-ui";
+import { Calendar, LibraryBig, Gift, LogOut, ClipboardList, ChevronDown, ChevronUp, LayoutGrid } from "lucide-react";
 import PageLayout from "../components/PageLayout";
 import "../App.css";
 import { useAuth } from "../context/AuthContext.jsx";
@@ -18,6 +18,7 @@ import {
     authSwitchPatient,
     storeTokens,
     getMe,
+    getCatalogCategories,
 } from "../api.js";
 
 import { getFallbackGradientByInitials } from "../modules/avatarGradient.js";
@@ -64,10 +65,12 @@ export default function Home() {
     const [newSurveysCount, setNewSurveysCount] = useState(0);
     const [isPatientsMenuOpen, setIsPatientsMenuOpen] = useState(false);
     const [patientSwitchBusy, setPatientSwitchBusy] = useState(false);
+    const [categories, setCategories] = useState([]);
+    const [categoriesLoading, setCategoriesLoading] = useState(false);
     const username = me?.fullName || "Иван Иванов";
     const phone = formatPhoneToInternational(me?.phone || "79123456789");
     const parts = username.trim().split(/\s+/, 2);
-    const initials = parts.map(p => p[0]?.toUpperCase()).join("");
+    const initials = parts.map((p) => p[0]?.toUpperCase()).join("");
     const bonus = me?.bonus || 0;
     const patientsByPhone = Array.isArray(me?.patients_by_phone) ? me.patients_by_phone : [];
     const hasSeveralPatients = patientsByPhone.length > 1;
@@ -92,6 +95,27 @@ export default function Home() {
 
         loadSurveyCounters();
     }, [me?.patient_id]);
+
+    useEffect(() => {
+        async function loadCategories() {
+            setCategoriesLoading(true);
+            try {
+                const accessToken = getStoredAccessToken();
+                if (!accessToken) {
+                    setCategories([]);
+                    return;
+                }
+                const response = await getCatalogCategories(accessToken);
+                setCategories(Array.isArray(response?.items) ? response.items : []);
+            } catch {
+                setCategories([]);
+            } finally {
+                setCategoriesLoading(false);
+            }
+        }
+
+        loadCategories();
+    }, []);
 
     async function handleLogout() {
         setBusy(true);
@@ -206,7 +230,6 @@ export default function Home() {
             onBottomButtonClick={handleBookClick}
         >
             <Flex direction="column" gap={10}>
-                {/* Карточка пациента */}
                 <Container className="card card--tight">
                     <Flex align="center" justify="space-between" gap={12}>
                         <Flex align="center" gap={12} style={{ minWidth: 0 }}>
@@ -234,7 +257,6 @@ export default function Home() {
                                     )}
                                 </Flex>
 
-                                {/* "Пациент" отдельно под ФИО */}
                                 <Typography.Label className="roleLine">
                                     {phone}
                                 </Typography.Label>
@@ -242,8 +264,6 @@ export default function Home() {
                         </Flex>
 
                         <Flex align="center" gap={10} className="actions">
-
-                            {/* Бонусы */}
                             <button
                                 type="button"
                                 className="bonusChip bonusChip--clickable"
@@ -257,9 +277,7 @@ export default function Home() {
                                     {bonus} ₽
                                 </Typography.Title>
                             </button>
-
                         </Flex>
-
                     </Flex>
                 </Container>
 
@@ -280,7 +298,29 @@ export default function Home() {
                     </Container>
                 )}
 
-                {/* Меню */}
+                <Container className="card menuCard">
+                    <CellList>
+                        <CellSimple
+                            before={<LayoutGrid size={24} />}
+                            showChevron
+                            onClick={() => categories[0] && nav(`/categories/${categories[0].id}`)}
+                            subtitle={categoriesLoading ? "Загружаем список категорий..." : "Новая навигация по категориям"}
+                        >
+                            Категории записи
+                        </CellSimple>
+                        {categories.map((category) => (
+                            <CellSimple
+                                key={category.id}
+                                showChevron
+                                onClick={() => nav(`/categories/${category.id}`)}
+                                subtitle={category.appointmentMode}
+                            >
+                                {category.title}
+                            </CellSimple>
+                        ))}
+                    </CellList>
+                </Container>
+
                 <Container className="card menuCard">
                     <CellList>
                         <CellSimple
@@ -332,6 +372,6 @@ export default function Home() {
                 onPhoneCall={openPhone}
                 onOpenChat={openChat}
             />
-        </PageLayout >
+        </PageLayout>
     );
 }
