@@ -349,6 +349,42 @@ export async function getAppointmentsSchedule({ cityId, specializationId }) {
     return data;
 }
 
+
+export async function getCatalogCategories({ cityId }) {
+    const oneCConfig = getOneCConfig(cityId);
+    const data = await onecFetch(oneCConfig.url.concat("/catalogs/categories"), {
+        method: "GET",
+        headers: {
+            Authorization: `Basic ${oneCConfig.basicAuth}`,
+        },
+    });
+
+    if (!Array.isArray(data)) {
+        return [];
+    }
+
+    return data;
+}
+
+export async function getCatalogCategoryById({ cityId, categoryId }) {
+    const oneCConfig = getOneCConfig(cityId);
+    const params = new URLSearchParams({
+        categoryId,
+    });
+    const data = await onecFetch(oneCConfig.url.concat(`/catalogs/categories?${params}`), {
+        method: "GET",
+        headers: {
+            Authorization: `Basic ${oneCConfig.basicAuth}`,
+        },
+    });
+
+    if (Array.isArray(data)) {
+        return data[0] || null;
+    }
+
+    return data && typeof data === "object" ? data : null;
+}
+
 export async function getCatalogSpecializationsBySchedule({ cityId }) {
     const oneCConfig = getOneCConfig(cityId);
     const data = await onecFetch(oneCConfig.url.concat("/catalogs/specializations?search_type=BySchedule"), {

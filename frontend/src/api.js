@@ -253,6 +253,27 @@ export async function getCatalogsCities() {
     return apiFetch("/catalogs/cities");
 }
 
+
+export async function getCatalogCategories(access_token) {
+    return apiFetch("/catalogs/categories", {
+        headers: {
+            Authorization: `Bearer ${access_token}`,
+        },
+    });
+}
+
+export async function getCatalogCategoryById(access_token, categoryId) {
+    const params = new URLSearchParams({
+        categoryId,
+    });
+
+    return apiFetch(`/catalogs/categories?${params}`, {
+        headers: {
+            Authorization: `Bearer ${access_token}`,
+        },
+    });
+}
+
 export async function sendLogs(log) {
     return apiFetch("/send-log", {
         method: "POST",

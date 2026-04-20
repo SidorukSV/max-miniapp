@@ -10,6 +10,7 @@ import SurveyDetails from "./pages/SurveyDetails.jsx";
 import PrivacyPolicy from "./pages/PrivacyPolicy.jsx";
 import PersonalDataConsent from "./pages/PersonalDataConsent.jsx";
 import NotFound from "./pages/NotFound.jsx";
+import CategoryDetails from "./pages/CategoryDetails.jsx";
 import PayloadSurveyRedirect from "./components/PayloadSurveyRedirect.jsx";
 import { useMaxWebApp } from "./hooks/useMaxWebApp.js";
 import { MaxContext } from "./context/MaxContext.jsx";
@@ -27,6 +28,7 @@ export default function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/book" element={<BookVisit />} />
+            <Route path="/categories/:id" element={<CategoryDetails />} />
             <Route path="/book/summary" element={<BookVisitSummary />} />
             <Route path="/visits" element={<MyVisits />} />
             <Route path="/history" element={<History />} />
