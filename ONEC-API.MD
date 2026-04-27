@@ -21,6 +21,7 @@
 
 - `proof.cityId` — обязательный ID города (из `onec-configs.yml`).
 - `proof.totp_code` — обязательный TOTP код.
+- применяется анти-брутфорс защита: лимит попыток и временный lockout, при неверном proof возвращается унифицированная ошибка `auth_attempt_failed`, при превышении лимита — `auth_rate_limited` (429 + `Retry-After`).
 - TOTP секрет берётся из `onec-configs.yml` у соответствующего города: `onecTotpSecret`.
 
 #### Успешный ответ

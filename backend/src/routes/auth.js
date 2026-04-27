@@ -347,6 +347,12 @@ export async function authRoutes(app) {
         lockMs: 30_000,
         lockAfterFailures: 3,
     };
+    const oneCAttemptPolicy = {
+        windowMs: 60_000,
+        limit: 6,
+        lockMs: 30_000,
+        lockAfterFailures: 3,
+    };
     const selectPatientAttemptPolicy = {
         windowMs: 60_000,
         limit: 8,
@@ -373,8 +379,29 @@ export async function authRoutes(app) {
             return sendApiError(reply, 400, "onec_city_id_required");
         }
 
+        const oneCAttemptDimensions = {
+            ip: req.ip,
+            city: cityId,
+        };
+
+        const oneCRateLimit = consumeAuthAttemptBudget({
+            scope: "auth_onec",
+            dimensions: oneCAttemptDimensions,
+            policy: oneCAttemptPolicy,
+        });
+
+        if (oneCRateLimit.limited) {
+            return sendAuthRateLimit(reply, oneCRateLimit.retryAfterSeconds);
+        }
+
         const oneCConfig = config.oneCConfigs.find((item) => item.cityId === cityId);
         if (!oneCConfig) {
+            recordAuthAttempt({
+                scope: "auth_onec",
+                dimensions: oneCAttemptDimensions,
+                success: false,
+                policy: oneCAttemptPolicy,
+            });
             return sendApiError(reply, 404, "onec_city_not_found");
         }
 
@@ -391,8 +418,21 @@ export async function authRoutes(app) {
         });
 
         if (!proofValidation.ok) {
-            return sendApiError(reply, proofValidation.statusCode, proofValidation.errorCode);
+            recordAuthAttempt({
+                scope: "auth_onec",
+                dimensions: oneCAttemptDimensions,
+                success: false,
+                policy: oneCAttemptPolicy,
+            });
+            return sendUnifiedAuthFailure(reply);
         }
+
+        recordAuthAttempt({
+            scope: "auth_onec",
+            dimensions: oneCAttemptDimensions,
+            success: true,
+            policy: oneCAttemptPolicy,
+        });
 
         const tokenPayload = {
             channel,
