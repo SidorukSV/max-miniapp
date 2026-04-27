@@ -45,6 +45,7 @@ function normalizeOneCConfigs(parsed, sourceLabel) {
         const cityId = typeof item.cityId === "string" ? item.cityId.trim() : "";
         const url = typeof item.url === "string" ? item.url.trim() : "";
         const basicAuth = typeof item.basicAuth === "string" ? item.basicAuth.trim() : "";
+        const onecTotpSecret = typeof item.onecTotpSecret === "string" ? item.onecTotpSecret.trim() : "";
 
         if (!cityId) {
             throw new Error(`${sourceLabel}[${index}].cityId is required`);
@@ -62,6 +63,7 @@ function normalizeOneCConfigs(parsed, sourceLabel) {
             cityId,
             url,
             basicAuth,
+            onecTotpSecret,
         };
     });
 }
@@ -191,6 +193,8 @@ function parseCorsAllowedOrigins(rawValue) {
     );
 }
 
+const loadedOneCConfigs = loadOneCConfigs();
+
 export const config = {
     port: Number(process.env.PORT || 3000),
     nodeEnv: process.env.NODE_ENV || "development",
@@ -201,7 +205,7 @@ export const config = {
     maxInitDataMaxAgeSeconds: Number(process.env.MAX_INIT_DATA_MAX_AGE_SECONDS || 300),
     redisUrl: process.env.REDIS_URL || "redis://127.0.0.1:6379",
     redisConnectTimeoutMs: Number(process.env.REDIS_CONNECT_TIMEOUT_MS || 5000),
-    oneCConfigs: loadOneCConfigs(),
+    oneCConfigs: loadedOneCConfigs,
     corsAllowedOrigins: parseCorsAllowedOrigins(process.env.CORS_ALLOWED_ORIGINS),
     logsInternalApiKey: process.env.LOGS_INTERNAL_API_KEY || "",
     logsRateLimitPerMinute: parsePositiveInteger(process.env.LOGS_RATE_LIMIT_PER_MINUTE, 30),

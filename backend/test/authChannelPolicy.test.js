@@ -58,3 +58,39 @@ test("non-production + channel=web with invalid TOTP is rejected", () => {
     assert.equal(result.statusCode, 401);
     assert.equal(result.errorCode, "dev_totp_invalid");
 });
+
+test("production + channel=1c with invalid TOTP is rejected by proof validation (not channel policy)", () => {
+    const result = validateAuthChannelProof({
+        nodeEnv: "production",
+        channel: "1c",
+        proof: { cityId: "city-a", totp_code: "000000" },
+        initData: null,
+        maxBotToken: "token",
+        maxInitDataMaxAgeSeconds: 300,
+        devTotpSecret: "JBSWY3DPEHPK3PXP",
+        devTotpPeriodSeconds: 30,
+        devTotpWindow: 0,
+    });
+
+    assert.equal(result.ok, false);
+    assert.equal(result.statusCode, 401);
+    assert.equal(result.errorCode, "onec_totp_invalid");
+});
+
+test("production + channel=1c without cityId is rejected", () => {
+    const result = validateAuthChannelProof({
+        nodeEnv: "production",
+        channel: "1c",
+        proof: { totp_code: "000000" },
+        initData: null,
+        maxBotToken: "token",
+        maxInitDataMaxAgeSeconds: 300,
+        devTotpSecret: "JBSWY3DPEHPK3PXP",
+        devTotpPeriodSeconds: 30,
+        devTotpWindow: 0,
+    });
+
+    assert.equal(result.ok, false);
+    assert.equal(result.statusCode, 400);
+    assert.equal(result.errorCode, "onec_city_id_required");
+});

@@ -25,10 +25,10 @@ import { authMiddleware } from "../middleware/auth.js";
 
 export function getAllowedAuthChannels(nodeEnv) {
     if (nodeEnv === "production") {
-        return new Set(["max"]);
+        return new Set(["max", "1c"]);
     }
 
-    return new Set(["max", "web"]);
+    return new Set(["max", "web", "1c"]);
 }
 
 export function validateAuthChannelProof({
@@ -101,6 +101,53 @@ export function validateAuthChannelProof({
                 ok: false,
                 statusCode: 401,
                 errorCode: "dev_totp_invalid",
+            };
+        }
+
+        return { ok: true };
+    }
+
+    if (channel === "1c") {
+        const oneCCityId = typeof (proof?.cityId || proof?.city_id) === "string"
+            ? String(proof?.cityId || proof?.city_id).trim()
+            : "";
+
+        if (!oneCCityId) {
+            return {
+                ok: false,
+                statusCode: 400,
+                errorCode: "onec_city_id_required",
+            };
+        }
+
+        if (!devTotpSecret) {
+            return {
+                ok: false,
+                statusCode: 503,
+                errorCode: "onec_totp_not_configured",
+            };
+        }
+
+        try {
+            const isValidTotp = verifyDevTotpCode({
+                code: proof?.totp_code || proof?.totpCode || null,
+                secret: devTotpSecret,
+                periodSeconds: devTotpPeriodSeconds,
+                window: devTotpWindow,
+            });
+
+            if (!isValidTotp) {
+                return {
+                    ok: false,
+                    statusCode: 401,
+                    errorCode: "onec_totp_invalid",
+                };
+            }
+        } catch {
+            return {
+                ok: false,
+                statusCode: 401,
+                errorCode: "onec_totp_invalid",
             };
         }
 
@@ -269,7 +316,7 @@ function getRefreshTokenFromRequest(req) {
 }
 
 function shouldExposeRefreshToken(channel) {
-    return channel === "max";
+    return channel === "max" || channel === "1c";
 }
 
 function buildCookieHeaderValue(req, name, value, maxAgeSeconds = null) {
@@ -300,6 +347,12 @@ export async function authRoutes(app) {
         lockMs: 30_000,
         lockAfterFailures: 3,
     };
+    const oneCAttemptPolicy = {
+        windowMs: 60_000,
+        limit: 6,
+        lockMs: 30_000,
+        lockAfterFailures: 3,
+    };
     const selectPatientAttemptPolicy = {
         windowMs: 60_000,
         limit: 8,
@@ -314,6 +367,97 @@ export async function authRoutes(app) {
             auth_session_id,
             need_city: config.citySelectionEnabled,
             default_city_id: config.citySelectionEnabled ? null : config.defaultCityId,
+        };
+    });
+
+    app.post("/api/v1/auth/onec", async (req, reply) => {
+        const { proof } = req.body || {};
+        const cityId = typeof proof?.cityId === "string" ? proof.cityId.trim() : "";
+        const channel = "1c";
+
+        if (!cityId) {
+            return sendApiError(reply, 400, "onec_city_id_required");
+        }
+
+        const oneCAttemptDimensions = {
+            ip: req.ip,
+            city: cityId,
+        };
+
+        const oneCRateLimit = consumeAuthAttemptBudget({
+            scope: "auth_onec",
+            dimensions: oneCAttemptDimensions,
+            policy: oneCAttemptPolicy,
+        });
+
+        if (oneCRateLimit.limited) {
+            return sendAuthRateLimit(reply, oneCRateLimit.retryAfterSeconds);
+        }
+
+        const oneCConfig = config.oneCConfigs.find((item) => item.cityId === cityId);
+        if (!oneCConfig) {
+            recordAuthAttempt({
+                scope: "auth_onec",
+                dimensions: oneCAttemptDimensions,
+                success: false,
+                policy: oneCAttemptPolicy,
+            });
+            return sendApiError(reply, 404, "onec_city_not_found");
+        }
+
+        const proofValidation = validateAuthChannelProof({
+            nodeEnv: config.nodeEnv,
+            channel,
+            proof,
+            initData: null,
+            maxBotToken: config.maxBotToken,
+            maxInitDataMaxAgeSeconds: config.maxInitDataMaxAgeSeconds,
+            devTotpSecret: oneCConfig.onecTotpSecret || "",
+            devTotpPeriodSeconds: config.devTotpPeriodSeconds,
+            devTotpWindow: config.devTotpWindow,
+        });
+
+        if (!proofValidation.ok) {
+            recordAuthAttempt({
+                scope: "auth_onec",
+                dimensions: oneCAttemptDimensions,
+                success: false,
+                policy: oneCAttemptPolicy,
+            });
+            return sendUnifiedAuthFailure(reply);
+        }
+
+        recordAuthAttempt({
+            scope: "auth_onec",
+            dimensions: oneCAttemptDimensions,
+            success: true,
+            policy: oneCAttemptPolicy,
+        });
+
+        const tokenPayload = {
+            channel,
+            integration: "1c",
+            city_id: cityId,
+        };
+
+        const access_token = signAccessToken(tokenPayload);
+        const refresh_token = signRefreshToken(tokenPayload);
+        const decodedRefreshToken = verifyToken(refresh_token);
+        const refreshContext = buildRefreshTokenContext(req, channel);
+
+        await saveRefreshToken(decodedRefreshToken.jti, {
+            ...tokenPayload,
+            ...refreshContext,
+            expiresAt: decodedRefreshToken.exp * 1000,
+        });
+
+        setRefreshCookie(req, reply, refresh_token, REFRESH_TOKEN_EXPIRES_SECONDS);
+
+        return {
+            access_token,
+            refresh_token,
+            expires_in: ACCESS_TOKEN_EXPIRES_SECONDS,
+            channel,
         };
     });
 
