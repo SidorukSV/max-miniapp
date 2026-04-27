@@ -9,7 +9,9 @@
 - cityId: "city-a"
   url: "https://example.com/onec/city-a/"
   basicAuth: "base64_login_password"
+  onecTotpSecret: "JBSWY3DPEHPK3PXP"
 
 - cityId: "city-b"
   url: "https://example.com/onec/city-b/"
   basicAuth: "base64_login_password"
+  onecTotpSecret: "JBSWY3DPEHPK3PXP"
