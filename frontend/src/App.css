@@ -52,48 +52,12 @@
 
   --inset-top: env(safe-area-inset-top);
   --inset-bottom: env(safe-area-inset-bottom);
-}
 
-/* 1.1 Dark theme overrides */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0f1115;
-    --text: rgba(255, 255, 255, 0.92);
-    --muted: rgba(255, 255, 255, 0.65);
-
-    --surface: rgba(255, 255, 255, 0.14);
-    --surface-2: rgba(15, 17, 21, 0.92);
-    --surface-glass: rgba(15, 17, 21, 0.70);
-
-    --border: rgba(255, 255, 255, 0.14);
-    --border-soft: rgba(255, 255, 255, 0.10);
-    --divider: rgba(255, 255, 255, 0.14);
-    --divider-soft: rgba(255, 255, 255, 0.10);
-
-    --tap: rgba(255, 255, 255, 0.06);
-
-    --accent: rgba(59, 130, 246, 1);
-    --accent-soft: rgba(115, 59, 246, 0.2);
-    --accent-chip: rgba(59, 130, 246, 0.14);
-    --accent-icon: rgba(59, 130, 246, 0.22);
-    --accent-pill-bg: rgba(59, 130, 246, 0.18);
-
-    --primary: #3b82f6;
-    --primary-hover: #2563eb;
-
-    --ok-bg: rgba(34, 197, 94, 0.22);
-    --ok-text: rgba(34, 197, 94, 1);
-
-    --danger-bg: rgba(239, 68, 68, 0.20);
-    --danger-text: rgba(239, 68, 68, 1);
-    --danger-plain: rgba(239, 68, 68, 1);
-
-    --muted-bg: rgba(255, 255, 255, 0.08);
-    --muted-text: rgba(255, 255, 255, 0.62);
-
-    --shadow-card: 0 2px 14px rgba(0, 0, 0, 0.35);
-    --shadow-header: 0 10px 30px rgba(0, 0, 0, 0.30);
-  }
+  /* Force light host tokens (MAX/Telegram WebApp vars) */
+  --tg-theme-bg-color: #ffffff;
+  --tg-theme-secondary-bg-color: #f6f8ff;
+  --tg-theme-text-color: #00103d;
+  --tg-theme-hint-color: #7d7d7d;
 }
 
 /* 1.2 Touch-device safe-area fallbacks */
@@ -852,12 +816,6 @@ body {
   flex: 1;
 }
 
-@media (prefers-color-scheme: dark) {
-  .questionDialogCard {
-    background: #1f2430;
-  }
-}
-
 /* ================================== */
 /* 5) HISTORY GROUPING + STATUSES     */
 /* ================================== */
@@ -890,13 +848,6 @@ body {
   height: 14px;
   border-radius: 999px;
   background: rgba(0, 0, 0, 0.18);
-}
-
-/* 5.3 Dark theme tweak for month marker */
-@media (prefers-color-scheme: dark) {
-  .historyGroupBar {
-    background: rgba(255, 255, 255, 0.18);
-  }
 }
 
 .historyMonth {
@@ -1386,19 +1337,6 @@ body {
 
 .emptyStateActions {
   width: 100%;
-}
-
-@media (prefers-color-scheme: dark) {
-  .emptyStateCard {
-    background:
-      radial-gradient(circle at top right, rgba(59, 130, 246, 0.22), transparent 52%),
-      linear-gradient(180deg, rgba(31, 36, 48, 0.96) 0%, rgba(15, 17, 21, 0.92) 100%);
-  }
-
-  .emptyStateIconWrap {
-    background: rgba(59, 130, 246, 0.2);
-    border-color: rgba(59, 130, 246, 0.28);
-  }
 }
 
 .categoryItemCard {
