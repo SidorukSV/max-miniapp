@@ -678,7 +678,7 @@ export async function authRoutes(app) {
     app.post("/api/v1/auth/switch-patient",
         { preHandler: [authMiddleware] },
         async (req, reply) => {
-            const { patient_id } = req.body || {};
+            const { patient_id } = JSON.parse(req.body) || {};
             const { city_id, phone, channel } = req.user;
 
             if (!patient_id) {
