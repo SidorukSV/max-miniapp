@@ -1,5 +1,9 @@
 # max-miniapp
 
+## Windows Server: установка backend как службы
+
+Подробный пошаговый гайд: [windows-server-install.md](./windows-server-install.md).
+
 ## Backend: Redis для sessions и refresh tokens
 
 Теперь backend хранит:
